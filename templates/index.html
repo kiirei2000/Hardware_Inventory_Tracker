@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Hardware Inventory Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="text-center mb-5">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-boxes text-primary me-3"></i>
+                Hardware Inventory Tracker
+            </h1>
+            <p class="lead text-muted">
+                Manage your hardware inventory with ease. Track boxes, log pulls, and monitor quantities.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Add New Box -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-plus-circle fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title">Add New Box</h5>
+                <p class="card-text">Register a new hardware box in the inventory system.</p>
+                <a href="{{ url_for('add_box') }}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>Add Box
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Pull Event -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-minus-circle fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title">Log Pull Event</h5>
+                <p class="card-text">Record when items are pulled from inventory boxes.</p>
+                <a href="{{ url_for('log_pull') }}" class="btn btn-warning">
+                    <i class="fas fa-minus me-2"></i>Log Pull
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Dashboard -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-bar fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title">Inventory Dashboard</h5>
+                <p class="card-text">View current inventory status and remaining quantities.</p>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-info">
+                    <i class="fas fa-chart-bar me-2"></i>Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Data -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-download fa-3x text-secondary"></i>
+                </div>
+                <h5 class="card-title">Export Data</h5>
+                <p class="card-text">Download current inventory data as Excel spreadsheet.</p>
+                <a href="{{ url_for('export_excel') }}" class="btn btn-secondary">
+                    <i class="fas fa-download me-2"></i>Export
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Quick Instructions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-plus text-success me-2"></i>Adding Boxes</h6>
+                        <ul class="list-unstyled">
+                            <li>• Fill in hardware type and lot number</li>
+                            <li>• Enter unique box number and barcode</li>
+                            <li>• Set initial quantity</li>
+                            <li>• System auto-generates Box ID</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-minus text-warning me-2"></i>Logging Pulls</h6>
+                        <ul class="list-unstyled">
+                            <li>• Scan or enter barcode</li>
+                            <li>• Specify quantity being pulled</li>
+                            <li>• Enter QC personnel name</li>
+                            <li>• System updates remaining quantity</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

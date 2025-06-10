@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Dashboard - Hardware Inventory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-chart-bar me-2"></i>
+        Inventory Dashboard
+    </h2>
+    <div class="btn-group">
+        <a href="{{ url_for('export_excel', type_filter=type_filter, lot_filter=lot_filter) }}" 
+           class="btn btn-success">
+            <i class="fas fa-download me-1"></i>Export Excel
+        </a>
+        <button class="btn btn-secondary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i>Print
+        </button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-filter me-2"></i>Filters
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="type_filter" class="form-label">Hardware Type</label>
+                <select class="form-select" id="type_filter" name="type_filter">
+                    <option value="">All Types</option>
+                    {% for type in types %}
+                    <option value="{{ type.name }}" {{ 'selected' if type_filter == type.name }}>
+                        {{ type.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="lot_filter" class="form-label">Lot Number</label>
+                <select class="form-select" id="lot_filter" name="lot_filter">
+                    <option value="">All Lots</option>
+                    {% for lot in lots %}
+                    <option value="{{ lot.name }}" {{ 'selected' if lot_filter == lot.name }}>
+                        {{ lot.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        {% if type_filter or lot_filter %}
+        <div class="mt-3">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Active filters: 
+                {% if type_filter %}Type: <strong>{{ type_filter }}</strong>{% endif %}
+                {% if type_filter and lot_filter %}, {% endif %}
+                {% if lot_filter %}Lot: <strong>{{ lot_filter }}</strong>{% endif %}
+                <a href="{{ url_for('dashboard') }}" class="ms-2">Clear all filters</a>
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Inventory Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-boxes me-2"></i>
+            Current Inventory ({{ boxes|length }} boxes)
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if boxes %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Box ID</th>
+                        <th>Type</th>
+                        <th>Lot</th>
+                        <th>Box #</th>
+                        <th>Initial Qty</th>
+                        <th>Remaining Qty</th>
+                        <th>Status</th>
+                        <th>Barcode</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for box_data in boxes %}
+                    {% set box = box_data[0] %}
+                    {% set type_name = box_data[1] %}
+                    {% set lot_name = box_data[2] %}
+                    <tr>
+                        <td>
+                            <strong>{{ box.box_id }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ type_name }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ lot_name }}</span>
+                        </td>
+                        <td>{{ box.box_number }}</td>
+                        <td>{{ box.initial_quantity }}</td>
+                        <td>
+                            <strong class="{{ 'text-danger' if box.remaining_quantity == 0 else 'text-warning' if box.remaining_quantity < 10 else 'text-success' }}">
+                                {{ box.remaining_quantity }}
+                            </strong>
+                        </td>
+                        <td>
+                            {% if box.remaining_quantity == 0 %}
+                                <span class="badge bg-danger">Empty</span>
+                            {% elif box.remaining_quantity < box.initial_quantity * 0.2 %}
+                                <span class="badge bg-warning">Low Stock</span>
+                            {% else %}
+                                <span class="badge bg-success">Available</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="font-monospace">{{ box.barcode }}</small>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('box_logs', box_id=box.id) }}" 
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-history me-1"></i>View Logs
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No inventory boxes found</h5>
+            <p class="text-muted">
+                {% if type_filter or lot_filter %}
+                Try adjusting your filters or <a href="{{ url_for('dashboard') }}">view all boxes</a>.
+                {% else %}
+                Start by <a href="{{ url_for('add_box') }}">adding your first box</a> to the inventory.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+{% if boxes %}
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{ boxes|length }}</h5>
+                <p class="card-text">Total Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">
+                    {{ boxes|selectattr('0.remaining_quantity', 'gt', 0)|list|length }}
+                </h5>
+                <p class="card-text">Available Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning">
+                    {{ boxes|selectattr('0.remaining_quantity', 'eq', 0)|list|length }}
+                </h5>
+                <p class="card-text">Empty Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">
+                    {{ boxes|sum(attribute='0.remaining_quantity') }}
+                </h5>
+                <p class="card-text">Total Remaining</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<style>
+@media print {
+    .btn-group, .card-header, nav, footer, .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+    
+    .badge {
+        border: 1px solid #000;
+        color: #000 !important;
+        background-color: #fff !important;
+    }
+}
+</style>
+{% endblock %}
