@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime, timezone
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import func
@@ -9,6 +9,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import pandas as pd
 import io
 import re
+from functools import wraps
+from urllib.parse import urlparse
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -36,6 +38,25 @@ db.init_app(app)
 # Import models after db initialization
 from models import HardwareType, LotNumber, Box, PullEvent
 
+def is_safe_url(target):
+    """Check if the target URL is safe for redirect"""
+    if not target:
+        return False
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(target)
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
+def admin_required(f):
+    """Decorator to require admin authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_admin'):
+            flash('Admin access required to manage boxes', 'error')
+            next_url = request.url if is_safe_url(request.url) else url_for('manage_boxes')
+            return redirect(url_for('admin_login', next=next_url))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def sanitize_box_id_component(component):
     """Sanitize a component for use in box ID generation"""
     # Remove special characters and replace spaces with underscores
@@ -56,6 +77,39 @@ def generate_box_id(hardware_type_name, lot_number_name, box_number):
 def index():
     """Home page with navigation options"""
     return render_template('index.html')
+
+@app.route('/admin_login', methods=['GET', 'POST'])
+def admin_login():
+    """Simple admin login with security"""
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        
+        # Simple admin credentials (in production, use proper hashed passwords)
+        if username == 'admin' and password == 'admin123':
+            session['is_admin'] = True
+            session['admin_username'] = username
+            
+            # Secure redirect handling
+            next_url = request.args.get('next')
+            if next_url and is_safe_url(next_url):
+                flash('Admin login successful', 'success')
+                return redirect(next_url)
+            else:
+                flash('Admin login successful', 'success')
+                return redirect(url_for('manage_boxes'))
+        else:
+            flash('Invalid admin credentials', 'error')
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin_logout')
+def admin_logout():
+    """Logout admin"""
+    session.pop('is_admin', None)
+    session.pop('admin_username', None)
+    flash('Admin logged out successfully', 'success')
+    return redirect(url_for('index'))
 
 @app.route('/add_box', methods=['GET', 'POST'])
 def add_box():
@@ -400,6 +454,7 @@ def get_box_info(barcode):
         return jsonify({'found': False})
 
 @app.route('/manage_boxes')
+@admin_required
 def manage_boxes():
     """List and manage all boxes"""
     # Get filter parameters
@@ -446,61 +501,107 @@ def manage_boxes():
                          search_query=search_query)
 
 @app.route('/edit_box/<int:box_id>', methods=['GET', 'POST'])
+@admin_required
 def edit_box(box_id):
-    """Edit an existing box"""
+    """Edit an existing box - FULL ADMIN ACCESS"""
     box = Box.query.get_or_404(box_id)
     hardware_type = HardwareType.query.get(box.hardware_type_id)
     lot_number = LotNumber.query.get(box.lot_number_id)
     
     if request.method == 'POST':
         try:
-            # Get form data
+            # Get form data - ADMIN CAN EDIT EVERYTHING
+            hardware_type_name = request.form.get('hardware_type', '').strip()
+            new_hardware_type = request.form.get('new_hardware_type', '').strip()
+            lot_number_name = request.form.get('lot_number', '').strip()
+            new_lot_number = request.form.get('new_lot_number', '').strip()
             new_box_number = request.form.get('box_number', '').strip()
             new_barcode = request.form.get('barcode', '').strip()
             new_initial_quantity = request.form.get('initial_quantity', 0)
+            new_current_quantity = request.form.get('current_quantity', 0)
             
             # Validation
             errors = []
             
+            # Handle hardware type
+            target_hardware_type = None
+            if new_hardware_type:
+                existing_type = HardwareType.query.filter_by(name=new_hardware_type).first()
+                if existing_type:
+                    target_hardware_type = existing_type
+                else:
+                    target_hardware_type = HardwareType(name=new_hardware_type)
+                    db.session.add(target_hardware_type)
+                    db.session.flush()
+            elif hardware_type_name:
+                target_hardware_type = HardwareType.query.filter_by(name=hardware_type_name).first()
+                if not target_hardware_type:
+                    errors.append("Invalid hardware type selected")
+            else:
+                errors.append("Hardware type is required")
+            
+            # Handle lot number  
+            target_lot_number = None
+            if new_lot_number:
+                existing_lot = LotNumber.query.filter_by(name=new_lot_number).first()
+                if existing_lot:
+                    target_lot_number = existing_lot
+                else:
+                    target_lot_number = LotNumber(name=new_lot_number)
+                    db.session.add(target_lot_number)
+                    db.session.flush()
+            elif lot_number_name:
+                target_lot_number = LotNumber.query.filter_by(name=lot_number_name).first()
+                if not target_lot_number:
+                    errors.append("Invalid lot number selected")
+            else:
+                errors.append("Lot number is required")
+            
+            # Validate other fields
             if not new_box_number:
                 errors.append("Box number is required")
             
             if not new_barcode:
                 errors.append("Barcode is required")
             elif new_barcode != box.barcode:
-                # Check if new barcode already exists
                 existing_box = Box.query.filter_by(barcode=new_barcode).first()
                 if existing_box:
                     errors.append("Barcode already exists")
             
             try:
                 new_initial_quantity = int(new_initial_quantity)
-                if new_initial_quantity < box.initial_quantity - box.remaining_quantity:
-                    errors.append(f"Initial quantity cannot be less than already pulled quantity ({box.initial_quantity - box.remaining_quantity})")
+                new_current_quantity = int(new_current_quantity)
+                if new_initial_quantity <= 0:
+                    errors.append("Initial quantity must be greater than 0")
+                if new_current_quantity < 0:
+                    errors.append("Current quantity cannot be negative")
+                if new_current_quantity > new_initial_quantity:
+                    errors.append("Current quantity cannot exceed initial quantity")
             except (ValueError, TypeError):
-                errors.append("Initial quantity must be a valid number")
+                errors.append("Quantities must be valid numbers")
             
             if errors:
                 for error in errors:
                     flash(error, 'error')
                 form_data = request.form.to_dict()
+                types = HardwareType.query.all()
+                lots = LotNumber.query.all()
                 return render_template('edit_box.html', box=box, hardware_type=hardware_type, 
-                                     lot_number=lot_number, form_data=form_data)
+                                     lot_number=lot_number, form_data=form_data, types=types, lots=lots)
             
-            # Calculate new remaining quantity if initial quantity changed
-            quantity_difference = new_initial_quantity - box.initial_quantity
-            new_remaining_quantity = box.remaining_quantity + quantity_difference
-            
-            # Update box
-            old_box_id = box.box_id
+            # Update box with new values
+            if target_hardware_type:
+                box.hardware_type_id = target_hardware_type.id
+            if target_lot_number:
+                box.lot_number_id = target_lot_number.id
             box.box_number = new_box_number
             box.barcode = new_barcode
             box.initial_quantity = new_initial_quantity
-            box.remaining_quantity = new_remaining_quantity
+            box.remaining_quantity = new_current_quantity
             
-            # Regenerate box_id if box_number changed
-            if new_box_number != box.box_number:
-                box.box_id = generate_box_id(hardware_type.name, lot_number.name, new_box_number)
+            # Regenerate box_id
+            if target_hardware_type and target_lot_number:
+                box.box_id = generate_box_id(target_hardware_type.name, target_lot_number.name, new_box_number)
             
             db.session.commit()
             
@@ -513,9 +614,13 @@ def edit_box(box_id):
             flash("An error occurred while updating the box", 'error')
     
     # GET request - show form
-    return render_template('edit_box.html', box=box, hardware_type=hardware_type, lot_number=lot_number)
+    types = HardwareType.query.all()
+    lots = LotNumber.query.all()
+    return render_template('edit_box.html', box=box, hardware_type=hardware_type, 
+                         lot_number=lot_number, types=types, lots=lots)
 
 @app.route('/delete_box/<int:box_id>', methods=['POST'])
+@admin_required
 def delete_box(box_id):
     """Delete a box and all its pull events"""
     try:

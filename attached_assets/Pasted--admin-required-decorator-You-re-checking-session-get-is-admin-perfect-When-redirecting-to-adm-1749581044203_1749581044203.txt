@@ -1,0 +1,57 @@
+@admin_required decorator
+
+You’re checking session.get('is_admin')—perfect.
+
+When redirecting to admin_login, consider passing next with url_for('manage_boxes', _external=False) to avoid open-redirect risks (or sanitize next).
+
+Login / Logout
+
+After successful login you pop next = request.args.get('next'), then redirect. Make sure next is relative (to avoid redirecting off-site).
+
+Logout clears both is_admin and admin_username, which is exactly what you want.
+
+ORM vs. Raw SQL Consistency
+
+Your edit route uses Box.query.get_or_404 and HardwareType.query, so I’m assuming you’ve switched to SQLAlchemy models. Just verify your model fields match:
+
+python
+Copier
+class Box(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    box_id = db.Column(db.String, unique=True)
+    hardware_type_id = db.Column(db.Integer, db.ForeignKey('hardware_types.id'))
+    lot_number_id   = db.Column(db.Integer, db.ForeignKey('lot_numbers.id'))
+    box_number      = db.Column(db.String)
+    barcode         = db.Column(db.String, unique=True)
+    initial_quantity   = db.Column(db.Integer)
+    remaining_quantity = db.Column(db.Integer)
+    # …
+And that your lookup models use .name (or .number) consistently in both code and templates.
+
+generate_box_id helper
+
+You’re calling generate_box_id(...) after the update—just ensure that function is defined (same logic as your f-string in add_box) and accessible here.
+
+Form Data vs. Model Attributes
+
+In your template you reference lot.name, but in your original schema the column was called number (lot_numbers.number). If you renamed it to .name, be consistent; otherwise use lot.number in the template.
+
+Validation Edge Cases
+
+You’ve covered most quantity checks; just double-check that zero is allowed where you want it (you’ve set min="0" and prevent negatives).
+
+On barcode change, you correctly check new_barcode != box.barcode before querying for duplicates—good.
+
+UI Consistency
+
+In manage_boxes.html you added a “Current Qty” column but in the code you still pull box.remaining_quantity. Since you’ve renamed it remaining_quantity in the model, everything lines up.
+
+Your status color logic (<10 → warning, 0 → danger) is a nice touch.
+
+Protecting all management routes
+
+You decorated /manage_boxes, /edit_box, and /delete_box—don’t forget if you have any AJAX or API endpoints for inline editing, they also need @admin_required.
+
+CSRF Tokens
+
+If you ever layer in Flask-WTF or another CSRF solution later, wrap your POST forms with {{ csrf_token() }}. For now, the plain forms work, but bear in mind for production.
