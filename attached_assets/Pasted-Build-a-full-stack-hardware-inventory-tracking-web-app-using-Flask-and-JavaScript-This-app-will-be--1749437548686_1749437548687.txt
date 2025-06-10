@@ -1,0 +1,57 @@
+Build a full-stack hardware inventory tracking web app using Flask and JavaScript. This app will be used on tablets or phones, and it must be mobile-friendly and simple.
+
+⸻
+
+🔧 Features to Implement:
+
+🔹 1. Add New Box to Inventory
+	•	A form with the following fields:
+	•	Type of Hardware (dropdown with option to add new type)
+	•	Lot Number (dropdown with option to add new lot)
+	•	Box Number (text input)
+	•	Initial Quantity (number)
+	•	Barcode input field (text or scanned, must be unique)
+	•	When submitted:
+	•	Store all info in a database (use SQLite)
+	•	Validate barcode is not already used
+	•	Auto-generate a unique box ID from Type|Lot|Box
+
+🔹 2. Log a Pull Event
+	•	A form with:
+	•	Type (dropdown, pulled from registered types)
+	•	Lot Number (dropdown, pulled from registered lots)
+	•	Quantity pulled (number input)
+	•	Scan barcode (or paste code into text input)
+	•	QC Personnel name (text input)
+	•	Signature box (optional, can be just a text name for now)
+	•	When submitted:
+	•	Validate that barcode exists
+	•	Subtract the quantity pulled from the associated box
+	•	Save pull event to a logs table in the database, including timestamp
+
+🔹 3. Inventory Dashboard
+	•	Page to view all current boxes and their remaining quantities
+	•	Columns: Type, Lot, Box Number, Original Quantity, Remaining Quantity
+	•	Add filter by Type or Lot
+	•	Each row links to view logs for that box
+
+🔹 4. Barcode Scanner Integration
+	•	Use a JavaScript-based scanner like html5-qrcode to:
+	•	Capture barcode from mobile/tablet camera
+	•	Autofill form fields based on scanned data
+	•	Alert the user if the scanned code doesn’t match a registered box
+
+🔹 5. Export and Print
+	•	Add a button to:
+	•	Export current inventory table as Excel (.xlsx) using pandas and openpyxl
+	•	Generate a print-friendly HTML version of the table with a “Print” button (window.print())
+
+⸻
+
+🔐 Requirements:
+	•	Backend: Python + Flask
+	•	Frontend: HTML, CSS (mobile responsive), JS (barcode scanning)
+	•	Database: SQLite
+	•	Use Bootstrap or a clean CSS layout for responsive design
+	•	Structure files into /templates, /static, and main app.py
+	•	Keep everything within Replit’s free tier if possible

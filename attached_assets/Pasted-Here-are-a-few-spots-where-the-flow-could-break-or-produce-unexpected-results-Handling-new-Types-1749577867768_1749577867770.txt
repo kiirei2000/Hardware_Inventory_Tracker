@@ -1,0 +1,62 @@
+Here are a few spots where the flow could break or produce unexpected results:
+
+Handling “new” Types/Lots
+
+Your form lets users type in a new hardware type (and lot) but the POST handler never inserts those into hardware_types or lot_numbers. You’ll end up with dropdowns that don’t match your master tables.
+
+Fix: On POST, check if the text‐inputs for “new type” / “new lot” are non‐empty, insert them into their lookup tables, then use those IDs (or names) when making the box.
+
+Foreign‐Key Enforcement vs Plain TEXT
+
+In boxes, you store hardware_type TEXT and lot_number TEXT rather than FK IDs. That makes it easy to get typos or orphaned entries if someone manually edits the DB.
+
+Fix: Store hardware_type_id INTEGER REFERENCES hardware_types(id) and likewise for lot_number_id; JOIN back for display.
+
+Dropdown Population & Template Mismatch
+
+In add_box, you do
+
+python
+Copier
+types = db.execute("SELECT DISTINCT name FROM hardware_types").fetchall()
+but your template expects <option value="{{ type.id }}">{{ type.name }}</option> (presumably). As written, types is a list of 1-tuples like ("Widget",) unless you use row_factory.
+
+Fix: SELECT id, name, or unpack your tuples in the template.
+
+Box ID Collisions & Special Characters
+
+You generate box_id = f"{hardware_type}|{lot_number}|{box_number}". If any of those strings contain “|” or spaces, you could end up with ambiguous IDs (e.g. “A|B|C” vs “A|B|C”).
+
+Fix: Either sanitize (strip/escape) inputs or use a more robust scheme (e.g. zero‐padded numbers or UUID).
+
+Quantity Validation
+
+You check only if remaining_quantity >= quantity_pulled, which is good. But there’s no lower‐bound check on negative pulls or zero.
+
+Fix: Disallow quantity_pulled <= 0, and maybe enforce quantity_pulled <= original_quantity.
+
+Timestamp Timezone & Consistency
+
+Using datetime.now() will use server local time (UTC? whatever). Meanwhile your SQLite CURRENT_TIMESTAMP is always UTC. This mismatch can confuse your logs.
+
+Fix: Pick one (e.g. datetime.utcnow()) or always rely on the DB’s default timestamp, passing no timestamp in the INSERT.
+
+Scanner Integration Edge Cases
+
+If the camera fails or the QR code is unreadable, you never call .stop() or hide the container, so the UI stays stuck.
+
+Fix: Add error callbacks to .start() to .stop() on failure or a manual “Cancel” button.
+
+Log-Pull Form Needs Hardware Type & Lot Inputs
+
+In your JS you auto-fill input[name="hardware_type"], but your pull form HTML only shows barcode, quantity, QC name and signature. If you’re relying on hardware_type elsewhere, you’ll need hidden fields or to re-query on the server.
+
+Lack of CSRF Protection
+
+I don’t see any Flask-WTF or CSRF token in your forms. In production you’ll want at least a simple {{ csrf_token() }} pattern or a header check.
+
+UX: Immediate Redirect on Error
+
+When you flash “Barcode not found!” you redirect back to the blank form. The user loses all their other field entries.
+
+Fix: Render the same template with request.form pre-filled so they only have to fix the barcode.
