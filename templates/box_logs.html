@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Box Logs - {{ box.box_id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-history me-2"></i>
+        Pull Event Logs
+    </h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+    </a>
+</div>
+
+<!-- Box Information -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-box me-2"></i>
+            Box Information
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">Box ID:</dt>
+                    <dd class="col-sm-8"><strong>{{ box.box_id }}</strong></dd>
+                    
+                    <dt class="col-sm-4">Hardware Type:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-primary">{{ hardware_type.name }}</span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Lot Number:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-info">{{ lot_number.name }}</span>
+                    </dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">Box Number:</dt>
+                    <dd class="col-sm-8">{{ box.box_number }}</dd>
+                    
+                    <dt class="col-sm-4">Initial Quantity:</dt>
+                    <dd class="col-sm-8">{{ box.initial_quantity }}</dd>
+                    
+                    <dt class="col-sm-4">Remaining:</dt>
+                    <dd class="col-sm-8">
+                        <strong class="{{ 'text-danger' if box.remaining_quantity == 0 else 'text-warning' if box.remaining_quantity < 10 else 'text-success' }}">
+                            {{ box.remaining_quantity }}
+                        </strong>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Barcode:</dt>
+                    <dd class="col-sm-8">
+                        <code>{{ box.barcode }}</code>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pull Events -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Pull Event History ({{ pull_events|length }} events)
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if pull_events %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Quantity Pulled</th>
+                        <th>QC Personnel</th>
+                        <th>Signature/Notes</th>
+                        <th>Remaining After Pull</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in pull_events %}
+                    <tr>
+                        <td>
+                            <div>
+                                <strong>{{ event.timestamp.strftime('%Y-%m-%d') }}</strong>
+                            </div>
+                            <small class="text-muted">{{ event.timestamp.strftime('%H:%M:%S UTC') }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning">{{ event.quantity_pulled }}</span>
+                        </td>
+                        <td>
+                            <i class="fas fa-user me-1"></i>{{ event.qc_personnel }}
+                        </td>
+                        <td>
+                            {% if event.signature %}
+                                <small>{{ event.signature }}</small>
+                            {% else %}
+                                <small class="text-muted">No signature</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Calculate remaining quantity at time of pull -->
+                            {% set remaining_at_pull = box.remaining_quantity %}
+                            {% for later_event in pull_events %}
+                                {% if later_event.timestamp > event.timestamp %}
+                                    {% set remaining_at_pull = remaining_at_pull + later_event.quantity_pulled %}
+                                {% endif %}
+                            {% endfor %}
+                            <strong>{{ remaining_at_pull }}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Summary -->
+        <div class="card-footer bg-light">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <strong>Total Pulled:</strong>
+                    <span class="text-danger">{{ pull_events|sum(attribute='quantity_pulled') }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Initial Quantity:</strong>
+                    <span class="text-info">{{ box.initial_quantity }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Current Remaining:</strong>
+                    <span class="text-success">{{ box.remaining_quantity }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Utilization:</strong>
+                    <span class="text-primary">
+                        {{ "%.1f"|format(((box.initial_quantity - box.remaining_quantity) / box.initial_quantity * 100)) }}%
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No pull events recorded</h5>
+            <p class="text-muted">
+                This box hasn't had any items pulled yet.
+                <a href="{{ url_for('log_pull') }}">Log a pull event</a> to start tracking usage.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="card-title">Log New Pull Event</h6>
+                <p class="card-text">Record items being pulled from this box</p>
+                <a href="{{ url_for('log_pull') }}?barcode={{ box.barcode }}" class="btn btn-warning">
+                    <i class="fas fa-minus me-1"></i>Log Pull
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="card-title">Print Box Report</h6>
+                <p class="card-text">Generate printable report for this box</p>
+                <button onclick="window.print()" class="btn btn-secondary">
+                    <i class="fas fa-print me-1"></i>Print Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+@media print {
+    .btn, .card-footer, nav, footer, .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        margin-bottom: 20px !important;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+        border-bottom: 1px solid #000 !important;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+    
+    .badge {
+        border: 1px solid #000;
+        color: #000 !important;
+        background-color: #fff !important;
+    }
+}
+</style>
+{% endblock %}
