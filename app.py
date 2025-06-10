@@ -399,6 +399,148 @@ def get_box_info(barcode):
     else:
         return jsonify({'found': False})
 
+@app.route('/manage_boxes')
+def manage_boxes():
+    """List and manage all boxes"""
+    # Get filter parameters
+    type_filter = request.args.get('type_filter', '')
+    lot_filter = request.args.get('lot_filter', '')
+    search_query = request.args.get('search', '')
+    
+    # Build query
+    query = db.session.query(
+        Box,
+        HardwareType.name.label('type_name'),
+        LotNumber.name.label('lot_name')
+    ).join(HardwareType, Box.hardware_type_id == HardwareType.id)\
+     .join(LotNumber, Box.lot_number_id == LotNumber.id)
+    
+    # Apply filters
+    if type_filter:
+        query = query.filter(HardwareType.name == type_filter)
+    if lot_filter:
+        query = query.filter(LotNumber.name == lot_filter)
+    if search_query:
+        search_term = f"%{search_query}%"
+        query = query.filter(
+            db.or_(
+                Box.box_id.ilike(search_term),
+                Box.barcode.ilike(search_term),
+                Box.box_number.ilike(search_term)
+            )
+        )
+    
+    # Order by box_id
+    boxes = query.order_by(Box.box_id).all()
+    
+    # Get unique types and lots for filter dropdowns
+    types = HardwareType.query.order_by(HardwareType.name).all()
+    lots = LotNumber.query.order_by(LotNumber.name).all()
+    
+    return render_template('manage_boxes.html', 
+                         boxes=boxes, 
+                         types=types, 
+                         lots=lots,
+                         type_filter=type_filter,
+                         lot_filter=lot_filter,
+                         search_query=search_query)
+
+@app.route('/edit_box/<int:box_id>', methods=['GET', 'POST'])
+def edit_box(box_id):
+    """Edit an existing box"""
+    box = Box.query.get_or_404(box_id)
+    hardware_type = HardwareType.query.get(box.hardware_type_id)
+    lot_number = LotNumber.query.get(box.lot_number_id)
+    
+    if request.method == 'POST':
+        try:
+            # Get form data
+            new_box_number = request.form.get('box_number', '').strip()
+            new_barcode = request.form.get('barcode', '').strip()
+            new_initial_quantity = request.form.get('initial_quantity', 0)
+            
+            # Validation
+            errors = []
+            
+            if not new_box_number:
+                errors.append("Box number is required")
+            
+            if not new_barcode:
+                errors.append("Barcode is required")
+            elif new_barcode != box.barcode:
+                # Check if new barcode already exists
+                existing_box = Box.query.filter_by(barcode=new_barcode).first()
+                if existing_box:
+                    errors.append("Barcode already exists")
+            
+            try:
+                new_initial_quantity = int(new_initial_quantity)
+                if new_initial_quantity < box.initial_quantity - box.remaining_quantity:
+                    errors.append(f"Initial quantity cannot be less than already pulled quantity ({box.initial_quantity - box.remaining_quantity})")
+            except (ValueError, TypeError):
+                errors.append("Initial quantity must be a valid number")
+            
+            if errors:
+                for error in errors:
+                    flash(error, 'error')
+                form_data = request.form.to_dict()
+                return render_template('edit_box.html', box=box, hardware_type=hardware_type, 
+                                     lot_number=lot_number, form_data=form_data)
+            
+            # Calculate new remaining quantity if initial quantity changed
+            quantity_difference = new_initial_quantity - box.initial_quantity
+            new_remaining_quantity = box.remaining_quantity + quantity_difference
+            
+            # Update box
+            old_box_id = box.box_id
+            box.box_number = new_box_number
+            box.barcode = new_barcode
+            box.initial_quantity = new_initial_quantity
+            box.remaining_quantity = new_remaining_quantity
+            
+            # Regenerate box_id if box_number changed
+            if new_box_number != box.box_number:
+                box.box_id = generate_box_id(hardware_type.name, lot_number.name, new_box_number)
+            
+            db.session.commit()
+            
+            flash(f"Box {box.box_id} updated successfully!", 'success')
+            return redirect(url_for('manage_boxes'))
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error updating box: {str(e)}")
+            flash("An error occurred while updating the box", 'error')
+    
+    # GET request - show form
+    return render_template('edit_box.html', box=box, hardware_type=hardware_type, lot_number=lot_number)
+
+@app.route('/delete_box/<int:box_id>', methods=['POST'])
+def delete_box(box_id):
+    """Delete a box and all its pull events"""
+    try:
+        box = Box.query.get_or_404(box_id)
+        box_id_name = box.box_id
+        
+        # Check if box has any pull events
+        pull_events_count = PullEvent.query.filter_by(box_id=box_id).count()
+        
+        # Delete all pull events first (due to foreign key constraint)
+        PullEvent.query.filter_by(box_id=box_id).delete()
+        
+        # Delete the box
+        db.session.delete(box)
+        db.session.commit()
+        
+        flash(f"Box {box_id_name} and {pull_events_count} pull events deleted successfully!", 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting box: {str(e)}")
+        flash("An error occurred while deleting the box", 'error')
+    
+    return redirect(url_for('manage_boxes'))
+
 # Create tables
 with app.app_context():
     db.create_all()
