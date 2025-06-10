@@ -26,22 +26,48 @@
             <div class="card-body">
                 <form method="POST" id="editBoxForm">
                     <div class="row">
-                        <!-- Hardware Type (Read-only) -->
+                        <!-- Hardware Type (Admin Editable) -->
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-cogs me-1"></i>Hardware Type
+                            <label for="hardware_type" class="form-label">
+                                <i class="fas fa-cogs me-1"></i>Hardware Type *
                             </label>
-                            <input type="text" class="form-control" value="{{ hardware_type.name }}" readonly>
-                            <small class="form-text text-muted">Hardware type cannot be changed</small>
+                            <select class="form-select" id="hardware_type" name="hardware_type">
+                                <option value="">Select existing type...</option>
+                                {% for type in types %}
+                                <option value="{{ type.name }}" 
+                                    {{ 'selected' if (form_data and form_data.get('hardware_type') == type.name) or (not form_data and type.name == hardware_type.name) }}>
+                                    {{ type.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="mt-2">
+                                <input type="text" class="form-control" id="new_hardware_type" 
+                                       name="new_hardware_type" placeholder="Or enter new type..."
+                                       value="{{ form_data.get('new_hardware_type', '') if form_data }}">
+                                <small class="form-text text-muted">Leave existing selection empty to add new type</small>
+                            </div>
                         </div>
 
-                        <!-- Lot Number (Read-only) -->
+                        <!-- Lot Number (Admin Editable) -->
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-tag me-1"></i>Lot Number
+                            <label for="lot_number" class="form-label">
+                                <i class="fas fa-tag me-1"></i>Lot Number *
                             </label>
-                            <input type="text" class="form-control" value="{{ lot_number.name }}" readonly>
-                            <small class="form-text text-muted">Lot number cannot be changed</small>
+                            <select class="form-select" id="lot_number" name="lot_number">
+                                <option value="">Select existing lot...</option>
+                                {% for lot in lots %}
+                                <option value="{{ lot.name }}"
+                                    {{ 'selected' if (form_data and form_data.get('lot_number') == lot.name) or (not form_data and lot.name == lot_number.name) }}>
+                                    {{ lot.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="mt-2">
+                                <input type="text" class="form-control" id="new_lot_number" 
+                                       name="new_lot_number" placeholder="Or enter new lot..."
+                                       value="{{ form_data.get('new_lot_number', '') if form_data }}">
+                                <small class="form-text text-muted">Leave existing selection empty to add new lot</small>
+                            </div>
                         </div>
 
                         <!-- Box Number (Editable) -->
@@ -55,18 +81,26 @@
                             <small class="form-text text-muted">Changing this will update the Box ID</small>
                         </div>
 
-                        <!-- Initial Quantity (Editable with constraints) -->
+                        <!-- Initial Quantity -->
                         <div class="col-md-6 mb-3">
                             <label for="initial_quantity" class="form-label">
                                 <i class="fas fa-hashtag me-1"></i>Initial Quantity *
                             </label>
                             <input type="number" class="form-control" id="initial_quantity" name="initial_quantity" 
                                    value="{{ form_data.get('initial_quantity', box.initial_quantity) if form_data else box.initial_quantity }}" 
-                                   min="{{ box.initial_quantity - box.remaining_quantity }}" required>
-                            <small class="form-text text-muted">
-                                Minimum: {{ box.initial_quantity - box.remaining_quantity }} 
-                                ({{ box.initial_quantity - box.remaining_quantity }} already pulled)
-                            </small>
+                                   min="1" required>
+                            <small class="form-text text-muted">Admin can modify any quantity</small>
+                        </div>
+
+                        <!-- Current/Remaining Quantity (NEW FIELD) -->
+                        <div class="col-md-6 mb-3">
+                            <label for="current_quantity" class="form-label">
+                                <i class="fas fa-layer-group me-1"></i>Current Quantity *
+                            </label>
+                            <input type="number" class="form-control" id="current_quantity" name="current_quantity" 
+                                   value="{{ form_data.get('current_quantity', box.remaining_quantity) if form_data else box.remaining_quantity }}" 
+                                   min="0" required>
+                            <small class="form-text text-muted">Current remaining quantity in box</small>
                         </div>
 
                         <!-- Barcode (Editable) -->
