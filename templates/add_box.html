@@ -94,6 +94,27 @@
                             </div>
                             <small class="form-text text-muted">Barcode must be unique across all boxes</small>
                         </div>
+
+                        <!-- Operator -->
+                        <div class="col-md-6 mb-3">
+                            <label for="operator" class="form-label">
+                                <i class="fas fa-user me-1"></i>Operator
+                            </label>
+                            <input type="text" name="operator" id="operator" class="form-control" 
+                                   placeholder="Enter operator name" 
+                                   value="{{ form_data.get('operator', '') if form_data }}" required>
+                        </div>
+
+                        <!-- QC Operator -->
+                        <div class="col-md-6 mb-3">
+                            <label for="qc_operator" class="form-label">
+                                <i class="fas fa-user-check me-1"></i>QC Operator
+                            </label>
+                            <input type="text" name="qc_operator" id="qc_operator" class="form-control" 
+                                   placeholder="Enter QC operator name" 
+                                   value="{{ form_data.get('qc_operator', '') if form_data }}" required>
+                            <small class="form-text text-muted">QC Operator must be different from the Operator</small>
+                        </div>
                     </div>
 
                     <!-- Preview Box ID -->
