@@ -36,9 +36,9 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label for="user" class="form-label">User</label>
+                <label for="user" class="form-label">Operator</label>
                 <select class="form-select" id="user" name="user">
-                    <option value="">All Users</option>
+                    <option value="">All Operators</option>
                     {% for user in users %}
                     <option value="{{ user }}" {{ 'selected' if user_filter == user }}>
                         {{ user }}
@@ -86,21 +86,52 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Timestamp</th>
-                        <th>Action</th>
-                        <th>User</th>
                         <th>Box ID</th>
                         <th>Hardware Type</th>
                         <th>Lot Number</th>
-                        <th>Details</th>
+                        <th>Previous Quantity</th>
+                        <th>Action</th>
+                        <th>Quantity</th>
+                        <th>Operator</th>
+                        <th>QC Operator</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in action_logs %}
+                    {% set details = log.details|from_json if log.details else {} %}
                     <tr>
                         <td>
                             <small class="text-muted">
                                 {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
                             </small>
+                        </td>
+                        <td>
+                            {% if log.box_id %}
+                                <code class="text-primary">{{ log.box_id }}</code>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.hardware_type %}
+                                <span class="badge bg-primary">{{ log.hardware_type }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.lot_number %}
+                                <span class="badge bg-info">{{ log.lot_number }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if details.remaining_quantity %}
+                                <span class="text-info">{{ details.remaining_quantity }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
                         </td>
                         <td>
                             {% if log.action_type == 'pull' %}
@@ -126,41 +157,18 @@
                             {% endif %}
                         </td>
                         <td>
+                            {% if details.quantity %}
+                                <span class="fw-bold">{{ details.quantity }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             <strong>{{ log.user }}</strong>
                         </td>
                         <td>
-                            {% if log.box_id %}
-                                <code class="text-primary">{{ log.box_id }}</code>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.hardware_type %}
-                                <span class="badge bg-primary">{{ log.hardware_type }}</span>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.lot_number %}
-                                <span class="badge bg-info">{{ log.lot_number }}</span>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.details %}
-                            <button class="btn btn-sm btn-outline-secondary" type="button" 
-                                    data-bs-toggle="collapse" data-bs-target="#details{{ log.id }}" 
-                                    aria-expanded="false">
-                                <i class="fas fa-eye me-1"></i>View
-                            </button>
-                            <div class="collapse mt-2" id="details{{ log.id }}">
-                                <div class="card card-body">
-                                    <pre class="small mb-0">{{ log.details }}</pre>
-                                </div>
-                            </div>
+                            {% if details.qc_operator %}
+                                <span class="text-primary">{{ details.qc_operator }}</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
