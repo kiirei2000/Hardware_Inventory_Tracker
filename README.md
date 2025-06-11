@@ -54,6 +54,10 @@ Barcodes can be generated freely using online tools (e.g., barcode.tec-it.com) a
 Deployment
 
 Hosted on Replit for easy access and collaboration.
+
+hardware-tracker.replit.app
+----
+
 Can be exported and run locally or deployed to other Flask-friendly hosts (e.g., Render, PythonAnywhere, etc.).
 
 Contributing
