@@ -36,7 +36,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 db.init_app(app)
 
 # Import models after db initialization
-from models import HardwareType, LotNumber, Box, PullEvent
+from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
 
 def is_safe_url(target):
     """Check if the target URL is safe for redirect"""
@@ -300,7 +300,7 @@ def log_pull():
 
 @app.route('/dashboard')
 def dashboard():
-    """Inventory dashboard"""
+    """Inventory dashboard with grouped display"""
     # Get filter parameters
     type_filter = request.args.get('type_filter', '')
     lot_filter = request.args.get('lot_filter', '')
@@ -319,15 +319,51 @@ def dashboard():
     if lot_filter:
         query = query.filter(LotNumber.name == lot_filter)
     
-    # Order by box_id
-    boxes = query.order_by(Box.box_id).all()
+    # Order by type name first, then lot name, then box number
+    results = query.order_by(HardwareType.name, LotNumber.name, Box.box_number).all()
+    
+    # Group boxes by type code (first 3 digits) and then by type-lot combination
+    from collections import defaultdict
+    
+    type_code_groups = defaultdict(lambda: defaultdict(list))
+    
+    for box, type_name, lot_name in results:
+        # Extract first 3 digits from type name (handle cases where type name might be shorter)
+        type_code = type_name[:3] if len(type_name) >= 3 else type_name
+        type_lot_key = f"{type_name}|{lot_name}"
+        
+        type_code_groups[type_code][type_lot_key].append({
+            'box': box,
+            'type_name': type_name,
+            'lot_name': lot_name
+        })
+    
+    # Calculate totals for each type-lot group
+    grouped_data = {}
+    for type_code, type_lot_groups in type_code_groups.items():
+        grouped_data[type_code] = {}
+        for type_lot_key, boxes_data in type_lot_groups.items():
+            type_name = boxes_data[0]['type_name']
+            lot_name = boxes_data[0]['lot_name']
+            
+            total_initial = sum(bd['box'].initial_quantity for bd in boxes_data)
+            total_remaining = sum(bd['box'].remaining_quantity for bd in boxes_data)
+            
+            grouped_data[type_code][type_lot_key] = {
+                'type_name': type_name,
+                'lot_name': lot_name,
+                'boxes': boxes_data,
+                'total_initial': total_initial,
+                'total_remaining': total_remaining,
+                'box_count': len(boxes_data)
+            }
     
     # Get unique types and lots for filter dropdowns
     types = HardwareType.query.order_by(HardwareType.name).all()
     lots = LotNumber.query.order_by(LotNumber.name).all()
     
     return render_template('dashboard.html', 
-                         boxes=boxes, 
+                         grouped_data=grouped_data, 
                          types=types, 
                          lots=lots,
                          type_filter=type_filter,

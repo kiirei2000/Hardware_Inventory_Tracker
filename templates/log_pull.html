@@ -52,24 +52,28 @@
                             <small class="form-text text-muted">Must be greater than 0</small>
                         </div>
 
-                        <!-- QC Personnel -->
+                        <!-- Operator -->
                         <div class="col-md-6 mb-3">
                             <label for="qc_personnel" class="form-label">
-                                <i class="fas fa-user me-1"></i>QC Personnel Name
+                                <i class="fas fa-user me-1"></i>Operator
                             </label>
                             <input type="text" class="form-control" id="qc_personnel" name="qc_personnel" 
                                    placeholder="Enter your name"
                                    value="{{ form_data.get('qc_personnel', '') if form_data }}" required>
                         </div>
 
-                        <!-- Signature -->
+                        <!-- QC Operator Initials -->
                         <div class="col-12 mb-3">
                             <label for="signature" class="form-label">
-                                <i class="fas fa-signature me-1"></i>Signature/Notes (Optional)
+                                <i class="fas fa-signature me-1"></i>QC Operator Initials
                             </label>
                             <input type="text" class="form-control" id="signature" name="signature" 
-                                   placeholder="Digital signature or additional notes"
+                                   placeholder="QC operator initials"
                                    value="{{ form_data.get('signature', '') if form_data }}">
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                QC Operator must be different than Operator who committed this pull.
+                            </small>
                         </div>
                     </div>
 
