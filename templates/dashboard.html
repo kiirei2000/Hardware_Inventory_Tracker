@@ -253,59 +253,7 @@
     </div>
 </div>
 
-<!-- Summary Statistics -->
-{% if grouped_data %}
-{% set total_boxes = grouped_data.values()|list|map('values')|list|sum(attribute='box_count')|sum %}
-{% set total_remaining = grouped_data.values()|list|map('values')|list|sum(attribute='total_remaining')|sum %}
-{% set available_boxes = 0 %}
-{% set empty_boxes = 0 %}
-{% for type_code, type_lot_groups in grouped_data.items() %}
-    {% for type_lot_key, group_data in type_lot_groups.items() %}
-        {% for box_data in group_data.boxes %}
-            {% if box_data.box.remaining_quantity > 0 %}
-                {% set available_boxes = available_boxes + 1 %}
-            {% else %}
-                {% set empty_boxes = empty_boxes + 1 %}
-            {% endif %}
-        {% endfor %}
-    {% endfor %}
-{% endfor %}
 
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title text-primary">{{ total_boxes }}</h5>
-                <p class="card-text">Total Boxes</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title text-success">{{ available_boxes }}</h5>
-                <p class="card-text">Available Boxes</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title text-warning">{{ empty_boxes }}</h5>
-                <p class="card-text">Empty Boxes</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title text-info">{{ total_remaining }}</h5>
-                <p class="card-text">Total Remaining</p>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
