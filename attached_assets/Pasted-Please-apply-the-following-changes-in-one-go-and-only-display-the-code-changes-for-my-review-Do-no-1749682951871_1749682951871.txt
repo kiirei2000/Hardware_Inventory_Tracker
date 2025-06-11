@@ -1,0 +1,199 @@
+Please apply the following changes in one go, and only display the code changes for my review. Do not save or commit until I approve.
+
+✅ log_pull.html → Rename to log_event.html and update form fields:
+html
+Copier
+Modifier
+<h2 id="event-title" class="text-danger">Log Pull Event</h2>
+
+<form method="POST" action="{{ url_for('log_event') }}">
+  <div class="form-group">
+    <label>Quantity</label>
+    <input type="number" min="1" name="quantity" required class="form-control">
+  </div>
+
+  <div class="form-group">
+    <label>Event Type</label>
+    <select id="event-type" name="event_type" class="form-control" required>
+      <option value="Pull">Pull</option>
+      <option value="Return">Return</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Manufacturing Order (MO)</label>
+    <input type="text" name="mo" required class="form-control">
+  </div>
+
+  <div class="form-group">
+    <label>Operator</label>
+    <input type="text" name="operator" required class="form-control">
+  </div>
+
+  <div class="form-group">
+    <label>QC Operator</label>
+    <input type="text" name="qc_operator" required class="form-control">
+  </div>
+
+  <div id="error-msg" class="text-danger"></div>
+
+  <button type="submit" class="btn btn-primary mt-3">Submit</button>
+</form>
+
+<script>
+document.getElementById("event-type").addEventListener("change", function() {
+  const title = document.getElementById("event-title");
+  const type = this.value;
+  title.textContent = type === "Pull" ? "Log Pull Event" : "Log Return Event";
+  title.className = type === "Pull" ? "text-danger" : "text-success";
+});
+</script>
+✅ app.py → Modify route to /log_event and logic:
+python
+Copier
+Modifier
+@app.route('/log_event', methods=['GET', 'POST'])
+def log_event():
+    if request.method == 'POST':
+        quantity = int(request.form['quantity'])
+        event_type = request.form['event_type']
+        mo = request.form['mo']
+        operator = request.form['operator']
+        qc_operator = request.form['qc_operator']
+        barcode = request.form.get('barcode')
+
+        if operator == qc_operator:
+            flash("Operator and QC Operator cannot be the same.", "danger")
+            return redirect(url_for('log_event'))
+
+        box = get_box_by_barcode(barcode)
+        if not box:
+            flash("Box with given barcode not found.", "danger")
+            return redirect(url_for('log_event'))
+
+        change = quantity if event_type == "Return" else -quantity
+        new_qty = box.remaining_qty + change
+
+        if new_qty < 0:
+            flash("Not enough quantity in box.", "danger")
+            return redirect(url_for('log_event'))
+
+        box.remaining_qty = new_qty
+        db.session.add(PullEvent(
+            box_id=box.id,
+            quantity=change,
+            mo=mo,
+            operator=operator,
+            qc_operator=qc_operator,
+            timestamp=datetime.utcnow()
+        ))
+        db.session.commit()
+        flash("Event logged successfully!", "success")
+        return redirect(url_for('dashboard'))
+    return render_template('log_event.html')
+✅ models.py → Update PullEvent and Box schemas:
+python
+Copier
+Modifier
+class PullEvent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    box_id = db.Column(db.Integer, db.ForeignKey('box.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    mo = db.Column(db.String(50))
+    operator = db.Column(db.String(50))
+    qc_operator = db.Column(db.String(50))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Box(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ...
+    operator = db.Column(db.String(50))
+    qc_operator = db.Column(db.String(50))
+✅ add_box.html → Add new fields:
+html
+Copier
+Modifier
+<div class="form-group">
+  <label>Operator</label>
+  <input type="text" name="operator" class="form-control" required>
+</div>
+
+<div class="form-group">
+  <label>QC Operator</label>
+  <input type="text" name="qc_operator" class="form-control" required>
+</div>
+✅ admin_logs.html → Collapsible dropdown line per log:
+html
+Copier
+Modifier
+{% for box in boxes %}
+<tr>
+  <td>{{ box.type }}</td>
+  <td>{{ box.lot }}</td>
+  <td>{{ box.box_number }}</td>
+  <td>
+    <button class="btn btn-sm btn-link" data-bs-toggle="collapse" data-bs-target="#logs-{{ box.id }}">
+      View Logs
+    </button>
+    <div class="collapse" id="logs-{{ box.id }}">
+      <ul>
+        {% for log in box.logs[:500] %}
+          <li>
+            Qty: {{ log.quantity }} | Remaining: {{ box.remaining_qty }} | QC: {{ log.qc_operator }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </td>
+</tr>
+{% endfor %}
+✅ base.html → Remove "Manage Boxes" link:
+html
+Copier
+Modifier
+<!-- Remove this section -->
+<!-- <li class="nav-item">
+  <a class="nav-link" href="{{ url_for('add_box') }}">Manage Boxes</a>
+</li> -->
+✅ Add CSS Hover Tooltip (Quick Instructions)
+In custom.css:
+
+css
+Copier
+Modifier
+.tooltip-hover {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+}
+
+.tooltip-hover .tooltiptext {
+  visibility: hidden;
+  width: 220px;
+  background-color: #444;
+  color: #fff;
+  text-align: left;
+  padding: 8px;
+  border-radius: 5px;
+  position: absolute;
+  z-index: 1;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip-hover:hover .tooltiptext {
+  visibility: visible;
+}
+Example usage in HTML:
+
+html
+Copier
+Modifier
+<label>
+  Quantity
+  <span class="tooltip-hover">
+    <i class="fa fa-info-circle"></i>
+    <span class="tooltiptext">Enter how many items are pulled or returned</span>
+  </span>
+</label>
