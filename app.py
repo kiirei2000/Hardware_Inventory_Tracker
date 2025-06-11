@@ -73,6 +73,25 @@ def generate_box_id(hardware_type_name, lot_number_name, box_number):
     box_clean = sanitize_box_id_component(box_number)
     return f"{type_clean}_{lot_clean}_{box_clean}"
 
+def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=None, details=None):
+    """Log an admin action"""
+    try:
+        import json
+        action_log = ActionLog(
+            action_type=action_type,
+            user=user,
+            box_id=box_id,
+            hardware_type=hardware_type,
+            lot_number=lot_number,
+            details=json.dumps(details) if details else None
+        )
+        db.session.add(action_log)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error(f"Failed to log action: {str(e)}")
+        # Don't fail the main operation if logging fails
+        pass
+
 @app.route('/')
 def index():
     """Home page with navigation options"""
@@ -212,6 +231,19 @@ def add_box():
             db.session.add(new_box)
             db.session.commit()
             
+            # Log the box addition
+            log_action(
+                action_type='box_add',
+                user='System',  # Could be admin if logged in
+                box_id=box_id,
+                hardware_type=hardware_type.name,
+                lot_number=lot_number.name,
+                details={
+                    'initial_quantity': initial_quantity,
+                    'barcode': barcode
+                }
+            )
+            
             flash(f"Box {box_id} added successfully!", 'success')
             return redirect(url_for('dashboard'))
             
@@ -284,6 +316,22 @@ def log_pull():
             
             db.session.add(pull_event)
             db.session.commit()
+            
+            # Log the pull action
+            hardware_type = HardwareType.query.get(box.hardware_type_id)
+            lot_number = LotNumber.query.get(box.lot_number_id)
+            log_action(
+                action_type='pull',
+                user=qc_personnel,
+                box_id=box.box_id,
+                hardware_type=hardware_type.name if hardware_type else None,
+                lot_number=lot_number.name if lot_number else None,
+                details={
+                    'quantity_pulled': quantity_pulled,
+                    'remaining_quantity': box.remaining_quantity,
+                    'signature': signature
+                }
+            )
             
             flash(f"Pull event logged successfully! Remaining quantity: {box.remaining_quantity}", 'success')
             return redirect(url_for('dashboard'))
@@ -641,6 +689,21 @@ def edit_box(box_id):
             
             db.session.commit()
             
+            # Log the box edit action
+            admin_user = session.get('admin_username', 'Unknown Admin')
+            log_action(
+                action_type='box_edit',
+                user=admin_user,
+                box_id=box.box_id,
+                hardware_type=target_hardware_type.name if target_hardware_type else None,
+                lot_number=target_lot_number.name if target_lot_number else None,
+                details={
+                    'new_initial_quantity': new_initial_quantity,
+                    'new_current_quantity': new_current_quantity,
+                    'new_barcode': new_barcode
+                }
+            )
+            
             flash(f"Box {box.box_id} updated successfully!", 'success')
             return redirect(url_for('manage_boxes'))
             
@@ -669,9 +732,28 @@ def delete_box(box_id):
         # Delete all pull events first (due to foreign key constraint)
         PullEvent.query.filter_by(box_id=box_id).delete()
         
+        # Get box details for logging before deletion
+        hardware_type = HardwareType.query.get(box.hardware_type_id)
+        lot_number = LotNumber.query.get(box.lot_number_id)
+        
         # Delete the box
         db.session.delete(box)
         db.session.commit()
+        
+        # Log the box deletion action
+        admin_user = session.get('admin_username', 'Unknown Admin')
+        log_action(
+            action_type='box_delete',
+            user=admin_user,
+            box_id=box_id_name,
+            hardware_type=hardware_type.name if hardware_type else None,
+            lot_number=lot_number.name if lot_number else None,
+            details={
+                'pull_events_deleted': pull_events_count,
+                'initial_quantity': box.initial_quantity,
+                'remaining_quantity': box.remaining_quantity
+            }
+        )
         
         flash(f"Box {box_id_name} and {pull_events_count} pull events deleted successfully!", 'success')
         
@@ -681,6 +763,40 @@ def delete_box(box_id):
         flash("An error occurred while deleting the box", 'error')
     
     return redirect(url_for('manage_boxes'))
+
+@app.route('/admin/action_log')
+@admin_required
+def action_log():
+    """Admin-only action log page"""
+    # Get filter parameters
+    action_type_filter = request.args.get('action_type', '')
+    user_filter = request.args.get('user', '')
+    
+    # Build query
+    query = ActionLog.query
+    
+    # Apply filters
+    if action_type_filter:
+        query = query.filter(ActionLog.action_type == action_type_filter)
+    if user_filter:
+        query = query.filter(ActionLog.user.ilike(f'%{user_filter}%'))
+    
+    # Order by most recent first
+    action_logs = query.order_by(ActionLog.timestamp.desc()).limit(500).all()
+    
+    # Get unique action types and users for filter dropdowns
+    action_types = db.session.query(ActionLog.action_type).distinct().all()
+    action_types = [at[0] for at in action_types]
+    
+    users = db.session.query(ActionLog.user).distinct().all()
+    users = [u[0] for u in users]
+    
+    return render_template('admin_action_log.html', 
+                         action_logs=action_logs,
+                         action_types=action_types,
+                         users=users,
+                         action_type_filter=action_type_filter,
+                         user_filter=user_filter)
 
 # Create tables
 with app.app_context():
