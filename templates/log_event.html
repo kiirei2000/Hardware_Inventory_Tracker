@@ -214,15 +214,35 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('logEventForm').addEventListener('submit', function(e) {
         const operator = document.getElementById('operator').value.trim();
         const qcOperator = document.getElementById('qc_operator').value.trim();
+        const quantity = parseInt(document.getElementById('quantity').value);
+        const barcode = document.getElementById('barcode').value.trim();
         
         errorMsg.textContent = '';
         
+        // Validate barcode
+        if (!barcode) {
+            e.preventDefault();
+            errorMsg.textContent = 'Please enter a barcode.';
+            return;
+        }
+        
+        // Validate quantity
+        if (!quantity || quantity <= 0) {
+            e.preventDefault();
+            errorMsg.textContent = 'Quantity must be greater than 0.';
+            return;
+        }
+        
+        // Validate operators are different
         if (operator === qcOperator) {
             e.preventDefault();
             errorMsg.textContent = 'Operator and QC Operator cannot be the same.';
             return;
         }
     });
+    
+    // Initialize header on page load
+    document.getElementById('event_type').dispatchEvent(new Event('change'));
     
     // Initial lookup if barcode is pre-filled
     if (barcodeInput.value.trim()) {
