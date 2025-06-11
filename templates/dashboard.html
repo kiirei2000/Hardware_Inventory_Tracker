@@ -75,76 +75,120 @@
     </div>
 </div>
 
-<!-- Inventory Table -->
+<!-- Grouped Inventory Display -->
 <div class="card">
     <div class="card-header">
         <h5 class="mb-0">
             <i class="fas fa-boxes me-2"></i>
-            Current Inventory ({{ boxes|length }} boxes)
+            Current Inventory (Grouped by Type Code)
         </h5>
     </div>
     <div class="card-body p-0">
-        {% if boxes %}
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Box ID</th>
-                        <th>Type</th>
-                        <th>Lot</th>
-                        <th>Box #</th>
-                        <th>Initial Qty</th>
-                        <th>Remaining Qty</th>
-                        <th>Status</th>
-                        <th>Barcode</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for box_data in boxes %}
-                    {% set box = box_data[0] %}
-                    {% set type_name = box_data[1] %}
-                    {% set lot_name = box_data[2] %}
-                    <tr>
-                        <td>
-                            <strong>{{ box.box_id }}</strong>
-                        </td>
-                        <td>
-                            <span class="badge bg-primary">{{ type_name }}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-info">{{ lot_name }}</span>
-                        </td>
-                        <td>{{ box.box_number }}</td>
-                        <td>{{ box.initial_quantity }}</td>
-                        <td>
-                            <strong class="{{ 'text-danger' if box.remaining_quantity == 0 else 'text-warning' if box.remaining_quantity < 10 else 'text-success' }}">
-                                {{ box.remaining_quantity }}
-                            </strong>
-                        </td>
-                        <td>
-                            {% if box.remaining_quantity == 0 %}
-                                <span class="badge bg-danger">Empty</span>
-                            {% elif box.remaining_quantity < box.initial_quantity * 0.2 %}
-                                <span class="badge bg-warning">Low Stock</span>
-                            {% else %}
-                                <span class="badge bg-success">Available</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <small class="font-monospace">{{ box.barcode }}</small>
-                        </td>
-                        <td>
-                            <a href="{{ url_for('box_logs', box_id=box.id) }}" 
-                               class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-history me-1"></i>View Logs
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        {% if grouped_data %}
+        {% for type_code, type_lot_groups in grouped_data.items() %}
+        <div class="accordion accordion-flush" id="typeAccordion{{ type_code }}">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ type_code }}">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                            data-bs-target="#collapse{{ type_code }}" aria-expanded="true" 
+                            aria-controls="collapse{{ type_code }}">
+                        <strong class="me-2">Type Code: {{ type_code }}</strong>
+                        <span class="badge bg-secondary me-2">
+                            {{ type_lot_groups|length }} lot group(s)
+                        </span>
+                        <span class="badge bg-info">
+                            {{ type_lot_groups.values()|sum(attribute='box_count') }} total boxes
+                        </span>
+                    </button>
+                </h2>
+                <div id="collapse{{ type_code }}" class="accordion-collapse collapse show" 
+                     aria-labelledby="heading{{ type_code }}" data-bs-parent="#typeAccordion{{ type_code }}">
+                    <div class="accordion-body p-0">
+                        {% for type_lot_key, group_data in type_lot_groups.items() %}
+                        <div class="border-bottom">
+                            <!-- Type-Lot Group Header -->
+                            <div class="bg-light p-3 border-bottom">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-1">
+                                            <span class="badge bg-primary me-2">{{ group_data.type_name }}</span>
+                                            <span class="badge bg-info me-2">Lot: {{ group_data.lot_name }}</span>
+                                            <span class="badge bg-secondary">{{ group_data.box_count }} box(es)</span>
+                                        </h6>
+                                        <small class="text-muted">
+                                            Total: {{ group_data.total_remaining }}/{{ group_data.total_initial }} remaining
+                                        </small>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#boxes{{ type_lot_key|replace('|', '_') }}" 
+                                                aria-expanded="false">
+                                            <i class="fas fa-eye me-1"></i>View Boxes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Individual Boxes (Collapsible) -->
+                            <div class="collapse" id="boxes{{ type_lot_key|replace('|', '_') }}">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Box ID</th>
+                                                <th>Box #</th>
+                                                <th>Initial Qty</th>
+                                                <th>Current Qty</th>
+                                                <th>Status</th>
+                                                <th>Barcode</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for box_data in group_data.boxes %}
+                                            {% set box = box_data.box %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ box.box_id }}</strong>
+                                                </td>
+                                                <td>{{ box.box_number }}</td>
+                                                <td>{{ box.initial_quantity }}</td>
+                                                <td>
+                                                    <strong class="{{ 'text-danger' if box.remaining_quantity == 0 else 'text-warning' if box.remaining_quantity < 10 else 'text-success' }}">
+                                                        {{ box.remaining_quantity }}
+                                                    </strong>
+                                                </td>
+                                                <td>
+                                                    {% if box.remaining_quantity == 0 %}
+                                                        <span class="badge bg-danger">Empty</span>
+                                                    {% elif box.remaining_quantity < box.initial_quantity * 0.2 %}
+                                                        <span class="badge bg-warning text-dark">Low Stock</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">Available</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="font-monospace text-body">{{ box.barcode }}</span>
+                                                </td>
+                                                <td>
+                                                    <a href="{{ url_for('box_logs', box_id=box.id) }}" 
+                                                       class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-history me-1"></i>Logs
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
+        {% endfor %}
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
@@ -162,12 +206,28 @@
 </div>
 
 <!-- Summary Statistics -->
-{% if boxes %}
+{% if grouped_data %}
+{% set total_boxes = grouped_data.values()|list|map('values')|list|sum(attribute='box_count')|sum %}
+{% set total_remaining = grouped_data.values()|list|map('values')|list|sum(attribute='total_remaining')|sum %}
+{% set available_boxes = 0 %}
+{% set empty_boxes = 0 %}
+{% for type_code, type_lot_groups in grouped_data.items() %}
+    {% for type_lot_key, group_data in type_lot_groups.items() %}
+        {% for box_data in group_data.boxes %}
+            {% if box_data.box.remaining_quantity > 0 %}
+                {% set available_boxes = available_boxes + 1 %}
+            {% else %}
+                {% set empty_boxes = empty_boxes + 1 %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+{% endfor %}
+
 <div class="row mt-4">
     <div class="col-md-3">
         <div class="card text-center">
             <div class="card-body">
-                <h5 class="card-title text-primary">{{ boxes|length }}</h5>
+                <h5 class="card-title text-primary">{{ total_boxes }}</h5>
                 <p class="card-text">Total Boxes</p>
             </div>
         </div>
@@ -175,9 +235,7 @@
     <div class="col-md-3">
         <div class="card text-center">
             <div class="card-body">
-                <h5 class="card-title text-success">
-                    {{ boxes|selectattr('0.remaining_quantity', 'gt', 0)|list|length }}
-                </h5>
+                <h5 class="card-title text-success">{{ available_boxes }}</h5>
                 <p class="card-text">Available Boxes</p>
             </div>
         </div>
@@ -185,9 +243,7 @@
     <div class="col-md-3">
         <div class="card text-center">
             <div class="card-body">
-                <h5 class="card-title text-warning">
-                    {{ boxes|selectattr('0.remaining_quantity', 'eq', 0)|list|length }}
-                </h5>
+                <h5 class="card-title text-warning">{{ empty_boxes }}</h5>
                 <p class="card-text">Empty Boxes</p>
             </div>
         </div>
@@ -195,9 +251,7 @@
     <div class="col-md-3">
         <div class="card text-center">
             <div class="card-body">
-                <h5 class="card-title text-info">
-                    {{ boxes|sum(attribute='0.remaining_quantity') }}
-                </h5>
+                <h5 class="card-title text-info">{{ total_remaining }}</h5>
                 <p class="card-text">Total Remaining</p>
             </div>
         </div>

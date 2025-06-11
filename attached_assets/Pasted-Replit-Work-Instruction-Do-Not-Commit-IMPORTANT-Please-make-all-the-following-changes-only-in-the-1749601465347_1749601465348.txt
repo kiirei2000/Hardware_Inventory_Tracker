@@ -1,0 +1,58 @@
+Replit Work Instruction – Do Not Commit
+IMPORTANT:
+Please make all the following changes only in the code editor, and do not commit, push, run, or merge any changes yet.
+
+The goal is to update the source files, stage code and UI changes, and be able to review the diff and the interface, but do not click “Commit & Run” or “Push” or make a checkpoint until explicitly approved.
+
+Requested Code and UI Changes:
+1. /log_pull page:
+Change "QC Personnel Name" → "Operator".
+
+Change "Signature/Notes (Optional)" → "QC Operator Initials".
+
+In the description box for QC Operator, add:
+
+QC Operator must be different than Operator who committed this pull.
+
+2. Dashboard Page:
+Arrange display boxes by the name of their types.
+
+For example, 005Main Tube - 2.5cm BH should be grouped/displayed together with 005Hex Cap.
+
+Match the first 3 digits of the type code so that all boxes with the same first 3 digits appear in the same group or row/column.
+
+3. Dashboard – Box and Lot Grouping:
+When multiple boxes have the same type and same lot (e.g., box 1, box 2, box 3 of 008Adaptor-SMB, lot 001):
+
+Show them together under one type-lot group (e.g., collapsible group or subline).
+
+Display total quantity (sum of all boxes in the group) and separate quantity for each box.
+
+4. Admin – Action Log:
+Under Admin-only access, add an Action Log page or component that registers/logs:
+
+All pulls
+
+Box additions
+
+Box modifications
+
+Show action details: action type, user, timestamp, affected box/lot, etc.
+
+5. Dashboard – Barcode Line:
+Do not highlight the Barcode text line.
+
+Ensure the text color contrasts with the background so the barcode is always clearly visible.
+
+Code Management Instructions:
+Do not use the “Commit & Run” button until all changes are reviewed and approved.
+
+Do not push changes to GitHub or create a new Replit checkpoint yet.
+
+Work only in the code editor and document all file edits and UI changes for review.
+
+When finished, send a summary of all code diffs and screenshots of the updated UI before committing.
+
+Purpose:
+This is to avoid consuming checkpoints or making irreversible commits while reviewing and staging interface/logic changes.
+
