@@ -35,6 +35,8 @@ class Box(db.Model):
     initial_quantity = db.Column(db.Integer, nullable=False)
     remaining_quantity = db.Column(db.Integer, nullable=False)
     barcode = db.Column(db.String(100), unique=True, nullable=False)
+    operator = db.Column(db.String(50))  # Box creation operator
+    qc_operator = db.Column(db.String(50))  # Box creation QC operator
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
@@ -50,9 +52,10 @@ class PullEvent(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     box_id = db.Column(db.Integer, db.ForeignKey('boxes.id'), nullable=False)
-    quantity_pulled = db.Column(db.Integer, nullable=False)
-    qc_personnel = db.Column(db.String(100), nullable=False)
-    signature = db.Column(db.String(200))
+    quantity = db.Column(db.Integer, nullable=False)  # Can be negative for returns
+    mo = db.Column(db.String(50))  # Manufacturing Order
+    operator = db.Column(db.String(50))
+    qc_operator = db.Column(db.String(50))
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationship

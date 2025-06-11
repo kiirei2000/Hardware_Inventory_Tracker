@@ -478,6 +478,108 @@ def log_pull():
     lots = LotNumber.query.all()
     return render_template('log_pull.html', types=types, lots=lots)
 
+@app.route('/log_event', methods=['GET', 'POST'])
+def log_event():
+    """Log pull/return event with improved validation"""
+    if request.method == 'POST':
+        try:
+            # Get form data
+            barcode = request.form.get('barcode', '').strip()
+            quantity = request.form.get('quantity')
+            event_type = request.form.get('event_type', '').strip().lower()
+            mo = request.form.get('mo', '').strip()
+            operator = request.form.get('operator', '').strip()
+            qc_operator = request.form.get('qc_operator', '').strip()
+            
+            # Validation
+            errors = []
+            
+            if not barcode:
+                errors.append("Barcode is required")
+            
+            try:
+                quantity = int(quantity)
+                if quantity <= 0:
+                    errors.append("Quantity must be greater than 0")
+            except (ValueError, TypeError):
+                errors.append("Quantity must be a valid number")
+            
+            if event_type not in ('pull', 'return'):
+                errors.append("Invalid event type")
+            
+            if not mo:
+                errors.append("Manufacturing Order (MO) is required")
+            
+            if not operator:
+                errors.append("Operator name is required")
+            
+            if not qc_operator:
+                errors.append("QC Operator name is required")
+            
+            if operator == qc_operator:
+                errors.append("Operator and QC Operator cannot be the same")
+            
+            # Find the box
+            box = None
+            if barcode:
+                box = Box.query.filter_by(barcode=barcode).first()
+                if not box:
+                    errors.append("Box with given barcode not found")
+            
+            if errors:
+                for error in errors:
+                    flash(error, 'danger')
+                return redirect(url_for('log_event'))
+            
+            # Calculate quantity change (positive for return, negative for pull)
+            change = quantity if event_type == "return" else -quantity
+            new_qty = box.remaining_quantity + change
+
+            if new_qty < 0:
+                flash("Not enough quantity in box", "danger")
+                return redirect(url_for('log_event'))
+
+            # Use explicit transaction for atomicity
+            with db.session.begin():
+                box.remaining_quantity = new_qty
+                
+                # Create pull event record
+                pull_event = PullEvent(
+                    box_id=box.id,
+                    quantity=change,
+                    mo=mo,
+                    operator=operator,
+                    qc_operator=qc_operator,
+                    timestamp=datetime.now(timezone.utc)
+                )
+                
+                db.session.add(pull_event)
+                
+                # Log admin action
+                log_action(
+                    action_type=event_type,
+                    user=operator,
+                    box_id=box.box_id,
+                    hardware_type=box.hardware_type.name,
+                    lot_number=box.lot_number.name,
+                    details={
+                        'quantity_changed': change,
+                        'new_remaining': new_qty,
+                        'mo': mo,
+                        'qc_operator': qc_operator
+                    }
+                )
+            
+            flash("Event logged successfully!", "success")
+            return redirect(url_for('dashboard'))
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error logging event: {str(e)}")
+            flash("An error occurred while logging the event", 'error')
+    
+    return render_template('log_event.html')
+
 @app.route('/dashboard')
 def dashboard():
     """Inventory dashboard with grouped display"""
