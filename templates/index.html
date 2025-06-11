@@ -41,10 +41,10 @@
                 <div class="mb-3">
                     <i class="fas fa-minus-circle fa-3x text-warning"></i>
                 </div>
-                <h5 class="card-title">Log Pull Event</h5>
-                <p class="card-text">Record when items are pulled from inventory boxes.</p>
-                <a href="{{ url_for('log_pull') }}" class="btn btn-warning">
-                    <i class="fas fa-minus me-2"></i>Log Pull
+                <h5 class="card-title">Log Event</h5>
+                <p class="card-text">Record when items are pulled from or returned to inventory boxes.</p>
+                <a href="{{ url_for('log_event') }}" class="btn btn-warning">
+                    <i class="fas fa-exchange-alt me-2"></i>Log Event
                 </a>
             </div>
         </div>
@@ -83,39 +83,5 @@
     </div>
 </div>
 
-<!-- Quick Stats -->
-<div class="row mt-5">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Quick Instructions
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-plus text-success me-2"></i>Adding Boxes</h6>
-                        <ul class="list-unstyled">
-                            <li>• Fill in hardware type and lot number</li>
-                            <li>• Enter unique box number and barcode</li>
-                            <li>• Set initial quantity</li>
-                            <li>• System auto-generates Box ID</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-minus text-warning me-2"></i>Logging Pulls</h6>
-                        <ul class="list-unstyled">
-                            <li>• Scan or enter barcode</li>
-                            <li>• Specify quantity being pulled</li>
-                            <li>• Enter QC personnel name</li>
-                            <li>• System updates remaining quantity</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 {% endblock %}
