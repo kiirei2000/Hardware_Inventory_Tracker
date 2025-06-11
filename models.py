@@ -60,3 +60,19 @@ class PullEvent(db.Model):
     
     def __repr__(self):
         return f'<PullEvent {self.id} - Box {self.box_id}>'
+
+class ActionLog(db.Model):
+    """Admin action log table"""
+    __tablename__ = 'action_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    action_type = db.Column(db.String(50), nullable=False)  # 'pull', 'box_add', 'box_edit', 'box_delete'
+    user = db.Column(db.String(100), nullable=False)  # Admin username or operator name
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    box_id = db.Column(db.String(200))  # Box ID affected (if applicable)
+    hardware_type = db.Column(db.String(100))  # Hardware type affected
+    lot_number = db.Column(db.String(100))  # Lot number affected
+    details = db.Column(db.Text)  # JSON or text details of the action
+    
+    def __repr__(self):
+        return f'<ActionLog {self.id}: {self.action_type} by {self.user}>'
