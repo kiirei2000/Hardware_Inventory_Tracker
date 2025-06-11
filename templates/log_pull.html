@@ -44,12 +44,12 @@
                         <!-- Quantity Pulled -->
                         <div class="col-md-6 mb-3">
                             <label for="quantity_pulled" class="form-label">
-                                <i class="fas fa-hashtag me-1"></i>Quantity Pulled
+                                <i class="fas fa-hashtag me-1"></i>Quantity (Pull/Return)
                             </label>
                             <input type="number" class="form-control" id="quantity_pulled" name="quantity_pulled" 
-                                   min="1" placeholder="Enter quantity to pull"
+                                   placeholder="Enter quantity (negative to return items)"
                                    value="{{ form_data.get('quantity_pulled', '') if form_data }}" required>
-                            <small class="form-text text-muted">Must be greater than 0</small>
+                            <small class="form-text text-muted">Enter positive number to pull, negative to return items</small>
                         </div>
 
                         <!-- Operator -->
