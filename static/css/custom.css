@@ -279,3 +279,31 @@ body {
     background-color: #d1ecf1;
     color: #0c5460;
 }
+
+/* Tooltip hover styles */
+.tooltip-hover {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.tooltip-hover .tooltiptext {
+    visibility: hidden;
+    width: 220px;
+    background-color: #444;
+    color: #fff;
+    text-align: left;
+    padding: 8px;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 1;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.tooltip-hover:hover .tooltiptext {
+    visibility: visible;
+}

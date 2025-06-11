@@ -249,6 +249,8 @@ def add_box():
             box_number = request.form.get('box_number', '').strip()
             initial_quantity = request.form.get('initial_quantity', 0)
             barcode = request.form.get('barcode', '').strip()
+            operator = request.form.get('operator', '').strip()
+            qc_operator = request.form.get('qc_operator', '').strip()
             
             # Validation
             errors = []
@@ -303,6 +305,15 @@ def add_box():
             elif Box.query.filter_by(barcode=barcode).first():
                 errors.append("Barcode already exists")
             
+            if not operator:
+                errors.append("Operator name is required")
+            
+            if not qc_operator:
+                errors.append("QC Operator name is required")
+            
+            if operator == qc_operator:
+                errors.append("Operator and QC Operator cannot be the same")
+            
             if errors:
                 for error in errors:
                     flash(error, 'error')
@@ -331,7 +342,9 @@ def add_box():
                 box_number=box_number,
                 initial_quantity=initial_quantity,
                 remaining_quantity=initial_quantity,
-                barcode=barcode
+                barcode=barcode,
+                operator=operator,
+                qc_operator=qc_operator
             )
             
             db.session.add(new_box)
