@@ -2,3 +2,4 @@ Flask
 gunicorn
 pandas
 openpyxl
+flask_sqlalchemy
