@@ -75,6 +75,54 @@
     </div>
 </div>
 
+<!-- Summary Statistics -->
+{% if grouped_data %}
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{ total_stats.total_boxes }}</h5>
+                <p class="card-text">Total Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">{{ total_stats.available_boxes }}</h5>
+                <p class="card-text">Available Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning">
+                    {{ total_stats.empty_boxes }}
+                    {% if total_stats.negative_boxes > 0 %}
+                    <small class="text-danger d-block">⚠️ {{ total_stats.negative_boxes }} negative</small>
+                    {% endif %}
+                </h5>
+                <p class="card-text">Empty Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">{{ total_stats.total_remaining }}</h5>
+                <p class="card-text">Total Remaining</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif type_filter or lot_filter %}
+<div class="alert alert-info mt-4">
+    <i class="fas fa-info-circle me-2"></i>
+    No boxes match your current filters. <a href="{{ url_for('dashboard') }}">Clear filters</a> to see all boxes.
+</div>
+{% endif %}
+
 <!-- Grouped Inventory Display -->
 <div class="card">
     <div class="card-header">

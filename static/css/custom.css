@@ -76,6 +76,34 @@ body {
     pointer-events: none;
 }
 
+/* Enhanced barcode display with higher specificity */
+.table td .barcode-text {
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    background-color: #f8f9fa;
+    color: #212529;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Negative quantity styling */
+.quantity-negative {
+    color: #dc3545;
+    position: relative;
+}
+
+.quantity-negative::after {
+    content: " ⚠️";
+    color: #dc3545;
+    font-size: 0.8em;
+}
+
 /* Barcode input styling */
 .font-monospace {
     font-family: 'Courier New', monospace;

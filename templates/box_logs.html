@@ -79,44 +79,36 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Date & Time</th>
-                        <th>Quantity Pulled</th>
+                        <th>Event Type</th>
+                        <th>Quantity</th>
                         <th>QC Personnel</th>
                         <th>Signature/Notes</th>
-                        <th>Remaining After Pull</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for event in pull_events %}
                     <tr>
+                        <td>{{ event.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>
-                            <div>
-                                <strong>{{ event.timestamp.strftime('%Y-%m-%d') }}</strong>
-                            </div>
-                            <small class="text-muted">{{ event.timestamp.strftime('%H:%M:%S UTC') }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-warning">{{ event.quantity_pulled }}</span>
-                        </td>
-                        <td>
-                            <i class="fas fa-user me-1"></i>{{ event.qc_personnel }}
-                        </td>
-                        <td>
-                            {% if event.signature %}
-                                <small>{{ event.signature }}</small>
+                            {% if event.quantity_pulled < 0 %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-plus me-1"></i>Return
+                            </span>
                             {% else %}
-                                <small class="text-muted">No signature</small>
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-minus me-1"></i>Pull
+                            </span>
                             {% endif %}
                         </td>
                         <td>
-                            <!-- Calculate remaining quantity at time of pull -->
-                            {% set remaining_at_pull = box.remaining_quantity %}
-                            {% for later_event in pull_events %}
-                                {% if later_event.timestamp > event.timestamp %}
-                                    {% set remaining_at_pull = remaining_at_pull + later_event.quantity_pulled %}
-                                {% endif %}
-                            {% endfor %}
-                            <strong>{{ remaining_at_pull }}</strong>
+                            {% if event.quantity_pulled < 0 %}
+                            <span class="text-success">+{{ event.quantity_pulled|abs }}</span>
+                            {% else %}
+                            <span class="text-warning">-{{ event.quantity_pulled }}</span>
+                            {% endif %}
                         </td>
+                        <td>{{ event.qc_personnel }}</td>
+                        <td>{{ event.signature or '-' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
