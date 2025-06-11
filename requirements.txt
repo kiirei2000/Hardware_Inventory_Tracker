@@ -1,0 +1,5 @@
+Flask
+gunicorn
+pandas
+openpyxl
+sqlite3
