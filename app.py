@@ -92,6 +92,112 @@ def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=No
         # Don't fail the main operation if logging fails
         pass
 
+def group_boxes_by_type_lot(results):
+    """Group boxes by type code (first 3 digits) and type-lot combination"""
+    from collections import defaultdict
+    
+    type_code_groups = defaultdict(lambda: defaultdict(list))
+    
+    for box, type_name, lot_name in results:
+        # Extract first 3 digits from type name
+        type_code = type_name[:3] if len(type_name) >= 3 else type_name
+        # Use tuple key to avoid collisions with | character
+        type_lot_key = (type_name, lot_name)
+        
+        type_code_groups[type_code][type_lot_key].append({
+            'box': box,
+            'type_name': type_name,
+            'lot_name': lot_name
+        })
+    
+    # Calculate totals for each type-lot group - convert to plain dict
+    grouped_data = {}
+    for type_code, type_lot_groups in type_code_groups.items():
+        grouped_data[type_code] = {}
+        for type_lot_key, boxes_data in type_lot_groups.items():
+            type_name, lot_name = type_lot_key  # Unpack tuple
+            
+            total_initial = sum(bd['box'].initial_quantity for bd in boxes_data)
+            total_remaining = sum(bd['box'].remaining_quantity for bd in boxes_data)
+            
+            # Create string key for template compatibility
+            display_key = f"{type_name}__{lot_name}"  # Use __ as separator
+            grouped_data[type_code][display_key] = {
+                'type_name': type_name,
+                'lot_name': lot_name,
+                'boxes': boxes_data,
+                'total_initial': total_initial,
+                'total_remaining': total_remaining,
+                'box_count': len(boxes_data)
+            }
+    
+    return grouped_data
+
+def calculate_inventory_stats(grouped_data):
+    """Calculate summary statistics from grouped data with error handling"""
+    total_boxes = sum(g.get('box_count', 0)
+                      for lots in grouped_data.values()
+                      for g in lots.values())
+    
+    available_boxes = 0
+    empty_boxes = 0
+    negative_boxes = 0  # Track anomalous negative quantities
+    
+    for lots in grouped_data.values():
+        for g in lots.values():
+            for b in g.get('boxes', []):
+                remaining = b['box'].remaining_quantity
+                # Handle None or unexpected values
+                if remaining is None:
+                    remaining = 0
+                
+                if remaining > 0:
+                    available_boxes += 1
+                elif remaining == 0:
+                    empty_boxes += 1
+                else:  # negative
+                    empty_boxes += 1
+                    negative_boxes += 1
+    
+    total_remaining = sum(g.get('total_remaining', 0)
+                          for lots in grouped_data.values()
+                          for g in lots.values())
+    
+    return {
+        'total_boxes': total_boxes,
+        'available_boxes': available_boxes,
+        'empty_boxes': empty_boxes,
+        'negative_boxes': negative_boxes,
+        'total_remaining': max(0, total_remaining)  # Ensure non-negative
+    }
+
+def build_filtered_query(type_filter=None, lot_filter=None, search_query=None):
+    """Build base query with common filters - DRY helper"""
+    query = db.session.query(
+        Box,
+        HardwareType.name.label('type_name'),
+        LotNumber.name.label('lot_name')
+    ).join(HardwareType, Box.hardware_type_id == HardwareType.id)\
+     .join(LotNumber, Box.lot_number_id == LotNumber.id)
+    
+    # Apply filters
+    if type_filter:
+        query = query.filter(HardwareType.name == type_filter)
+    if lot_filter:
+        query = query.filter(LotNumber.name == lot_filter)
+    if search_query and search_query.strip():
+        search_pattern = f'%{search_query.strip()}%'
+        query = query.filter(
+            db.or_(
+                Box.box_id.ilike(search_pattern),
+                Box.barcode.ilike(search_pattern),
+                HardwareType.name.ilike(search_pattern),
+                LotNumber.name.ilike(search_pattern)
+            )
+        )
+    
+    return query
+
 @app.route('/')
 def index():
     """Home page with navigation options"""
@@ -276,10 +382,11 @@ def log_pull():
             
             try:
                 quantity_pulled = int(quantity_pulled)
-                if quantity_pulled <= 0:
-                    errors.append("Quantity pulled must be greater than 0")
+                # Allow negative quantities for returns
+                if quantity_pulled == 0:
+                    errors.append("Quantity cannot be zero")
             except (ValueError, TypeError):
-                errors.append("Quantity pulled must be a valid number")
+                errors.append("Quantity must be a valid number")
             
             if not qc_personnel:
                 errors.append("QC Personnel name is required")
@@ -290,8 +397,20 @@ def log_pull():
                 box = Box.query.filter_by(barcode=barcode).first()
                 if not box:
                     errors.append("Barcode not found in inventory")
-                elif box.remaining_quantity < quantity_pulled:
-                    errors.append(f"Insufficient quantity. Available: {box.remaining_quantity}")
+                else:
+                    # Determine if this is a pull or return
+                    is_return = quantity_pulled < 0
+                    actual_quantity = abs(quantity_pulled)
+                    
+                    # Validate against available quantity for pulls only
+                    if not is_return and actual_quantity > box.remaining_quantity:
+                        errors.append(f"Cannot pull {actual_quantity} items. Only {box.remaining_quantity} available.")
+                    
+                    # For returns, ensure we don't exceed initial capacity
+                    if is_return:
+                        new_quantity = box.remaining_quantity + actual_quantity
+                        if new_quantity > box.initial_quantity:
+                            errors.append(f"Cannot return {actual_quantity} items. Would exceed initial capacity of {box.initial_quantity}.")
             
             if errors:
                 for error in errors:
@@ -302,13 +421,20 @@ def log_pull():
                 lots = LotNumber.query.all()
                 return render_template('log_pull.html', types=types, lots=lots, form_data=form_data)
             
-            # Update box quantity
-            box.remaining_quantity -= quantity_pulled
+            # Determine if this is a pull or return
+            is_return = quantity_pulled < 0
+            actual_quantity = abs(quantity_pulled)
             
-            # Create pull event log
+            # Update box quantity (handles both pulls and returns)
+            if is_return:
+                box.remaining_quantity += actual_quantity
+            else:
+                box.remaining_quantity -= actual_quantity
+            
+            # Create pull/return event log
             pull_event = PullEvent(
                 box_id=box.id,
-                quantity_pulled=quantity_pulled,
+                quantity_pulled=quantity_pulled,  # Keep original sign
                 qc_personnel=qc_personnel,
                 signature=signature,
                 timestamp=datetime.now(timezone.utc)
@@ -317,23 +443,29 @@ def log_pull():
             db.session.add(pull_event)
             db.session.commit()
             
-            # Log the pull action
+            # Log the action with correct type
+            action_type = 'return' if is_return else 'pull'
             hardware_type = HardwareType.query.get(box.hardware_type_id)
             lot_number = LotNumber.query.get(box.lot_number_id)
             log_action(
-                action_type='pull',
+                action_type=action_type,
                 user=qc_personnel,
                 box_id=box.box_id,
                 hardware_type=hardware_type.name if hardware_type else None,
                 lot_number=lot_number.name if lot_number else None,
                 details={
-                    'quantity_pulled': quantity_pulled,
+                    'quantity': actual_quantity,
                     'remaining_quantity': box.remaining_quantity,
-                    'signature': signature
+                    'signature': signature,
+                    'is_return': is_return
                 }
             )
             
-            flash(f"Pull event logged successfully! Remaining quantity: {box.remaining_quantity}", 'success')
+            # Updated flash message
+            if is_return:
+                flash(f"Return logged successfully! {actual_quantity} items returned. New quantity: {box.remaining_quantity}", 'success')
+            else:
+                flash(f"Pull event logged successfully! Remaining quantity: {box.remaining_quantity}", 'success')
             return redirect(url_for('dashboard'))
             
         except Exception as e:
@@ -353,65 +485,25 @@ def dashboard():
     type_filter = request.args.get('type_filter', '')
     lot_filter = request.args.get('lot_filter', '')
     
-    # Build query
-    query = db.session.query(
-        Box,
-        HardwareType.name.label('type_name'),
-        LotNumber.name.label('lot_name')
-    ).join(HardwareType, Box.hardware_type_id == HardwareType.id)\
-     .join(LotNumber, Box.lot_number_id == LotNumber.id)
-    
-    # Apply filters
-    if type_filter:
-        query = query.filter(HardwareType.name == type_filter)
-    if lot_filter:
-        query = query.filter(LotNumber.name == lot_filter)
+    # Use DRY filter helper
+    query = build_filtered_query(type_filter, lot_filter)
     
     # Order by type name first, then lot name, then box number
     results = query.order_by(HardwareType.name, LotNumber.name, Box.box_number).all()
     
-    # Group boxes by type code (first 3 digits) and then by type-lot combination
-    from collections import defaultdict
+    # Group boxes using helper function
+    grouped_data = group_boxes_by_type_lot(results)
     
-    type_code_groups = defaultdict(lambda: defaultdict(list))
-    
-    for box, type_name, lot_name in results:
-        # Extract first 3 digits from type name (handle cases where type name might be shorter)
-        type_code = type_name[:3] if len(type_name) >= 3 else type_name
-        type_lot_key = f"{type_name}|{lot_name}"
-        
-        type_code_groups[type_code][type_lot_key].append({
-            'box': box,
-            'type_name': type_name,
-            'lot_name': lot_name
-        })
-    
-    # Calculate totals for each type-lot group
-    grouped_data = {}
-    for type_code, type_lot_groups in type_code_groups.items():
-        grouped_data[type_code] = {}
-        for type_lot_key, boxes_data in type_lot_groups.items():
-            type_name = boxes_data[0]['type_name']
-            lot_name = boxes_data[0]['lot_name']
-            
-            total_initial = sum(bd['box'].initial_quantity for bd in boxes_data)
-            total_remaining = sum(bd['box'].remaining_quantity for bd in boxes_data)
-            
-            grouped_data[type_code][type_lot_key] = {
-                'type_name': type_name,
-                'lot_name': lot_name,
-                'boxes': boxes_data,
-                'total_initial': total_initial,
-                'total_remaining': total_remaining,
-                'box_count': len(boxes_data)
-            }
+    # Calculate statistics
+    total_stats = calculate_inventory_stats(grouped_data)
     
     # Get unique types and lots for filter dropdowns
     types = HardwareType.query.order_by(HardwareType.name).all()
     lots = LotNumber.query.order_by(LotNumber.name).all()
     
     return render_template('dashboard.html', 
-                         grouped_data=grouped_data, 
+                         grouped_data=grouped_data,
+                         total_stats=total_stats,
                          types=types, 
                          lots=lots,
                          type_filter=type_filter,
@@ -540,45 +632,41 @@ def get_box_info(barcode):
 @app.route('/manage_boxes')
 @admin_required
 def manage_boxes():
-    """List and manage all boxes"""
+    """List and manage all boxes with grouping"""
     # Get filter parameters
     type_filter = request.args.get('type_filter', '')
     lot_filter = request.args.get('lot_filter', '')
     search_query = request.args.get('search', '')
     
-    # Build query
-    query = db.session.query(
-        Box,
-        HardwareType.name.label('type_name'),
-        LotNumber.name.label('lot_name')
-    ).join(HardwareType, Box.hardware_type_id == HardwareType.id)\
-     .join(LotNumber, Box.lot_number_id == LotNumber.id)
+    # Use DRY filter helper
+    query = build_filtered_query(type_filter, lot_filter, search_query)
     
-    # Apply filters
-    if type_filter:
-        query = query.filter(HardwareType.name == type_filter)
-    if lot_filter:
-        query = query.filter(LotNumber.name == lot_filter)
-    if search_query:
-        search_term = f"%{search_query}%"
-        query = query.filter(
-            db.or_(
-                Box.box_id.ilike(search_term),
-                Box.barcode.ilike(search_term),
-                Box.box_number.ilike(search_term)
-            )
-        )
+    # Order by type name first, then lot name, then box number
+    results = query.order_by(HardwareType.name, LotNumber.name, Box.box_number).all()
     
-    # Order by box_id
-    boxes = query.order_by(Box.box_id).all()
+    # Group boxes using helper function
+    grouped_data = group_boxes_by_type_lot(results)
     
-    # Get unique types and lots for filter dropdowns
+    # Calculate statistics with pre-computed lot counts for template
+    total_stats = calculate_inventory_stats(grouped_data)
+    
+    # Pre-compute lot counts for each type code to avoid Jinja complexity
+    type_code_stats = {}
+    for type_code, type_lot_groups in grouped_data.items():
+        type_code_stats[type_code] = {
+            'lot_count': len(type_lot_groups),
+            'total_boxes': sum(g.get('box_count', 0) for g in type_lot_groups.values())
+        }
+    
+    # Get filter options
     types = HardwareType.query.order_by(HardwareType.name).all()
     lots = LotNumber.query.order_by(LotNumber.name).all()
     
-    return render_template('manage_boxes.html', 
-                         boxes=boxes, 
-                         types=types, 
+    return render_template('manage_boxes.html',
+                         grouped_data=grouped_data,
+                         total_stats=total_stats,
+                         type_code_stats=type_code_stats,
+                         types=types,
                          lots=lots,
                          type_filter=type_filter,
                          lot_filter=lot_filter,
