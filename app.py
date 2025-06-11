@@ -38,6 +38,14 @@ db.init_app(app)
 # Import models after db initialization
 from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
 
+# Add JSON filter for templates
+@app.template_filter('from_json')
+def from_json_filter(value):
+    try:
+        return json.loads(value) if value else {}
+    except (json.JSONDecodeError, TypeError):
+        return {}
+
 def is_safe_url(target):
     """Check if the target URL is safe for redirect"""
     if not target:
