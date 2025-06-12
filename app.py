@@ -82,15 +82,22 @@ def generate_box_id(hardware_type_name, lot_number_name, box_number):
     box_clean = sanitize_box_id_component(box_number)
     return f"{type_clean}_{lot_clean}_{box_clean}"
 
-def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=None, details=None):
+def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=None, 
+               previous_quantity=None, quantity_change=None, available_quantity=None,
+               operator=None, qc_operator=None, details=None):
     """Log an admin action with enhanced tracking"""
     try:
         action_log = ActionLog()
         action_log.action_type = action_type
-        action_log.user = user
+        action_log.user = user or operator  # Use operator as user if user not provided
         action_log.box_id = box_id
         action_log.hardware_type = hardware_type
         action_log.lot_number = lot_number
+        action_log.previous_quantity = previous_quantity
+        action_log.quantity_change = quantity_change
+        action_log.available_quantity = available_quantity
+        action_log.operator = operator
+        action_log.qc_operator = qc_operator
         action_log.details = json.dumps(details) if details else None
         db.session.add(action_log)
         db.session.commit()
@@ -590,13 +597,13 @@ def log_event():
                 box_id=box.box_id,
                 hardware_type=box.hardware_type.name,
                 lot_number=box.lot_number.name,
+                previous_quantity=previous_qty,
+                quantity_change=change,  # Keep original sign (negative for pulls, positive for returns)
+                available_quantity=new_qty,
+                operator=operator,
+                qc_operator=qc_personnel,
                 details={
-                    'previous_quantity': previous_qty,
-                    'quantity_change': abs(change),
-                    'new_quantity': new_qty,
                     'mo': mo,
-                    'operator': operator,
-                    'qc_personnel': qc_personnel,
                     'signature': signature
                 }
             )
@@ -993,6 +1000,8 @@ def delete_box(box_id):
 @admin_required
 def action_log():
     """Admin-only action log page"""
+    from collections import Counter
+    
     # Get filter parameters
     action_type_filter = request.args.get('action_type', '')
     user_filter = request.args.get('user', '')
@@ -1009,6 +1018,9 @@ def action_log():
     # Order by most recent first
     action_logs = query.order_by(ActionLog.timestamp.desc()).limit(500).all()
     
+    # Calculate summary counts
+    counts = Counter(log.action_type for log in action_logs)
+    
     # Get unique action types and users for filter dropdowns
     action_types = db.session.query(ActionLog.action_type).distinct().all()
     action_types = [at[0] for at in action_types]
@@ -1020,6 +1032,7 @@ def action_log():
                          action_logs=action_logs,
                          action_types=action_types,
                          users=users,
+                         counts=counts,
                          action_type_filter=action_type_filter,
                          user_filter=user_filter)
 
