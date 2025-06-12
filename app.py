@@ -372,14 +372,13 @@ def add_box():
                 box_id=box_id,
                 hardware_type=hardware_type.name,
                 lot_number=lot_number.name,
+                previous_quantity=0,
+                quantity_change=initial_quantity,
+                available_quantity=initial_quantity,
+                operator=operator,
+                qc_operator=qc_operator,
                 details={
-                    'initial_quantity': initial_quantity,
-                    'previous_quantity': 0,
-                    'quantity_change': initial_quantity,
-                    'new_quantity': initial_quantity,
-                    'barcode': barcode,
-                    'operator': operator,
-                    'qc_operator': qc_operator
+                    'barcode': barcode
                 }
             )
             
