@@ -1,128 +1,117 @@
+
 {% extends "base.html" %}
 
 {% block title %}Log Event - Hardware Inventory{% endblock %}
 
 {% block content %}
+<!-- Header Section -->
+<div class="text-center py-4 mb-4">
+    <h2 class="fw-bold mb-2" id="event-title">
+        <i class="fas fa-exchange-alt text-primary me-3"></i>
+        Log Inventory Event
+    </h2>
+    <p class="text-muted">Record pull/return inventory events</p>
+</div>
+
+<!-- Main Form Section -->
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card shadow">
-            <div class="card-header bg-danger text-white" id="event-header">
-                <h2 id="event-title" class="text-white mb-0">
-                    <i class="fas fa-minus-circle me-2"></i>
-                    Log Pull Event
-                </h2>
-            </div>
-            <div class="card-body">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-5">
                 <form method="POST" action="{{ url_for('log_event') }}" id="logEventForm">
-                    <div class="row">
+                    <div class="row gx-4 gy-4">
                         <!-- Barcode -->
-                        <div class="col-12 mb-3">
+                        <div class="col-12">
                             <label for="barcode" class="form-label">
-                                <i class="fas fa-barcode me-1"></i>Barcode
-                                <span class="tooltip-hover">
-                                    <i class="fa fa-info-circle"></i>
-                                    <span class="tooltiptext">Scan or enter the barcode of the box</span>
-                                </span>
+                                <i class="fas fa-barcode me-2 text-primary"></i>Barcode
                             </label>
-                            <div class="input-group">
+                            <div class="input-group input-group-lg">
                                 <input type="text" class="form-control" id="barcode" name="barcode" 
                                        placeholder="Scan or enter barcode"
                                        value="{{ form_data.get('barcode', '') if form_data }}" required>
-                                <button class="btn btn-outline-secondary" type="button" id="scanBarcodeBtn">
+                                <button class="btn btn-outline-primary" type="button" id="scanBarcodeBtn">
                                     <i class="fas fa-camera me-1"></i>Scan
                                 </button>
-                                <button class="btn btn-outline-info" type="button" id="lookupBarcodeBtn">
+                                <button class="btn btn-outline-primary" type="button" id="lookupBarcodeBtn">
                                     <i class="fas fa-search me-1"></i>Lookup
                                 </button>
                             </div>
                         </div>
 
                         <!-- Box Info Display -->
-                        <div id="boxInfo" class="col-12 mb-3" style="display: none;">
+                        <div id="boxInfo" class="col-12" style="display: none;">
                             <div class="alert alert-info">
-                                <h6><i class="fas fa-box me-1"></i>Box Information:</h6>
+                                <h6><i class="fas fa-box me-2"></i>Box Information:</h6>
                                 <div id="boxInfoContent"></div>
                             </div>
                         </div>
 
-                        <!-- Quantity -->
-                        <div class="col-md-6 mb-3">
-                            <label for="quantity" class="form-label">
-                                <i class="fas fa-hashtag me-1"></i>Quantity
-                                <span class="tooltip-hover">
-                                    <i class="fa fa-info-circle"></i>
-                                    <span class="tooltiptext">Enter how many items are pulled or returned</span>
-                                </span>
-                            </label>
-                            <input type="number" min="1" name="quantity" id="quantity" class="form-control" 
-                                   placeholder="Enter quantity" required>
-                        </div>
-
                         <!-- Event Type -->
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label for="event_type" class="form-label">
-                                <i class="fas fa-exchange-alt me-1"></i>Event Type
+                                <i class="fas fa-exchange-alt me-2 text-primary"></i>Event Type
                             </label>
-                            <select id="event_type" name="event_type" class="form-control" required>
+                            <select id="event_type" name="event_type" class="form-select form-select-lg" required>
                                 <option value="Pull">Pull</option>
                                 <option value="Return">Return</option>
                             </select>
                         </div>
 
-                        <!-- Manufacturing Order -->
-                        <div class="col-md-6 mb-3">
-                            <label for="mo" class="form-label">
-                                <i class="fas fa-clipboard-list me-1"></i>Manufacturing Order (MO)
-                                <span class="tooltip-hover">
-                                    <i class="fas fa-info-circle"></i>
-                                    <span class="tooltiptext">Enter MO number assigned or Research Project Name</span>
-                                </span>
+                        <!-- Quantity -->
+                        <div class="col-md-6">
+                            <label for="quantity" class="form-label">
+                                <i class="fas fa-hashtag me-2 text-primary"></i>Quantity
                             </label>
-                            <input type="text" name="mo" id="mo" class="form-control" 
+                            <input type="number" min="1" name="quantity" id="quantity" class="form-control form-control-lg" 
+                                   placeholder="Enter quantity" required>
+                        </div>
+
+                        <!-- Manufacturing Order -->
+                        <div class="col-md-6">
+                            <label for="mo" class="form-label">
+                                <i class="fas fa-clipboard-list me-2 text-primary"></i>Manufacturing Order (MO)
+                            </label>
+                            <input type="text" name="mo" id="mo" class="form-control form-control-lg" 
                                    placeholder="Enter MO number" required>
                         </div>
 
                         <!-- Operator -->
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label for="operator" class="form-label">
-                                <i class="fas fa-user me-1"></i>Operator
+                                <i class="fas fa-user me-2 text-primary"></i>Operator
                             </label>
-                            <input type="text" name="operator" id="operator" class="form-control" 
+                            <input type="text" name="operator" id="operator" class="form-control form-control-lg" 
                                    placeholder="Enter operator name" required>
                         </div>
 
                         <!-- QC Personnel -->
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
                             <label for="qc_personnel" class="form-label">
-                                <i class="fas fa-user-check me-1"></i>QC Personnel
+                                <i class="fas fa-user-check me-2 text-primary"></i>QC Personnel
                             </label>
-                            <input type="text" name="qc_personnel" id="qc_personnel" class="form-control" 
+                            <input type="text" name="qc_personnel" id="qc_personnel" class="form-control form-control-lg" 
                                    placeholder="Enter QC personnel name" required>
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                QC Personnel must be different from the Operator.
-                            </small>
                         </div>
 
-                        <!-- Signature (Optional) -->
-                        <div class="col-md-6 mb-3">
+                        <!-- Signature -->
+                        <div class="col-md-6">
                             <label for="signature" class="form-label">
-                                <i class="fas fa-signature me-1"></i>Signature (Optional)
+                                <i class="fas fa-signature me-2 text-primary"></i>Signature (Optional)
                             </label>
-                            <input type="text" name="signature" id="signature" class="form-control" 
+                            <input type="text" name="signature" id="signature" class="form-control form-control-lg" 
                                    placeholder="Enter signature">
                         </div>
                     </div>
 
-                    <div id="error-msg" class="text-danger mb-3"></div>
+                    <div id="error-msg" class="text-danger mt-4"></div>
 
                     <!-- Submit Buttons -->
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times me-1"></i>Cancel
+                    <div class="d-flex justify-content-end gap-3 mt-5">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg px-4">
+                            <i class="fas fa-times me-2"></i>Cancel
                         </a>
-                        <button type="submit" class="btn btn-primary mt-3">
-                            <i class="fas fa-save me-1"></i>Submit
+                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-save me-2"></i>Submit Event
                         </button>
                     </div>
                 </form>
@@ -131,21 +120,14 @@
     </div>
 </div>
 
-<!-- Barcode Scanner Container -->
-<div id="barcodeScannerContainer" style="display: none;">
-    <div class="modal fade" id="barcodeScannerModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Scan Barcode</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="reader" style="width: 100%;"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
+    <!-- Footer -->
+    <div class="row flex-shrink-0">
+        <div class="col-12">
+            <div class="text-center py-2">
+                <small class="text-muted">
+                    <i class="fas fa-box me-1"></i>
+                    Hardware Inventory Tracker &copy; 2025
+                </small>
             </div>
         </div>
     </div>
@@ -160,22 +142,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const scanBtn = document.getElementById('scanBarcodeBtn');
     const boxInfoDiv = document.getElementById('boxInfo');
     const boxInfoContent = document.getElementById('boxInfoContent');
-    const quantityInput = document.getElementById('quantity');
     const errorMsg = document.getElementById('error-msg');
     
-    // Event type change handler
     document.getElementById("event_type").addEventListener("change", function() {
         const title = document.getElementById("event-title");
         const header = document.getElementById("event-header");
         const type = this.value;
         title.innerHTML = type === "Pull" 
-            ? '<i class="fas fa-minus-circle me-2"></i>Log Pull Event'
-            : '<i class="fas fa-plus-circle me-2"></i>Log Return Event';
+            ? '<i class="fas fa-minus-circle me-2 text-white"></i>Log Pull Event'
+            : '<i class="fas fa-plus-circle me-2 text-white"></i>Log Return Event';
         title.className = "text-white mb-0";
-        header.className = type === "Pull" ? "card-header bg-danger text-white" : "card-header bg-success text-white";
+        header.className = type === "Pull" ? "card-header bg-danger text-white text-center" : "card-header bg-success text-white text-center";
     });
 
-    // Lookup barcode information
     async function lookupBarcode(barcode) {
         if (!barcode.trim()) {
             boxInfoDiv.style.display = 'none';
@@ -210,22 +189,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Auto-lookup when barcode changes
     barcodeInput.addEventListener('blur', function() {
         lookupBarcode(this.value);
     });
     
-    // Manual lookup button
     lookupBtn.addEventListener('click', function() {
         lookupBarcode(barcodeInput.value);
     });
     
-    // Barcode scanner (placeholder)
     scanBtn.addEventListener('click', function() {
         alert('Barcode scanning would be implemented here with camera access. For now, please enter the barcode manually.');
     });
     
-    // Form validation
     document.getElementById('logEventForm').addEventListener('submit', function(e) {
         const operator = document.getElementById('operator').value.trim();
         const qcPersonnel = document.getElementById('qc_personnel').value.trim();
@@ -234,21 +209,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         errorMsg.textContent = '';
         
-        // Validate barcode
         if (!barcode) {
             e.preventDefault();
             errorMsg.textContent = 'Please enter a barcode.';
             return;
         }
         
-        // Validate quantity
         if (!quantity || quantity <= 0) {
             e.preventDefault();
             errorMsg.textContent = 'Quantity must be greater than 0.';
             return;
         }
         
-        // Validate operators are different
         if (operator === qcPersonnel) {
             e.preventDefault();
             errorMsg.textContent = 'Operator and QC Personnel cannot be the same.';
@@ -256,10 +228,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initialize header on page load
     document.getElementById('event_type').dispatchEvent(new Event('change'));
     
-    // Initial lookup if barcode is pre-filled
     if (barcodeInput.value.trim()) {
         lookupBarcode(barcodeInput.value);
     }

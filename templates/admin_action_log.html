@@ -222,9 +222,9 @@
         <div class="card text-center">
             <div class="card-body">
                 <h5 class="card-title text-primary">
-                    {{ action_logs|selectattr('action_type', 'eq', 'pull')|list|length }}
+                    {{ (action_logs|selectattr('action_type', 'eq', 'pull')|list|length) + (action_logs|selectattr('action_type', 'eq', 'return')|list|length) }}
                 </h5>
-                <p class="card-text">Pull Events</p>
+                <p class="card-text">Events</p>
             </div>
         </div>
     </div>

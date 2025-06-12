@@ -1,88 +1,116 @@
+
 {% extends "base.html" %}
 
 {% block title %}Home - Hardware Inventory Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid vh-100 d-flex flex-column">
-    <div class="row flex-grow-1">
-        <div class="col-12">
-            <div class="text-center mb-5">
-                <h1 class="display-4 mb-3">
-                    <i class="fas fa-boxes text-primary me-3"></i>
-                    Hardware Inventory Tracker
-                </h1>
-                <p class="lead text-muted">
-                    Manage your hardware inventory with ease. Track boxes, log events, and monitor quantities.
-                </p>
+<!-- Header Section -->
+<div class="text-center py-4 mb-4">
+    <h1 class="display-4 mb-3 fw-bold">
+        <i class="fas fa-boxes text-primary me-3"></i>
+        Hardware Inventory Tracker
+    </h1>
+    <p class="lead text-muted">
+        Manage your hardware inventory with ease
+    </p>
+</div>
+
+<!-- Main Action Cards Section -->
+<div class="row gx-4 gy-4 justify-content-center">
+    <!-- Add New Box Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body d-flex flex-column p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+                </div>
+                <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-2">Add New Box</h5>
+                        <p class="card-text text-muted mb-3">
+                            Register new hardware with barcode tracking
+                        </p>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('add_box') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-plus me-2"></i>Add Box
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4 flex-grow-1 justify-content-center align-items-center">
-    <!-- Add New Box -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body text-center">
+    <!-- Log Event Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body d-flex flex-column p-4 text-center">
                 <div class="mb-3">
-                    <i class="fas fa-plus-circle fa-3x text-success"></i>
+                    <i class="fas fa-exchange-alt fa-3x text-primary mb-3"></i>
                 </div>
-                <h5 class="card-title">Add New Box</h5>
-                <p class="card-text">Register a new hardware box in the inventory system.</p>
-                <a href="{{ url_for('add_box') }}" class="btn btn-success">
-                    <i class="fas fa-plus me-2"></i>Add Box
-                </a>
+                <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-2">Log Event</h5>
+                        <p class="card-text text-muted mb-3">
+                            Record pull/return inventory events
+                        </p>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('log_event') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-exchange-alt me-2"></i>Log Event
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Log Pull Event -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body text-center">
+    <!-- Inventory Dashboard Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body d-flex flex-column p-4 text-center">
                 <div class="mb-3">
-                    <i class="fas fa-minus-circle fa-3x text-warning"></i>
+                    <i class="fas fa-chart-bar fa-3x text-primary mb-3"></i>
                 </div>
-                <h5 class="card-title">Log Event</h5>
-                <p class="card-text">Record when items are pulled from or returned to inventory boxes.</p>
-                <a href="{{ url_for('log_event') }}" class="btn btn-warning">
-                    <i class="fas fa-exchange-alt me-2"></i>Log Event
-                </a>
+                <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-2">Dashboard</h5>
+                        <p class="card-text text-muted mb-3">
+                            View inventory status and analytics
+                        </p>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-chart-bar me-2"></i>Dashboard
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- View Dashboard -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body text-center">
+    <!-- Export Data Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card h-100 shadow-sm border-0 hover-lift">
+            <div class="card-body d-flex flex-column p-4 text-center">
                 <div class="mb-3">
-                    <i class="fas fa-chart-bar fa-3x text-info"></i>
+                    <i class="fas fa-download fa-3x text-secondary mb-3"></i>
                 </div>
-                <h5 class="card-title">Inventory Dashboard</h5>
-                <p class="card-text">View current inventory status and remaining quantities.</p>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-info">
-                    <i class="fas fa-chart-bar me-2"></i>Dashboard
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Export Data -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body text-center">
-                <div class="mb-3">
-                    <i class="fas fa-download fa-3x text-secondary"></i>
+                <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-2">Export Data</h5>
+                        <p class="card-text text-muted mb-3">
+                            Download inventory as Excel report
+                        </p>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('export_excel') }}" class="btn btn-secondary btn-lg px-4">
+                            <i class="fas fa-download me-2"></i>Export
+                        </a>
+                    </div>
                 </div>
-                <h5 class="card-title">Export Data</h5>
-                <p class="card-text">Download current inventory data as Excel spreadsheet.</p>
-                <a href="{{ url_for('export_excel') }}" class="btn btn-secondary">
-                    <i class="fas fa-download me-2"></i>Export
-                </a>
             </div>
         </div>
     </div>
 </div>
-</div>
-
 {% endblock %}

@@ -1,0 +1,138 @@
+Force a true full-screen, no-scroll layout
+css
+Copier
+/* base.css (or inside a <style> in base.html) */
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;           /* prevents the browser scrollbar */
+}
+#main-container {             /* wrap all of your flex layout in a single div */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;              /* full viewport height */
+}
+Then in your template:
+
+jinja
+Copier
+{% block content %}
+<div id="main-container">
+  <!-- header, cards, footer -->
+</div>
+{% endblock %}
+By collapsing everything into one 100vh flex parent you guarantee no outer scrolling—and each child section (header, “cards” area, footer) can flexibly grow/shrink.
+
+2. Dial back the “pop-out” purple into a more professional palette
+Choose a neutral base:
+
+scss
+Copier
+$gray-100: #f8f9fa;
+$gray-800: #343a40;
+$accent-primary: #0056b3;  /* a deep, muted blue */
+$accent-secondary: #6c757d;/* a soft slate gray */
+Override Bootstrap variables (if you’re using Sass), or just drop in a custom CSS override:
+
+css
+Copier
+:root {
+  --bs-body-bg:    #f8f9fa;
+  --bs-body-color: #343a40;
+  --bs-primary:    #0056b3;
+  --bs-secondary:  #6c757d;
+  --bs-border-radius: .5rem;
+}
+
+.navbar, .card { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.btn-primary { background-color: var(--bs-primary); border-color: var(--bs-primary); }
+.btn-primary:hover { background-color: darken(var(--bs-primary), 5%); }
+.text-primary { color: var(--bs-primary) !important; }
+Status badges:
+— Replace the green/yellow/purple badges with semantic colors:
+
+html
+Copier
+<span class="badge bg-success">Active</span>
+<span class="badge bg-danger">Sold out</span>
+<span class="badge bg-warning text-dark">Low in stock</span>
+3. Unify spacing & sizing for cards and forms
+Cards
+Remove fixed heights—let padding define the size.
+
+Use the Bootstrap gutters and utility classes for consistent gaps:
+
+html
+Copier
+<div class="row gx-4 gy-4">
+  <div class="col-md-6 col-xl-3">
+    <div class="card h-100 shadow-sm border-0">
+      <div class="card-body d-flex flex-column p-4">
+        <!-- … -->
+      </div>
+    </div>
+  </div>
+  <!-- … -->
+</div>
+CSS:
+
+css
+Copier
+.card { border-radius: .75rem; }
+.card-body { padding: 1.5rem; }
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+Forms (Add Box & Log Event)
+Use the “large” input size everywhere:
+
+html
+Copier
+<div class="mb-4">
+  <label class="form-label">Barcode</label>
+  <input type="text" class="form-control form-control-lg" />
+</div>
+Increase vertical rhythm:
+
+css
+Copier
+.form-label { margin-bottom: .5rem; }
+.form-control-lg { padding: .75rem 1rem; font-size: 1.125rem; }
+Wrap your entire form in a <div class="p-4"> or <div class="px-5 py-4"> so that the edges are consistent with your cards.
+
+Putting it all together
+Base layout
+
+html
+Copier
+<body>
+  <div id="main-container">
+    {% include 'header.html' %}
+    <main class="flex-fill overflow-auto px-4 py-3">
+      {% block page-content %}{% endblock %}
+    </main>
+    {% include 'footer.html' %}
+  </div>
+</body>
+Color & theme
+
+Switch your SCSS or CSS variables to those muted blues/grays.
+
+Replace any inline text-success/text-warning/text-secondary icon classes with text-primary or text-secondary (or your new custom classes).
+
+Consistent gutters & padding
+
+Use row gx-4 gy-4 on every grid.
+
+Give every “chunk” (card or form) exactly p-4 or p-5.
+
+Use .form-control-lg and .btn-lg on your Add/Log forms.
+
+With those changes you’ll end up with a zero-scrolling, cohesive, professional-looking dashboard that adapts gracefully to any screen and keeps spacing perfectly in sync across sections.
+
+
+
+
+
+
