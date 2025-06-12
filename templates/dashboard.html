@@ -13,7 +13,7 @@
            class="btn btn-success">
             <i class="fas fa-download me-1"></i>Export Excel
         </a>
-        <button class="btn btn-secondary" onclick="window.print()">
+        <button class="btn btn-secondary" onclick="printDashboard()">
             <i class="fas fa-print me-1"></i>Print
         </button>
     </div>
@@ -226,21 +226,28 @@
 {% block scripts %}
 <style>
 @media print {
-  /* 1) Landscape orientation */
-  @page { 
-    size: A4 landscape; 
-    margin: 1cm; 
+  /* force landscape & tighter margins */
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
   }
 
-  /* 2) Hide everything except .printable */
+  /* hide everything except our .printable region */
   body * { visibility: hidden; }
   .printable, .printable * { visibility: visible; }
-  .no-print { display: none !important; }
 
-  /* 3) Un-wrap overflow containers */
+  /* remove any scrolling wrappers */
   .table-responsive { overflow: visible !important; }
 
-  /* 4) Full-width, paged table */
+  /* make our printable fill the page */
+  .printable {
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100%;
+  }
+
+  /* full-width, auto-flowing table */
   table {
     width: 100% !important;
     table-layout: auto;
@@ -258,12 +265,12 @@
   }
   
   th, td {
+    padding: .25rem;
+    font-size: 10pt;
     word-wrap: break-word;
-    padding: 0.3rem;
-    font-size: 11pt;
   }
 
-  /* 5) Card improvements for print */
+  /* Card improvements for print */
   .card { 
     page-break-inside: avoid; 
     margin-bottom: 1rem;
@@ -277,18 +284,47 @@
     border-bottom: 1px solid #000 !important;
   }
   
-  /* 6) Badge improvements for print */
+  /* Badge improvements for print */
   .badge {
     color: #000 !important;
     background-color: #f8f9fa !important;
     border: 1px solid #000 !important;
   }
 
-  /* 7) Statistics cards in landscape */
+  /* Statistics cards in landscape */
   .row .col-md-3 {
     width: 25% !important;
     float: left;
   }
+
+  /* get rid of any leftover UI bits */
+  .no-print { display: none !important; }
 }
 </style>
+
+<script>
+function printDashboard() {
+  // 1. expand printable area
+  const printable = document.querySelector('.printable');
+  printable.style.position = 'absolute';
+  printable.style.top = '0';
+  printable.style.left = '0';
+  printable.style.width = '100%';
+  printable.style.padding = '0';         // remove any container padding
+
+  // 2. shrink entire body slightly to ensure no overflow
+  document.body.style.transform = 'scale(0.85)';
+  document.body.style.transformOrigin = 'top left';
+
+  window.print();
+
+  // 3. reset styles after printing
+  printable.style.position = '';
+  printable.style.top = '';
+  printable.style.left = '';
+  printable.style.width = '';
+  printable.style.padding = '';
+  document.body.style.transform = '';
+}
+</script>
 {% endblock %}
