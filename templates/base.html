@@ -13,106 +13,191 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    <style>
+        /* Professional full-screen layout */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        #main-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* Professional color palette */
+        :root {
+            --bs-body-bg: #f8f9fa;
+            --bs-body-color: #343a40;
+            --bs-primary: #0056b3;
+            --bs-secondary: #6c757d;
+            --bs-border-radius: .5rem;
+        }
+        
+        .navbar, .card { 
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); 
+        }
+        
+        .btn-primary { 
+            background-color: var(--bs-primary); 
+            border-color: var(--bs-primary); 
+        }
+        
+        .btn-primary:hover { 
+            background-color: #004494;
+            border-color: #004494;
+        }
+        
+        .text-primary { 
+            color: var(--bs-primary) !important; 
+        }
+        
+        /* Card improvements */
+        .card { 
+            border-radius: .75rem;
+            border: 0;
+        }
+        
+        .card-body { 
+            padding: 1.5rem; 
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            transition: all 0.3s ease;
+        }
+        
+        /* Form improvements */
+        .form-label { 
+            margin-bottom: .5rem;
+            font-weight: 500;
+        }
+        
+        .form-control-lg { 
+            padding: .75rem 1rem; 
+            font-size: 1.125rem; 
+        }
+        
+        /* Main content area scrolling */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        
+        /* Footer fixed at bottom */
+        .app-footer {
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-boxes me-2"></i>
-                Inventory Tracker
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
-                            <i class="fas fa-home me-1"></i>Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('add_box') }}">
-                            <i class="fas fa-plus me-1"></i>Add Box
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('log_event') }}">
-                            <i class="fas fa-exchange-alt me-1"></i>Log Event
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-chart-bar me-1"></i>Dashboard
-                        </a>
-                    </li>
-                </ul>
+    <div id="main-container">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="fas fa-boxes me-2"></i>
+                    Inventory Tracker
+                </a>
                 
-                <!-- Admin Status -->
-                <ul class="navbar-nav ms-auto">
-                    {% if session.get('is_admin') %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" 
-                           data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-shield-alt me-1"></i>Admin: {{ session.get('admin_username') }}
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('manage_boxes') }}">
-                                <i class="fas fa-cogs me-1"></i>Manage Boxes
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('action_log') }}">
-                                <i class="fas fa-history me-1"></i>Action Log
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_logout') }}">
-                                <i class="fas fa-sign-out-alt me-1"></i>Logout
-                            </a></li>
-                        </ul>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin_login') }}">
-                            <i class="fas fa-sign-in-alt me-1"></i>Admin Login
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('index') }}">
+                                <i class="fas fa-home me-1"></i>Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('add_box') }}">
+                                <i class="fas fa-plus me-1"></i>Add Box
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('log_event') }}">
+                                <i class="fas fa-exchange-alt me-1"></i>Log Event
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-chart-bar me-1"></i>Dashboard
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Admin Status -->
+                    <ul class="navbar-nav ms-auto">
+                        {% if session.get('is_admin') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-shield-alt me-1"></i>Admin: {{ session.get('admin_username') }}
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('manage_boxes') }}">
+                                    <i class="fas fa-cogs me-1"></i>Manage Boxes
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('action_log') }}">
+                                    <i class="fas fa-history me-1"></i>Action Log
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_logout') }}">
+                                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                                </a></li>
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_login') }}">
+                                <i class="fas fa-sign-in-alt me-1"></i>Admin Login
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
 
-    <!-- Flash Messages -->
-    <div class="container mt-3">
+        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }} alert-dismissible fade show" role="alert">
-                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
+                <div class="container-fluid px-4 pt-3">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container-fluid">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer bg-secondary text-center py-3">
+            <div class="container">
+                <small class="text-muted">
+                    <i class="fas fa-box me-1"></i>
+                    Hardware Inventory Tracker &copy; 2025
+                </small>
+            </div>
+        </footer>
     </div>
-
-    <!-- Main Content -->
-    <main class="container my-4">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-secondary text-center py-3 mt-5">
-        <div class="container">
-            <small class="text-muted">
-                <i class="fas fa-box me-1"></i>
-                Hardware Inventory Tracker &copy; 2025
-            </small>
-        </div>
-    </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
