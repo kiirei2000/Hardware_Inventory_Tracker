@@ -1,0 +1,112 @@
+Here’s a drop-in upgrade to your box_logs.html that:
+
+Hides the sidebar gap by absolutely stretching your printable area to the full page.
+
+Auto-scales the content down just enough to never overflow.
+
+Removes any scrollbars by allowing overflow in print.
+
+1) Swap your print button to call a small JS helper:
+html
+Copier
+<!-- replace your old button -->
+<div class="no-print text-center mt-3">
+  <button onclick="printReport()" class="btn btn-secondary">
+    <i class="fas fa-print me-1"></i>Print Report
+  </button>
+</div>
+
+<script>
+function printReport() {
+  // 1. expand printable area
+  const printable = document.querySelector('.printable');
+  printable.style.position = 'absolute';
+  printable.style.top = '0';
+  printable.style.left = '0';
+  printable.style.width = '100%';
+  printable.style.padding = '0';         // remove any container padding
+
+  // 2. shrink entire body slightly to ensure no overflow
+  document.body.style.transform = 'scale(0. Nine)';
+  document.body.style.transformOrigin = 'top left';
+
+  window.print();
+
+  // 3. reset styles after printing
+  printable.style.position = '';
+  printable.style.top = '';
+  printable.style.left = '';
+  printable.style.width = '';
+  printable.style.padding = '';
+  document.body.style.transform = '';
+}
+</script>
+Tip: you can tweak the scale(0. Nine) up or down until it perfectly fits your longest table.
+
+2) Update your print CSS so nothing “bleeds” off the page:
+html
+Copier
+<style>
+@media print {
+  /* force landscape & tighter margins */
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+
+  /* hide everything except our .printable region */
+  body * { visibility: hidden; }
+  .printable, .printable * { visibility: visible; }
+
+  /* remove any scrolling wrappers */
+  .table-responsive { overflow: visible !important; }
+
+  /* make our printable fill the page */
+  .printable {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+  }
+
+  /* full-width, auto-flowing table */
+  table {
+    width: 100% !important;
+    table-layout: auto;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+  thead { display: table-header-group; }
+  tr    { page-break-inside: avoid; page-break-after: auto; }
+  th, td {
+    padding: .25rem;
+    font-size: 11pt;
+    word-wrap: break-word;
+  }
+
+  /* get rid of any leftover UI bits */
+  .no-print { display: none !important; }
+}
+</style>
+3) Wrap only your report content in .printable
+html
+Copier
+<div class="printable">
+  <!-- Box info card -->
+  <div class="card mb-4"> … </div>
+
+  <!-- Event history table -->
+  <div class="table-responsive">
+    <table class="table table-bordered"> … </table>
+  </div>
+</div>
+With this in place:
+
+On screen, nothing changes.
+
+On print, your .printable region jumps to fill the whole sheet (no sidebar gap), shrinks just enough to avoid any scrollbar/truncation, and flows across pages with headers repeated.
+
+
+
+
+
+
