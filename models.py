@@ -71,13 +71,27 @@ class ActionLog(db.Model):
     __tablename__ = 'action_logs'
     
     id = db.Column(db.Integer, primary_key=True)
-    action_type = db.Column(db.String(50), nullable=False)  # 'pull', 'box_add', 'box_edit', 'box_delete'
+    action_type = db.Column(db.String(50), nullable=False)  # 'Pull', 'Return', 'box_add', 'box_edit', 'box_delete'
     user = db.Column(db.String(100), nullable=False)  # Admin username or operator name
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     box_id = db.Column(db.String(200))  # Box ID affected (if applicable)
     hardware_type = db.Column(db.String(100))  # Hardware type affected
     lot_number = db.Column(db.String(100))  # Lot number affected
+    previous_quantity = db.Column(db.Integer)  # Quantity before the action
+    quantity_change = db.Column(db.Integer)  # Amount changed (positive or negative)
+    available_quantity = db.Column(db.Integer)  # Quantity after the action
+    operator = db.Column(db.String(100))  # Operator who performed the action
+    qc_operator = db.Column(db.String(100))  # QC Personnel who approved/checked
     details = db.Column(db.Text)  # JSON or text details of the action
+    
+    @property
+    def details_json(self):
+        """Parse JSON details into a dictionary"""
+        import json
+        try:
+            return json.loads(self.details or '{}')
+        except (json.JSONDecodeError, TypeError):
+            return {}
     
     def __repr__(self):
         return f'<ActionLog {self.id}: {self.action_type} by {self.user}>'
