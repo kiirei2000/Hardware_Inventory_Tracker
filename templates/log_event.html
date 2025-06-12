@@ -2,25 +2,23 @@
 {% extends "base.html" %}
 
 {% block title %}Log Event - Hardware Inventory{% endblock %}
+{% block body_class %}fullscreen-center{% endblock %}
 
 {% block content %}
-<!-- Dynamic Header Section -->
-<div class="card mb-4" id="event-header">
-    <div class="card-header bg-danger text-white text-center">
-        <h2 class="text-white mb-0" id="event-title">
-            <i class="fas fa-minus-circle me-2 text-white"></i>
-            Log Pull Event
-        </h2>
-    </div>
-</div>
-
-<!-- Main Form Section -->
-<div class="row justify-content-center">
-    <div class="col-lg-8 col-xl-6">
+<div class="fit-card card shadow rounded-4">
+    <!-- Dynamic Header Section -->
+    <div class="card-body" id="event-header">
+            <div class="card-header bg-danger text-white text-center py-2">
+                <h4 class="text-white mb-0" id="event-title">
+                    <i class="fas fa-minus-circle me-2 text-white"></i>
+                    Log Pull Event
+                </h4>
+            </div>
+        </div>
         <div class="card shadow-sm border-0">
-            <div class="card-body p-5">
+            <div class="card-body p-3">
                 <form method="POST" action="{{ url_for('log_event') }}" id="logEventForm">
-                    <div class="row gx-4 gy-4">
+                    <div class="row gx-3 gy-2">
                         <!-- Barcode -->
                         <div class="col-12">
                             <label for="barcode" class="form-label">
@@ -104,10 +102,10 @@
                         </div>
                     </div>
 
-                    <div id="error-msg" class="text-danger mt-4"></div>
+                    <div id="error-msg" class="text-danger mt-2"></div>
 
                     <!-- Submit Buttons -->
-                    <div class="d-flex justify-content-end gap-3 mt-5">
+                    <div class="d-flex justify-content-end gap-3 mt-3">
                         <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg px-4">
                             <i class="fas fa-times me-2"></i>Cancel
                         </a>

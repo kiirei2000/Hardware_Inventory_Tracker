@@ -2,24 +2,22 @@
 {% extends "base.html" %}
 
 {% block title %}Add New Box - Hardware Inventory{% endblock %}
+{% block body_class %}fullscreen-center{% endblock %}
 
 {% block content %}
-<!-- Header Section -->
-<div class="text-center py-4 mb-4">
-    <h2 class="fw-bold mb-2">
-        <i class="fas fa-plus-circle text-primary me-3"></i>
-        Add New Box to Inventory
-    </h2>
-    <p class="text-muted">Register new hardware with barcode tracking</p>
-</div>
+<div class="fit-card card shadow rounded-4">
+    <!-- Header Section -->
+    <div class="card-body bg-primary text-white text-center rounded-top-4">
+        <h5 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>
+            Add New Box to Inventory
+        </h5>
+    </div>
 
-<!-- Main Form Section -->
-<div class="row justify-content-center">
-    <div class="col-lg-8 col-xl-6">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-5">
+    <!-- Main Form Section -->
+    <div class="card-body">
                 <form method="POST" id="addBoxForm">
-                    <div class="row gx-4 gy-4">
+                    <div class="row gx-3 gy-2">
                         <!-- Hardware Type -->
                         <div class="col-md-6">
                             <label for="hardware_type" class="form-label">
@@ -115,13 +113,13 @@
                     </div>
 
                     <!-- Preview Box ID -->
-                    <div class="alert alert-info mt-4" id="boxIdPreview" style="display: none;">
+                    <div class="alert alert-info mt-2 py-2" id="boxIdPreview" style="display: none;">
                         <strong><i class="fas fa-info-circle me-2"></i>Generated Box ID:</strong>
                         <span id="previewText"></span>
                     </div>
 
                     <!-- Submit Buttons -->
-                    <div class="d-flex justify-content-end gap-3 mt-5">
+                    <div class="d-flex justify-content-end gap-3 mt-3">
                         <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg px-4">
                             <i class="fas fa-times me-2"></i>Cancel
                         </a>
@@ -187,4 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+    </div>
+</div>
 {% endblock %}
