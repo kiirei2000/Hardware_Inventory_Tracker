@@ -4,127 +4,121 @@
 {% block title %}Log Event - Hardware Inventory{% endblock %}
 
 {% block content %}
-<div class="container-fluid vh-100 d-flex flex-column justify-content-between p-0">
-    <!-- Header Section -->
-    <div class="row flex-shrink-0">
-        <div class="col-12">
-            <div class="card shadow border-0">
-                <div class="card-header bg-danger text-white text-center" id="event-header">
-                    <h4 id="event-title" class="text-white mb-0">
-                        <i class="fas fa-minus-circle me-2 text-white"></i>
-                        Log Pull Event
-                    </h4>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Header Section -->
+<div class="text-center py-4 mb-4">
+    <h2 class="fw-bold mb-2" id="event-title">
+        <i class="fas fa-exchange-alt text-primary me-3"></i>
+        Log Inventory Event
+    </h2>
+    <p class="text-muted">Record pull/return inventory events</p>
+</div>
 
-    <!-- Main Form Section -->
-    <div class="row flex-grow-1 justify-content-center align-items-center">
-        <div class="col-lg-10">
-            <div class="card shadow border-0">
-                <div class="card-body p-4">
-                    <form method="POST" action="{{ url_for('log_event') }}" id="logEventForm">
-                        <div class="row g-3">
-                            <!-- Barcode -->
-                            <div class="col-12">
-                                <label for="barcode" class="form-label">
-                                    <i class="fas fa-barcode me-1"></i>Barcode
-                                </label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="barcode" name="barcode" 
-                                           placeholder="Scan or enter barcode"
-                                           value="{{ form_data.get('barcode', '') if form_data }}" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="scanBarcodeBtn">
-                                        <i class="fas fa-camera me-1"></i>Scan
-                                    </button>
-                                    <button class="btn btn-outline-info" type="button" id="lookupBarcodeBtn">
-                                        <i class="fas fa-search me-1"></i>Lookup
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Box Info Display -->
-                            <div id="boxInfo" class="col-12" style="display: none;">
-                                <div class="alert alert-info">
-                                    <h6><i class="fas fa-box me-1"></i>Box Information:</h6>
-                                    <div id="boxInfoContent"></div>
-                                </div>
-                            </div>
-
-                            <!-- Quantity -->
-                            <div class="col-md-6">
-                                <label for="quantity" class="form-label">
-                                    <i class="fas fa-hashtag me-1"></i>Quantity
-                                </label>
-                                <input type="number" min="1" name="quantity" id="quantity" class="form-control" 
-                                       placeholder="Enter quantity" required>
-                            </div>
-
-                            <!-- Event Type -->
-                            <div class="col-md-6">
-                                <label for="event_type" class="form-label">
-                                    <i class="fas fa-exchange-alt me-1"></i>Event Type
-                                </label>
-                                <select id="event_type" name="event_type" class="form-control" required>
-                                    <option value="Pull">Pull</option>
-                                    <option value="Return">Return</option>
-                                </select>
-                            </div>
-
-                            <!-- Manufacturing Order -->
-                            <div class="col-md-6">
-                                <label for="mo" class="form-label">
-                                    <i class="fas fa-clipboard-list me-1"></i>Manufacturing Order (MO)
-                                </label>
-                                <input type="text" name="mo" id="mo" class="form-control" 
-                                       placeholder="Enter MO number" required>
-                            </div>
-
-                            <!-- Operator -->
-                            <div class="col-md-6">
-                                <label for="operator" class="form-label">
-                                    <i class="fas fa-user me-1"></i>Operator
-                                </label>
-                                <input type="text" name="operator" id="operator" class="form-control" 
-                                       placeholder="Enter operator name" required>
-                            </div>
-
-                            <!-- QC Personnel -->
-                            <div class="col-md-6">
-                                <label for="qc_personnel" class="form-label">
-                                    <i class="fas fa-user-check me-1"></i>QC Personnel
-                                </label>
-                                <input type="text" name="qc_personnel" id="qc_personnel" class="form-control" 
-                                       placeholder="Enter QC personnel name" required>
-                            </div>
-
-                            <!-- Signature -->
-                            <div class="col-md-6">
-                                <label for="signature" class="form-label">
-                                    <i class="fas fa-signature me-1"></i>Signature (Optional)
-                                </label>
-                                <input type="text" name="signature" id="signature" class="form-control" 
-                                       placeholder="Enter signature">
+<!-- Main Form Section -->
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-5">
+                <form method="POST" action="{{ url_for('log_event') }}" id="logEventForm">
+                    <div class="row gx-4 gy-4">
+                        <!-- Barcode -->
+                        <div class="col-12">
+                            <label for="barcode" class="form-label">
+                                <i class="fas fa-barcode me-2 text-primary"></i>Barcode
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <input type="text" class="form-control" id="barcode" name="barcode" 
+                                       placeholder="Scan or enter barcode"
+                                       value="{{ form_data.get('barcode', '') if form_data }}" required>
+                                <button class="btn btn-outline-primary" type="button" id="scanBarcodeBtn">
+                                    <i class="fas fa-camera me-1"></i>Scan
+                                </button>
+                                <button class="btn btn-outline-primary" type="button" id="lookupBarcodeBtn">
+                                    <i class="fas fa-search me-1"></i>Lookup
+                                </button>
                             </div>
                         </div>
 
-                        <div id="error-msg" class="text-danger mt-3"></div>
-
-                        <!-- Submit Buttons -->
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                                <i class="fas fa-times me-1"></i>Cancel
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i>Submit
-                            </button>
+                        <!-- Box Info Display -->
+                        <div id="boxInfo" class="col-12" style="display: none;">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-box me-2"></i>Box Information:</h6>
+                                <div id="boxInfoContent"></div>
+                            </div>
                         </div>
-                    </form>
-                </div>
+
+                        <!-- Event Type -->
+                        <div class="col-md-6">
+                            <label for="event_type" class="form-label">
+                                <i class="fas fa-exchange-alt me-2 text-primary"></i>Event Type
+                            </label>
+                            <select id="event_type" name="event_type" class="form-select form-select-lg" required>
+                                <option value="Pull">Pull</option>
+                                <option value="Return">Return</option>
+                            </select>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div class="col-md-6">
+                            <label for="quantity" class="form-label">
+                                <i class="fas fa-hashtag me-2 text-primary"></i>Quantity
+                            </label>
+                            <input type="number" min="1" name="quantity" id="quantity" class="form-control form-control-lg" 
+                                   placeholder="Enter quantity" required>
+                        </div>
+
+                        <!-- Manufacturing Order -->
+                        <div class="col-md-6">
+                            <label for="mo" class="form-label">
+                                <i class="fas fa-clipboard-list me-2 text-primary"></i>Manufacturing Order (MO)
+                            </label>
+                            <input type="text" name="mo" id="mo" class="form-control form-control-lg" 
+                                   placeholder="Enter MO number" required>
+                        </div>
+
+                        <!-- Operator -->
+                        <div class="col-md-6">
+                            <label for="operator" class="form-label">
+                                <i class="fas fa-user me-2 text-primary"></i>Operator
+                            </label>
+                            <input type="text" name="operator" id="operator" class="form-control form-control-lg" 
+                                   placeholder="Enter operator name" required>
+                        </div>
+
+                        <!-- QC Personnel -->
+                        <div class="col-md-6">
+                            <label for="qc_personnel" class="form-label">
+                                <i class="fas fa-user-check me-2 text-primary"></i>QC Personnel
+                            </label>
+                            <input type="text" name="qc_personnel" id="qc_personnel" class="form-control form-control-lg" 
+                                   placeholder="Enter QC personnel name" required>
+                        </div>
+
+                        <!-- Signature -->
+                        <div class="col-md-6">
+                            <label for="signature" class="form-label">
+                                <i class="fas fa-signature me-2 text-primary"></i>Signature (Optional)
+                            </label>
+                            <input type="text" name="signature" id="signature" class="form-control form-control-lg" 
+                                   placeholder="Enter signature">
+                        </div>
+                    </div>
+
+                    <div id="error-msg" class="text-danger mt-4"></div>
+
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-end gap-3 mt-5">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg px-4">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-save me-2"></i>Submit Event
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Footer -->
     <div class="row flex-shrink-0">
