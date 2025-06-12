@@ -55,7 +55,7 @@ Deployment
 
 Hosted on Replit for easy access and collaboration.
 
-hardware-tracker.replit.app
+(https://hardwareinventorytracker-production.up.railway.app/)
 ----
 
 Can be exported and run locally or deployed to other Flask-friendly hosts (e.g., Render, PythonAnywhere, etc.).
