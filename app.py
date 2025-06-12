@@ -37,9 +37,8 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 db.init_app(app)
 from sqlalchemy import text
 
-# Ensure new tables exists
+# Ensure new tables exist
 with app.app_context():
-    db.create_all()
 
 # Import models after db initialization
 from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
