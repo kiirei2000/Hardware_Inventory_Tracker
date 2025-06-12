@@ -153,18 +153,20 @@
                         {% for type_lot_key, group_data in type_lot_groups.items() %}
                             <!-- Type-Lot Group Header Row -->
                             <tr class="table-secondary">
-                                <td colspan="9">
+                                <td colspan="9" class="d-flex justify-content-between align-items-center">
                                     <strong><i class="fas fa-folder me-2"></i>{{ group_data.type_name }} - Lot: {{ group_data.lot_name }}</strong>
-                                    <span class="badge bg-info ms-2">{{ group_data.box_count }} boxes</span>
-                                    <span class="badge bg-secondary ms-1">{{ group_data.total_remaining }}/{{ group_data.total_initial }} total qty</span>
+                                    <div>
+                                        <span class="badge bg-dark text-white ms-2">Boxes: {{ group_data.box_count }}</span>
+                                        <span class="badge bg-secondary text-white ms-1">Total quantity: {{ group_data.total_remaining }}</span>
+                                    </div>
                                 </td>
                             </tr>
                             {% for box_data in group_data.boxes %}
                             {% set box = box_data.box %}
                             <tr>
                                 <td><strong>{{ box.box_id }}</strong></td>
-                                <td><span class="badge bg-primary">{{ group_data.type_name }}</span></td>
-                                <td><span class="badge bg-info">{{ group_data.lot_name }}</span></td>
+                                <td><span class="badge bg-dark text-white">{{ group_data.type_name }}</span></td>
+                                <td><span class="badge bg-secondary text-white">{{ group_data.lot_name }}</span></td>
                                 <td>{{ box.box_number }}</td>
                                 <td>{{ box.initial_quantity }}</td>
                                 <td>
