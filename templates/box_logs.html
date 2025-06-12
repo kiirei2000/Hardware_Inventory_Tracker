@@ -33,6 +33,12 @@
           <dd class="col-sm-8">{{ box.box_number }}</dd>
           <dt class="col-sm-4">Initial Quantity:</dt>
           <dd class="col-sm-8">{{ box.initial_quantity }}</dd>
+          <dt class="col-sm-4">Available Quantity:</dt>
+          <dd class="col-sm-8">
+            <strong class="{{ 'text-danger' if box.remaining_quantity == 0 else 'text-warning' if box.remaining_quantity < 10 else 'text-success' }}">
+              {{ box.remaining_quantity }}
+            </strong>
+          </dd>
         </dl>
       </div>
     </div>
