@@ -193,8 +193,8 @@
                     <a href="{{ url_for('box_logs', box_id=box.id) }}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-history me-1"></i>View Pull Logs
                     </a>
-                    <a href="{{ url_for('log_pull') }}?barcode={{ box.barcode }}" class="btn btn-outline-warning btn-sm">
-                        <i class="fas fa-minus me-1"></i>Log Pull Event
+                    <a href="{{ url_for('log_event') }}?barcode={{ box.barcode }}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-exchange-alt me-1"></i>Log Event
                     </a>
                     <button class="btn btn-outline-danger btn-sm" onclick="confirmDelete()">
                         <i class="fas fa-trash me-1"></i>Delete Box
@@ -212,10 +212,7 @@
             </div>
             <div class="card-body">
                 <ul class="list-unstyled mb-0">
-                    <li class="mb-2">
-                        <i class="fas fa-info-circle text-info me-1"></i>
-                        Hardware type and lot number cannot be changed
-                    </li>
+
                     <li class="mb-2">
                         <i class="fas fa-warning text-warning me-1"></i>
                         Initial quantity cannot be less than already pulled items
