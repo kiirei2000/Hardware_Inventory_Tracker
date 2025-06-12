@@ -39,11 +39,7 @@ from sqlalchemy import text
 
 # Ensure new tables exists
 with app.app_context():
-    db.create_all()   
-    # Now patch the boxes table if needed
-    with db.engine.begin() as conn:
-    result = conn.execute(text("PRAGMA table_info(boxes)")).mappings()
-    cols   = [row['name'] for row in result]
+    db.create_all()
 
 # Import models after db initialization
 from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
