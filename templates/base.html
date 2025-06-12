@@ -28,6 +28,150 @@
             height: 100vh;
         }
         
+        /* Original Black Sidebar with Hover Functionality */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 60px;
+            height: 100vh;
+            background: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
+            transition: width 0.3s ease;
+            z-index: 1000;
+            overflow: hidden;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .sidebar:hover {
+            width: 250px;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            padding: 20px 15px;
+            border-bottom: 1px solid #333;
+            min-height: 60px;
+        }
+        
+        .sidebar-brand {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+        
+        .brand-text {
+            margin-left: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease 0.1s;
+        }
+        
+        .sidebar:hover .brand-text {
+            opacity: 1;
+        }
+        
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #ccc;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-decoration: none;
+        }
+        
+        .sidebar-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .item-text {
+            margin-left: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease 0.1s;
+        }
+        
+        .sidebar:hover .item-text {
+            opacity: 1;
+        }
+        
+        .sidebar-admin {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            border-top: 1px solid #333;
+        }
+        
+        .admin-dropdown {
+            position: relative;
+        }
+        
+        .admin-toggle {
+            position: relative;
+        }
+        
+        .dropdown-icon {
+            position: absolute;
+            right: 20px;
+            transition: transform 0.3s ease;
+            opacity: 0;
+        }
+        
+        .sidebar:hover .dropdown-icon {
+            opacity: 1;
+        }
+        
+        .admin-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 100%;
+            background: #2a2a2a;
+            border-top: 1px solid #444;
+            display: none;
+        }
+        
+        .admin-menu.show {
+            display: block;
+        }
+        
+        .admin-menu-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            color: #ccc;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .admin-menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-decoration: none;
+        }
+        
+        .admin-menu-item i {
+            width: 20px;
+            text-align: center;
+            margin-right: 15px;
+        }
+        
         /* Professional color palette */
         :root {
             --bs-body-bg: #f8f9fa;
@@ -35,10 +179,6 @@
             --bs-primary: #0056b3;
             --bs-secondary: #6c757d;
             --bs-border-radius: .5rem;
-        }
-        
-        .navbar, .card { 
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06); 
         }
         
         .btn-primary { 
@@ -82,31 +222,38 @@
             font-size: 1.125rem; 
         }
         
-        /* Main content area scrolling */
+        /* Main content area positioning for sidebar */
         .main-content {
             flex: 1;
             overflow-y: auto;
             padding: 1.5rem;
-            margin-left: 250px;
+            margin-left: 60px;
             transition: margin-left 0.3s ease;
         }
         
         /* Footer fixed at bottom */
         .app-footer {
             flex-shrink: 0;
-            margin-left: 250px;
+            margin-left: 60px;
             transition: margin-left 0.3s ease;
         }
         
-        /* Responsive footer adjustments */
+        /* Responsive adjustments */
         @media (max-width: 768px) {
-            .app-footer {
-                margin-left: 200px;
+            .sidebar {
+                width: 50px;
+            }
+            .main-content, .app-footer {
+                margin-left: 50px;
             }
         }
         
         @media (max-width: 576px) {
-            .app-footer {
+            .sidebar {
+                width: 0;
+                overflow: hidden;
+            }
+            .main-content, .app-footer {
                 margin-left: 0;
             }
         }
