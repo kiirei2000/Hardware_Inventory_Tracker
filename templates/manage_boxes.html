@@ -3,12 +3,12 @@
 {% block title %}Manage Boxes - Hardware Inventory{% endblock %}
 
 {% block content %}
-<div class="text-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <h2>
         <i class="fas fa-cogs me-2"></i>
         Manage Boxes
     </h2>
-    <a href="{{ url_for('add_box') }}" class="btn btn-success mt-2">
+    <a href="{{ url_for('add_box') }}" class="btn btn-success">
         <i class="fas fa-plus me-1"></i>Add New Box
     </a>
 </div>
