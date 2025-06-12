@@ -1,6 +1,46 @@
+Frontend fixes
+Event Type & Quantity signs
+
+Pull → negative number (-N)
+
+Return → positive number (+N)
+
+Rename header
+
+Change “Pull Event History” → “Event History”
+
+Re-columnize
+
+Columns should be:
+
+Date & Time
+
+Event Type
+
+Quantity
+
+MO
+
+Operator
+
+QC Personnel
+
+Remove the old “Signature/Notes” column entirely.
+
+Drop the summary row
+
+Remove the footer that shows totals & utilization.
+
+Print CSS
+
+Only show the Box Info card and the Event History table when printing; hide everything else (buttons, quick-action cards, navbars).
+
+3. Revised box_logs.html
+html
+Copier
 {% extends "base.html" %}
 
-{% block title %}Event History - {{ box.box_id }}{% endblock %}
+{% block title %}Event History – {{ box.box_id }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -96,7 +136,7 @@
         <i class="fas fa-history fa-3x text-muted mb-3"></i>
         <h5 class="text-muted">No events recorded</h5>
         <p class="text-muted">
-          This box hasn't had any pulls or returns yet.
+          This box hasn’t had any pulls or returns yet.
           <a href="{{ url_for('log_event') }}">Log an event</a> to start.
         </p>
       </div>
@@ -142,3 +182,13 @@
 }
 </style>
 {% endblock %}
+Summary of what changed
+Header → “Event History”
+
+Columns rearranged to: Date, Type, Quantity, MO, Operator, QC Personnel
+
+Sign logic in both badge and number flipped so Pull = “–N”, Return = “+N”
+
+Removed the summary/footer section entirely
+
+Print CSS now hides all but the info card and table (quick actions and nav are hidden)
