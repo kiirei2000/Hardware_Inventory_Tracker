@@ -35,6 +35,18 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 
 # Initialize the app with the extension
 db.init_app(app)
+from sqlalchemy import text
+
+@app.before_first_request
+def auto_migrate():
+    db.create_all()   # ensures new tables exist
+    # now patch the boxes table if needed
+    with db.engine.begin() as conn:
+        cols = [row['name'] for row in conn.execute(text("PRAGMA table_info(boxes)"))]
+        if 'operator' not in cols:
+            conn.execute(text("ALTER TABLE boxes ADD COLUMN operator VARCHAR(50)"))
+        if 'qc_operator' not in cols:
+            conn.execute(text("ALTER TABLE boxes ADD COLUMN qc_operator VARCHAR(50)"))
 
 # Import models after db initialization
 from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
