@@ -94,6 +94,21 @@
         /* Footer fixed at bottom */
         .app-footer {
             flex-shrink: 0;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+        
+        /* Responsive footer adjustments */
+        @media (max-width: 768px) {
+            .app-footer {
+                margin-left: 200px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .app-footer {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
