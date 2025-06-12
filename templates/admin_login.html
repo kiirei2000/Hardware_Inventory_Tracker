@@ -5,24 +5,23 @@
 {% block content %}
 <style>
 .login-container {
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
 }
 </style>
-<div class="row justify-content-center align-items-center login-container">
+<div class="d-flex align-items-center justify-content-center login-container">
     <div class="col-md-6 col-lg-4">
         <!-- Admin Access Required Panel -->
-        <div class="card shadow mb-3">
-            <div class="card-body bg-warning text-dark text-center d-flex align-items-center justify-content-center" style="min-height: 120px;">
-                <h4 class="mb-0">
+        <div class="card shadow mb-3 rounded">
+            <div class="card-body bg-primary text-white text-center d-flex align-items-center justify-content-center rounded" style="min-height: 80px;">
+                <h5 class="mb-0 text-truncate">
                     <i class="fas fa-shield-alt me-2"></i>Admin Access Required
-                </h4>
+                </h5>
             </div>
         </div>
         
         <!-- Login Form -->
-        <div class="card shadow">
-            <div class="card-body text-center py-3">
+        <div class="card shadow rounded">
+            <div class="card-body text-center py-3 rounded">
                 <form method="POST">
                     <div class="mb-2">
                         <label for="username" class="form-label text-center w-100 mb-1">
