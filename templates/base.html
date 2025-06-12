@@ -112,7 +112,7 @@
         }
     </style>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <div id="main-container">
         <!-- Sidebar Navigation -->
         <div class="sidebar" id="sidebar">
@@ -175,7 +175,7 @@
         </div>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content working-area">
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
