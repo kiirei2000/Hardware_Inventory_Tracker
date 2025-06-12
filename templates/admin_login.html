@@ -3,7 +3,12 @@
 {% block title %}Admin Login - Hardware Inventory{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
+<style>
+.min-vh-75 {
+    min-height: 75vh;
+}
+</style>
+<div class="row justify-content-center align-items-center min-vh-75">
     <div class="col-md-6 col-lg-4">
         <div class="card shadow">
             <div class="card-header bg-warning text-dark text-center">
@@ -12,25 +17,21 @@
                     Admin Access Required
                 </h4>
             </div>
-            <div class="card-body">
-                <p class="text-center text-muted mb-4">
-                    Please enter admin credentials to manage boxes
-                </p>
-                
+            <div class="card-body text-center">
                 <form method="POST">
                     <div class="mb-3">
-                        <label for="username" class="form-label">
+                        <label for="username" class="form-label text-center w-100">
                             <i class="fas fa-user me-1"></i>Username
                         </label>
-                        <input type="text" class="form-control" id="username" name="username" 
+                        <input type="text" class="form-control text-center" id="username" name="username" 
                                placeholder="Enter admin username" required autofocus>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="password" class="form-label">
+                        <label for="password" class="form-label text-center w-100">
                             <i class="fas fa-lock me-1"></i>Password
                         </label>
-                        <input type="password" class="form-control" id="password" name="password" 
+                        <input type="password" class="form-control text-center" id="password" name="password" 
                                placeholder="Enter admin password" required>
                     </div>
                     
