@@ -1,5 +1,14 @@
 /* Custom styles for Hardware Inventory Tracker */
 
+/* Background colors */
+body {
+    background-color: #f3f5f7; /* Cloud Gray */
+}
+
+.card {
+    background-color: #f4f4f4; /* Porcelain */
+}
+
 /* Button text centering */
 .btn {
     text-align: center !important;
