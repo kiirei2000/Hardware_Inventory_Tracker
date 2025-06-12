@@ -37,10 +37,9 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 db.init_app(app)
 from sqlalchemy import text
 
-@app.before_first_request
-def auto_migrate():
+with app.app_context():
     db.create_all()   # ensures new tables exist
-    # now patch the boxes table if needed
+    # Now patch the boxes table if needed
     with db.engine.begin() as conn:
         cols = [row['name'] for row in conn.execute(text("PRAGMA table_info(boxes)"))]
         if 'operator' not in cols:
