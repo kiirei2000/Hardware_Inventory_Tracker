@@ -39,6 +39,11 @@ from sqlalchemy import text
 
 # Ensure new tables exist
 with app.app_context():
+    # import models that need `db` to be ready
+    from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
+
+    # Create tables the first time
+    db.create_all()
 
 # Import models after db initialization
 from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
