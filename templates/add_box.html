@@ -2,20 +2,21 @@
 {% extends "base.html" %}
 
 {% block title %}Add New Box - Hardware Inventory{% endblock %}
-{% block body_class %}fullscreen-center{% endblock %}
 
 {% block content %}
-<div class="fit-card card shadow rounded-4">
-    <!-- Header Section -->
-    <div class="card-body bg-primary text-white text-center rounded-top-4">
-        <h5 class="mb-0">
-            <i class="fas fa-plus-circle me-2"></i>
-            Add New Box to Inventory
-        </h5>
-    </div>
+<!-- Header Section -->
+<div class="text-center py-2 mb-2">
+    <h3 class="fw-bold mb-1">
+        <i class="fas fa-plus-circle text-primary me-2"></i>
+        Add New Box to Inventory
+    </h3>
+</div>
 
-    <!-- Main Form Section -->
-    <div class="card-body">
+<!-- Main Form Section -->
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-3">
                 <form method="POST" id="addBoxForm">
                     <div class="row gx-3 gy-2">
                         <!-- Hardware Type -->
@@ -185,6 +186,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-    </div>
-</div>
 {% endblock %}

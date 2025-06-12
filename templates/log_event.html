@@ -2,12 +2,13 @@
 {% extends "base.html" %}
 
 {% block title %}Log Event - Hardware Inventory{% endblock %}
-{% block body_class %}fullscreen-center{% endblock %}
 
 {% block content %}
-<div class="fit-card card shadow rounded-4">
-    <!-- Dynamic Header Section -->
-    <div class="card-body" id="event-header">
+<!-- Main Form Section -->
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <!-- Dynamic Header Section -->
+        <div class="card mb-2" id="event-header">
             <div class="card-header bg-danger text-white text-center py-2">
                 <h4 class="text-white mb-0" id="event-title">
                     <i class="fas fa-minus-circle me-2 text-white"></i>

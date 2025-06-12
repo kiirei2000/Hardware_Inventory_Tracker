@@ -1,19 +1,27 @@
 {% extends "base.html" %}
 
 {% block title %}Admin Login - Hardware Inventory{% endblock %}
-{% block body_class %}fullscreen-center{% endblock %}
 
 {% block content %}
-<div class="fit-card card shadow rounded-4">
-    <!-- Access banner -->
-    <div class="card-body bg-primary text-white text-center rounded-top-4">
-        <h5 class="mb-0 text-truncate">
-            <i class="fas fa-shield-alt me-2"></i>Admin Access
-        </h5>
-    </div>
-
-    <!-- Login Form -->
-    <div class="card-body">
+<style>
+.login-container {
+    min-height: 100vh;
+}
+</style>
+<div class="d-flex align-items-center justify-content-center login-container">
+    <div class="col-md-6 col-lg-4">
+        <!-- Admin Access Required Panel -->
+        <div class="card shadow mb-3 rounded">
+            <div class="card-body bg-primary text-white text-center d-flex align-items-center justify-content-center rounded" style="min-height: 80px;">
+                <h5 class="mb-0 text-truncate">
+                    <i class="fas fa-shield-alt me-2"></i>Admin Access Required
+                </h5>
+            </div>
+        </div>
+        
+        <!-- Login Form -->
+        <div class="card shadow rounded">
+            <div class="card-body text-center py-3 rounded">
                 <form method="POST">
                     <div class="mb-2">
                         <label for="username" class="form-label text-center w-100 mb-1">
