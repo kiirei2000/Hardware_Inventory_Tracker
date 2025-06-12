@@ -287,7 +287,8 @@ def add_box():
                 if existing_lot:
                     lot_number = existing_lot
                 else:
-                    lot_number = LotNumber(name=new_lot_number)
+                    lot_number = LotNumber()
+                    lot_number.name = new_lot_number
                     db.session.add(lot_number)
                     db.session.flush()  # Get the ID without committing
             elif lot_number_name:
@@ -343,17 +344,16 @@ def add_box():
                 return render_template('add_box.html', types=types, lots=lots, form_data=form_data)
             
             # Create new box
-            new_box = Box(
-                box_id=box_id,
-                hardware_type_id=hardware_type.id,
-                lot_number_id=lot_number.id,
-                box_number=box_number,
-                initial_quantity=initial_quantity,
-                remaining_quantity=initial_quantity,
-                barcode=barcode,
-                operator=operator,
-                qc_operator=qc_operator
-            )
+            new_box = Box()
+            new_box.box_id = box_id
+            new_box.hardware_type_id = hardware_type.id
+            new_box.lot_number_id = lot_number.id
+            new_box.box_number = box_number
+            new_box.initial_quantity = initial_quantity
+            new_box.remaining_quantity = initial_quantity
+            new_box.barcode = barcode
+            new_box.operator = operator
+            new_box.qc_operator = qc_operator
             
             db.session.add(new_box)
             db.session.commit()
@@ -420,8 +420,8 @@ def log_pull():
                     errors.append("Barcode not found in inventory")
                 else:
                     # Determine if this is a pull or return
-                    is_return = quantity_pulled < 0
-                    actual_quantity = abs(quantity_pulled)
+                    is_return = int(quantity_pulled) < 0
+                    actual_quantity = abs(int(quantity_pulled))
                     
                     # Validate against available quantity for pulls only
                     if not is_return and actual_quantity > box.remaining_quantity:
@@ -453,13 +453,12 @@ def log_pull():
                 box.remaining_quantity -= actual_quantity
             
             # Create pull/return event log
-            pull_event = PullEvent(
-                box_id=box.id,
-                quantity_pulled=quantity_pulled,  # Keep original sign
-                qc_personnel=qc_personnel,
-                signature=signature,
-                timestamp=datetime.now(timezone.utc)
-            )
+            pull_event = PullEvent()
+            pull_event.box_id = box.id
+            pull_event.quantity = quantity_pulled  # Keep original sign
+            pull_event.mo = ""  # Not used in this function
+            pull_event.operator = qc_personnel
+            pull_event.qc_operator = signature
             
             db.session.add(pull_event)
             db.session.commit()
@@ -469,11 +468,11 @@ def log_pull():
             hardware_type = HardwareType.query.get(box.hardware_type_id)
             lot_number = LotNumber.query.get(box.lot_number_id)
             log_action(
-                action_type=action_type,
+                action_type="pull" if not is_return else "return",
                 user=qc_personnel,
                 box_id=box.box_id,
-                hardware_type=hardware_type.name if hardware_type else None,
-                lot_number=lot_number.name if lot_number else None,
+                hardware_type=box.hardware_type.name if box.hardware_type else None,
+                lot_number=box.lot_number.name if box.lot_number else None,
                 details={
                     'quantity': actual_quantity,
                     'remaining_quantity': box.remaining_quantity,
