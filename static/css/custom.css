@@ -254,6 +254,15 @@ body {
     height: 1rem;
 }
 
+/* Event type header colors */
+.bg-pull-event {
+    background-color: #8B4A47 !important; /* Light burgundy */
+}
+
+.bg-return-event {
+    background-color: #5A8A5A !important; /* Light green */
+}
+
 /* Custom alert styles */
 .alert {
     border-radius: 8px;
