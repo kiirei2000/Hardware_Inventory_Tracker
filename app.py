@@ -559,34 +559,35 @@ def log_event():
                 flash("Not enough quantity in box", "danger")
                 return redirect(url_for('log_event'))
 
-            # Use explicit transaction for atomicity
-            with db.session.begin():
-                box.remaining_quantity = new_qty
-                
-                # Create pull event record
-                pull_event = PullEvent()
-                pull_event.box_id = box.id
-                pull_event.quantity = change
-                pull_event.mo = mo
-                pull_event.operator = operator
-                pull_event.qc_operator = qc_operator
-                
-                db.session.add(pull_event)
-                
-                # Log admin action
-                log_action(
-                    action_type=event_type,
-                    user=operator,
-                    box_id=box.box_id,
-                    hardware_type=box.hardware_type.name,
-                    lot_number=box.lot_number.name,
-                    details={
-                        'quantity_changed': change,
-                        'new_remaining': new_qty,
-                        'mo': mo,
-                        'qc_operator': qc_operator
-                    }
-                )
+            # Update box quantity
+            box.remaining_quantity = new_qty
+            
+            # Create pull event record
+            pull_event = PullEvent()
+            pull_event.box_id = box.id
+            pull_event.quantity = change
+            pull_event.mo = mo
+            pull_event.operator = operator
+            pull_event.qc_operator = qc_operator
+            
+            db.session.add(pull_event)
+            
+            # Create action log record
+            action_log = ActionLog()
+            action_log.action_type = event_type
+            action_log.user = operator
+            action_log.box_id = box.box_id
+            action_log.hardware_type = box.hardware_type.name
+            action_log.lot_number = box.lot_number.name
+            action_log.details = json.dumps({
+                'quantity_changed': change,
+                'new_remaining': new_qty,
+                'mo': mo,
+                'qc_operator': qc_operator
+            })
+            
+            db.session.add(action_log)
+            db.session.commit()
             
             flash("Event logged successfully!", "success")
             return redirect(url_for('dashboard'))
