@@ -4,41 +4,41 @@
 {% block title %}Home - Hardware Inventory Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid vh-100 d-flex flex-column">
+<div class="container-fluid vh-100 d-flex flex-column justify-content-between p-0">
     <!-- Header Section -->
-    <div class="row flex-shrink-0 mb-5">
+    <div class="row flex-shrink-0 mb-0">
         <div class="col-12">
             <div class="text-center py-4">
-                <h1 class="display-3 mb-4 fw-bold">
+                <h1 class="display-4 mb-3 fw-bold">
                     <i class="fas fa-boxes text-primary me-3"></i>
                     Hardware Inventory Tracker
                 </h1>
-                <p class="lead text-muted fs-5 mb-0 px-3">
-                    Manage your hardware inventory with ease. Track boxes, log events, and monitor quantities.
+                <p class="lead text-muted fs-6 mb-0">
+                    Manage your hardware inventory with ease
                 </p>
             </div>
         </div>
     </div>
 
     <!-- Main Action Cards Section -->
-    <div class="row flex-grow-1 justify-content-center align-items-center g-4 px-3">
+    <div class="row flex-grow-1 justify-content-center align-items-center g-3 px-4">
         <!-- Add New Box Card -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-            <div class="card h-100 shadow-lg border-0 hover-lift">
-                <div class="card-body text-center p-4 d-flex flex-column">
-                    <div class="mb-4 flex-shrink-0">
-                        <i class="fas fa-plus-circle fa-4x text-success mb-3"></i>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+            <div class="card h-100 shadow border-0 hover-lift">
+                <div class="card-body text-center p-3 d-flex flex-column">
+                    <div class="mb-3 flex-shrink-0">
+                        <i class="fas fa-plus-circle fa-3x text-success mb-2"></i>
                     </div>
                     <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="mb-3">
-                            <h4 class="card-title fw-bold mb-3">Add New Box</h4>
-                            <p class="card-text text-muted fs-6 mb-0">
-                                Register a new hardware box in the inventory system with barcode tracking.
+                        <div class="mb-2">
+                            <h5 class="card-title fw-bold mb-2">Add New Box</h5>
+                            <p class="card-text text-muted small mb-0">
+                                Register new hardware with barcode tracking
                             </p>
                         </div>
                         <div class="mt-auto">
-                            <a href="{{ url_for('add_box') }}" class="btn btn-success btn-lg px-4 py-2 rounded-pill">
-                                <i class="fas fa-plus me-2"></i>Add Box
+                            <a href="{{ url_for('add_box') }}" class="btn btn-success btn-sm px-3 py-2 rounded-pill">
+                                <i class="fas fa-plus me-1"></i>Add Box
                             </a>
                         </div>
                     </div>
@@ -47,22 +47,22 @@
         </div>
 
         <!-- Log Event Card -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-            <div class="card h-100 shadow-lg border-0 hover-lift">
-                <div class="card-body text-center p-4 d-flex flex-column">
-                    <div class="mb-4 flex-shrink-0">
-                        <i class="fas fa-exchange-alt fa-4x text-warning mb-3"></i>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+            <div class="card h-100 shadow border-0 hover-lift">
+                <div class="card-body text-center p-3 d-flex flex-column">
+                    <div class="mb-3 flex-shrink-0">
+                        <i class="fas fa-exchange-alt fa-3x text-warning mb-2"></i>
                     </div>
                     <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="mb-3">
-                            <h4 class="card-title fw-bold mb-3">Log Event</h4>
-                            <p class="card-text text-muted fs-6 mb-0">
-                                Record when items are pulled from or returned to inventory boxes.
+                        <div class="mb-2">
+                            <h5 class="card-title fw-bold mb-2">Log Event</h5>
+                            <p class="card-text text-muted small mb-0">
+                                Record pull/return inventory events
                             </p>
                         </div>
                         <div class="mt-auto">
-                            <a href="{{ url_for('log_event') }}" class="btn btn-warning btn-lg px-4 py-2 rounded-pill">
-                                <i class="fas fa-exchange-alt me-2"></i>Log Event
+                            <a href="{{ url_for('log_event') }}" class="btn btn-warning btn-sm px-3 py-2 rounded-pill">
+                                <i class="fas fa-exchange-alt me-1"></i>Log Event
                             </a>
                         </div>
                     </div>
@@ -71,22 +71,22 @@
         </div>
 
         <!-- Inventory Dashboard Card -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-            <div class="card h-100 shadow-lg border-0 hover-lift">
-                <div class="card-body text-center p-4 d-flex flex-column">
-                    <div class="mb-4 flex-shrink-0">
-                        <i class="fas fa-chart-bar fa-4x text-info mb-3"></i>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+            <div class="card h-100 shadow border-0 hover-lift">
+                <div class="card-body text-center p-3 d-flex flex-column">
+                    <div class="mb-3 flex-shrink-0">
+                        <i class="fas fa-chart-bar fa-3x text-info mb-2"></i>
                     </div>
                     <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="mb-3">
-                            <h4 class="card-title fw-bold mb-3">Inventory Dashboard</h4>
-                            <p class="card-text text-muted fs-6 mb-0">
-                                View current inventory status, remaining quantities, and analytics.
+                        <div class="mb-2">
+                            <h5 class="card-title fw-bold mb-2">Dashboard</h5>
+                            <p class="card-text text-muted small mb-0">
+                                View inventory status and analytics
                             </p>
                         </div>
                         <div class="mt-auto">
-                            <a href="{{ url_for('dashboard') }}" class="btn btn-info btn-lg px-4 py-2 rounded-pill">
-                                <i class="fas fa-chart-bar me-2"></i>Dashboard
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-info btn-sm px-3 py-2 rounded-pill">
+                                <i class="fas fa-chart-bar me-1"></i>Dashboard
                             </a>
                         </div>
                     </div>
@@ -95,22 +95,22 @@
         </div>
 
         <!-- Export Data Card -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-            <div class="card h-100 shadow-lg border-0 hover-lift">
-                <div class="card-body text-center p-4 d-flex flex-column">
-                    <div class="mb-4 flex-shrink-0">
-                        <i class="fas fa-download fa-4x text-secondary mb-3"></i>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+            <div class="card h-100 shadow border-0 hover-lift">
+                <div class="card-body text-center p-3 d-flex flex-column">
+                    <div class="mb-3 flex-shrink-0">
+                        <i class="fas fa-download fa-3x text-secondary mb-2"></i>
                     </div>
                     <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="mb-3">
-                            <h4 class="card-title fw-bold mb-3">Export Data</h4>
-                            <p class="card-text text-muted fs-6 mb-0">
-                                Download current inventory data as Excel spreadsheet for reporting.
+                        <div class="mb-2">
+                            <h5 class="card-title fw-bold mb-2">Export Data</h5>
+                            <p class="card-text text-muted small mb-0">
+                                Download inventory as Excel report
                             </p>
                         </div>
                         <div class="mt-auto">
-                            <a href="{{ url_for('export_excel') }}" class="btn btn-secondary btn-lg px-4 py-2 rounded-pill">
-                                <i class="fas fa-download me-2"></i>Export
+                            <a href="{{ url_for('export_excel') }}" class="btn btn-secondary btn-sm px-3 py-2 rounded-pill">
+                                <i class="fas fa-download me-1"></i>Export
                             </a>
                         </div>
                     </div>
@@ -119,71 +119,61 @@
         </div>
     </div>
 
-    <!-- Footer Spacer -->
-    <div class="row flex-shrink-0 mt-5">
+    <!-- Footer -->
+    <div class="row flex-shrink-0 mt-0">
         <div class="col-12">
-            <div class="text-center py-3">
+            <div class="text-center py-2">
                 <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Select an action above to get started with inventory management
+                    <i class="fas fa-box me-1"></i>
+                    Hardware Inventory Tracker &copy; 2025
                 </small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Custom Styles for Enhanced UI -->
 <style>
 .hover-lift {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .hover-lift:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
 }
 
 .card {
-    min-height: 320px;
-    border-radius: 15px;
+    height: 200px;
+    border-radius: 12px;
 }
 
-.btn-lg {
+.btn-sm {
     font-weight: 600;
-    min-width: 140px;
+    min-width: 120px;
     transition: all 0.2s ease-in-out;
 }
 
-.btn-lg:hover {
+.btn-sm:hover {
     transform: scale(1.05);
 }
 
-/* Responsive adjustments */
-@media (max-width: 576px) {
-    .display-3 {
-        font-size: 2.5rem;
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
     }
-    
     .card {
-        min-height: 280px;
+        height: 180px;
     }
-    
-    .fa-4x {
-        font-size: 3rem !important;
+    .fa-3x {
+        font-size: 2.5rem !important;
     }
 }
 
 @media (min-width: 1400px) {
     .container-fluid {
-        max-width: 1320px;
+        max-width: 1200px;
         margin: 0 auto;
     }
 }
-
-/* Icon color consistency */
-.text-success { color: #198754 !important; }
-.text-warning { color: #ffc107 !important; }
-.text-info { color: #0dcaf0 !important; }
-.text-secondary { color: #6c757d !important; }
 </style>
 {% endblock %}
