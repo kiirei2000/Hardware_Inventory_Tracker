@@ -83,7 +83,7 @@ def generate_box_id(hardware_type_name, lot_number_name, box_number):
     return f"{type_clean}_{lot_clean}_{box_clean}"
 
 def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=None, details=None):
-    """Log an admin action"""
+    """Log an admin action with enhanced tracking"""
     try:
         action_log = ActionLog()
         action_log.action_type = action_type

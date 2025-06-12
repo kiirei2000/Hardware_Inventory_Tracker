@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Box Logs - {{ box.box_id }}{% endblock %}
+{% block title %}Event Logs - {{ box.box_id }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>
         <i class="fas fa-history me-2"></i>
-        Pull Event Logs
+        Event Logs
     </h2>
     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
         <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
@@ -121,7 +121,7 @@
             <div class="row text-center">
                 <div class="col-md-3">
                     <strong>Total Pulled:</strong>
-                    <span class="text-danger">{{ pull_events|sum(attribute='quantity_pulled') }}</span>
+                    <span class="text-danger">{{ pull_events|selectattr('quantity', 'lt', 0)|sum(attribute='quantity')|abs }}</span>
                 </div>
                 <div class="col-md-3">
                     <strong>Initial Quantity:</strong>
@@ -145,7 +145,7 @@
             <h5 class="text-muted">No pull events recorded</h5>
             <p class="text-muted">
                 This box hasn't had any items pulled yet.
-                <a href="{{ url_for('log_pull') }}">Log a pull event</a> to start tracking usage.
+                <a href="{{ url_for('log_event') }}">Log an event</a> to start tracking usage.
             </p>
         </div>
         {% endif %}
@@ -157,10 +157,10 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-body text-center">
-                <h6 class="card-title">Log New Pull Event</h6>
-                <p class="card-text">Record items being pulled from this box</p>
-                <a href="{{ url_for('log_pull') }}?barcode={{ box.barcode }}" class="btn btn-warning">
-                    <i class="fas fa-minus me-1"></i>Log Pull
+                <h6 class="card-title">Log Event</h6>
+                <p class="card-text">Record items being pulled or returned</p>
+                <a href="{{ url_for('log_event') }}?barcode={{ box.barcode }}" class="btn btn-warning">
+                    <i class="fas fa-exchange-alt me-1"></i>Log Event
                 </a>
             </div>
         </div>
