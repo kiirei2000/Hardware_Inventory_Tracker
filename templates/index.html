@@ -1,189 +1,88 @@
-
 {% extends "base.html" %}
 
 {% block title %}Home - Hardware Inventory Tracker{% endblock %}
 
 {% block content %}
 <div class="container-fluid vh-100 d-flex flex-column">
-    <!-- Header Section -->
-    <div class="row flex-shrink-0 mb-5">
+    <div class="row flex-grow-1">
         <div class="col-12">
-            <div class="text-center py-4">
-                <h1 class="display-3 mb-4 fw-bold">
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-3">
                     <i class="fas fa-boxes text-primary me-3"></i>
                     Hardware Inventory Tracker
                 </h1>
-                <p class="lead text-muted fs-5 mb-0 px-3">
+                <p class="lead text-muted">
                     Manage your hardware inventory with ease. Track boxes, log events, and monitor quantities.
                 </p>
             </div>
         </div>
     </div>
 
-    <!-- Main Action Cards Section -->
-    <div class="row flex-grow-1 justify-content-center align-items-center g-4 px-3">
-        <!-- Add New Box Card -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-            <div class="card h-100 shadow-lg border-0 hover-lift">
-                <div class="card-body text-center p-4 d-flex flex-column">
-                    <div class="mb-4 flex-shrink-0">
-                        <i class="fas fa-plus-circle fa-4x text-success mb-3"></i>
-                    </div>
-                    <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="mb-3">
-                            <h4 class="card-title fw-bold mb-3">Add New Box</h4>
-                            <p class="card-text text-muted fs-6 mb-0">
-                                Register a new hardware box in the inventory system with barcode tracking.
-                            </p>
-                        </div>
-                        <div class="mt-auto">
-                            <a href="{{ url_for('add_box') }}" class="btn btn-success btn-lg px-4 py-2 rounded-pill">
-                                <i class="fas fa-plus me-2"></i>Add Box
-                            </a>
-                        </div>
-                    </div>
+    <div class="row g-4 flex-grow-1 justify-content-center align-items-center">
+    <!-- Add New Box -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-plus-circle fa-3x text-success"></i>
                 </div>
-            </div>
-        </div>
-
-        <!-- Log Event Card -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-            <div class="card h-100 shadow-lg border-0 hover-lift">
-                <div class="card-body text-center p-4 d-flex flex-column">
-                    <div class="mb-4 flex-shrink-0">
-                        <i class="fas fa-exchange-alt fa-4x text-warning mb-3"></i>
-                    </div>
-                    <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="mb-3">
-                            <h4 class="card-title fw-bold mb-3">Log Event</h4>
-                            <p class="card-text text-muted fs-6 mb-0">
-                                Record when items are pulled from or returned to inventory boxes.
-                            </p>
-                        </div>
-                        <div class="mt-auto">
-                            <a href="{{ url_for('log_event') }}" class="btn btn-warning btn-lg px-4 py-2 rounded-pill">
-                                <i class="fas fa-exchange-alt me-2"></i>Log Event
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Inventory Dashboard Card -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-            <div class="card h-100 shadow-lg border-0 hover-lift">
-                <div class="card-body text-center p-4 d-flex flex-column">
-                    <div class="mb-4 flex-shrink-0">
-                        <i class="fas fa-chart-bar fa-4x text-info mb-3"></i>
-                    </div>
-                    <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="mb-3">
-                            <h4 class="card-title fw-bold mb-3">Inventory Dashboard</h4>
-                            <p class="card-text text-muted fs-6 mb-0">
-                                View current inventory status, remaining quantities, and analytics.
-                            </p>
-                        </div>
-                        <div class="mt-auto">
-                            <a href="{{ url_for('dashboard') }}" class="btn btn-info btn-lg px-4 py-2 rounded-pill">
-                                <i class="fas fa-chart-bar me-2"></i>Dashboard
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Data Card -->
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-            <div class="card h-100 shadow-lg border-0 hover-lift">
-                <div class="card-body text-center p-4 d-flex flex-column">
-                    <div class="mb-4 flex-shrink-0">
-                        <i class="fas fa-download fa-4x text-secondary mb-3"></i>
-                    </div>
-                    <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="mb-3">
-                            <h4 class="card-title fw-bold mb-3">Export Data</h4>
-                            <p class="card-text text-muted fs-6 mb-0">
-                                Download current inventory data as Excel spreadsheet for reporting.
-                            </p>
-                        </div>
-                        <div class="mt-auto">
-                            <a href="{{ url_for('export_excel') }}" class="btn btn-secondary btn-lg px-4 py-2 rounded-pill">
-                                <i class="fas fa-download me-2"></i>Export
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <h5 class="card-title">Add New Box</h5>
+                <p class="card-text">Register a new hardware box in the inventory system.</p>
+                <a href="{{ url_for('add_box') }}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>Add Box
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Footer Spacer -->
-    <div class="row flex-shrink-0 mt-5">
-        <div class="col-12">
-            <div class="text-center py-3">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Select an action above to get started with inventory management
-                </small>
+    <!-- Log Pull Event -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-minus-circle fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title">Log Event</h5>
+                <p class="card-text">Record when items are pulled from or returned to inventory boxes.</p>
+                <a href="{{ url_for('log_event') }}" class="btn btn-warning">
+                    <i class="fas fa-exchange-alt me-2"></i>Log Event
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Dashboard -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-bar fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title">Inventory Dashboard</h5>
+                <p class="card-text">View current inventory status and remaining quantities.</p>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-info">
+                    <i class="fas fa-chart-bar me-2"></i>Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Data -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-download fa-3x text-secondary"></i>
+                </div>
+                <h5 class="card-title">Export Data</h5>
+                <p class="card-text">Download current inventory data as Excel spreadsheet.</p>
+                <a href="{{ url_for('export_excel') }}" class="btn btn-secondary">
+                    <i class="fas fa-download me-2"></i>Export
+                </a>
             </div>
         </div>
     </div>
 </div>
+</div>
 
-<!-- Custom Styles for Enhanced UI -->
-<style>
-.hover-lift {
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.hover-lift:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
-}
-
-.card {
-    min-height: 320px;
-    border-radius: 15px;
-}
-
-.btn-lg {
-    font-weight: 600;
-    min-width: 140px;
-    transition: all 0.2s ease-in-out;
-}
-
-.btn-lg:hover {
-    transform: scale(1.05);
-}
-
-/* Responsive adjustments */
-@media (max-width: 576px) {
-    .display-3 {
-        font-size: 2.5rem;
-    }
-    
-    .card {
-        min-height: 280px;
-    }
-    
-    .fa-4x {
-        font-size: 3rem !important;
-    }
-}
-
-@media (min-width: 1400px) {
-    .container-fluid {
-        max-width: 1320px;
-        margin: 0 auto;
-    }
-}
-
-/* Icon color consistency */
-.text-success { color: #198754 !important; }
-.text-warning { color: #ffc107 !important; }
-.text-info { color: #0dcaf0 !important; }
-.text-secondary { color: #6c757d !important; }
-</style>
 {% endblock %}
