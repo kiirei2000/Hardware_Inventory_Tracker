@@ -87,6 +87,8 @@
             flex: 1;
             overflow-y: auto;
             padding: 1.5rem;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
         }
         
         /* Footer fixed at bottom */
@@ -97,92 +99,83 @@
 </head>
 <body>
     <div id="main-container">
-        <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="{{ url_for('index') }}">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
                     <i class="fas fa-boxes me-2"></i>
-                    Inventory Tracker
-                </a>
-                
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('index') }}">
-                                <i class="fas fa-home me-1"></i>Home
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('add_box') }}">
-                                <i class="fas fa-plus me-1"></i>Add Box
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('log_event') }}">
-                                <i class="fas fa-exchange-alt me-1"></i>Log Event
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard') }}">
-                                <i class="fas fa-chart-bar me-1"></i>Dashboard
-                            </a>
-                        </li>
-                    </ul>
-                    
-                    <!-- Admin Status -->
-                    <ul class="navbar-nav ms-auto">
-                        {% if session.get('is_admin') %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" 
-                               data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-shield-alt me-1"></i>Admin: {{ session.get('admin_username') }}
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                                <li><a class="dropdown-item" href="{{ url_for('manage_boxes') }}">
-                                    <i class="fas fa-cogs me-1"></i>Manage Boxes
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('action_log') }}">
-                                    <i class="fas fa-history me-1"></i>Action Log
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin_logout') }}">
-                                    <i class="fas fa-sign-out-alt me-1"></i>Logout
-                                </a></li>
-                            </ul>
-                        </li>
-                        {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin_login') }}">
-                                <i class="fas fa-sign-in-alt me-1"></i>Admin Login
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
+                    <span class="brand-text">Inventory Tracker</span>
                 </div>
             </div>
-        </nav>
-
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="container-fluid px-4 pt-3">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }} alert-dismissible fade show" role="alert">
-                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
+            
+            <div class="sidebar-menu">
+                <a class="sidebar-item" href="{{ url_for('index') }}">
+                    <i class="fas fa-home"></i>
+                    <span class="item-text">Home</span>
+                </a>
+                <a class="sidebar-item" href="{{ url_for('add_box') }}">
+                    <i class="fas fa-plus"></i>
+                    <span class="item-text">Add Box</span>
+                </a>
+                <a class="sidebar-item" href="{{ url_for('log_event') }}">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span class="item-text">Log Event</span>
+                </a>
+                <a class="sidebar-item" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span class="item-text">Dashboard</span>
+                </a>
+            </div>
+            
+            <div class="sidebar-admin">
+                {% if session.get('is_admin') %}
+                <div class="admin-dropdown">
+                    <a class="sidebar-item admin-toggle" href="#" id="adminToggle">
+                        <i class="fas fa-shield-alt"></i>
+                        <span class="item-text">Admin</span>
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </a>
+                    <div class="admin-menu" id="adminMenu">
+                        <a class="admin-menu-item" href="{{ url_for('manage_boxes') }}">
+                            <i class="fas fa-cogs"></i>
+                            <span>Manage Boxes</span>
+                        </a>
+                        <a class="admin-menu-item" href="{{ url_for('action_log') }}">
+                            <i class="fas fa-history"></i>
+                            <span>Action Log</span>
+                        </a>
+                        <a class="admin-menu-item" href="{{ url_for('admin_logout') }}">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
                 </div>
-            {% endif %}
-        {% endwith %}
+                {% else %}
+                <a class="sidebar-item" href="{{ url_for('admin_login') }}">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span class="item-text">Admin Login</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="container-fluid px-4 pt-3">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
             <div class="container-fluid">
                 {% block content %}{% endblock %}
             </div>
@@ -204,6 +197,22 @@
     
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/barcode.js') }}"></script>
+    
+    <!-- Sidebar JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const adminToggle = document.getElementById('adminToggle');
+            const adminMenu = document.getElementById('adminMenu');
+            
+            if (adminToggle && adminMenu) {
+                adminToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    adminToggle.classList.toggle('active');
+                    adminMenu.classList.toggle('show');
+                });
+            }
+        });
+    </script>
     
     {% block scripts %}{% endblock %}
 </body>

@@ -3,110 +3,118 @@
 {% block title %}Event History - {{ box.box_id }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
   <h2><i class="fas fa-history me-2"></i>Event History</h2>
   <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">
     <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
   </a>
 </div>
 
-<!-- Box Information -->
-<div class="card mb-4">
-  <div class="card-header bg-info text-white">
-    <h5 class="mb-0"><i class="fas fa-box me-2"></i>Box Information</h5>
-  </div>
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-6">
-        <dl class="row">
-          <dt class="col-sm-4">Box ID:</dt>
-          <dd class="col-sm-8"><strong>{{ box.box_id }}</strong></dd>
-          <dt class="col-sm-4">Hardware Type:</dt>
-          <dd class="col-sm-8">
-            <span class="badge bg-primary">{{ hardware_type.name }}</span>
-          </dd>
-        </dl>
-      </div>
-      <div class="col-md-6">
-        <dl class="row">
-          <dt class="col-sm-4">Box Number:</dt>
-          <dd class="col-sm-8">{{ box.box_number }}</dd>
-          <dt class="col-sm-4">Initial Quantity:</dt>
-          <dd class="col-sm-8">{{ box.initial_quantity }}</dd>
-          <dt class="col-sm-4">Available Quantity:</dt>
-          <dd class="col-sm-8">
-            <strong class="{{ 'text-danger' if box.remaining_quantity == 0 else 'text-warning' if box.remaining_quantity < 10 else 'text-success' }}">
-              {{ box.remaining_quantity }}
-            </strong>
-          </dd>
-        </dl>
+<div class="printable">
+  <!-- Box Information -->
+  <div class="card mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0"><i class="fas fa-box me-2"></i>Box Information - {{ box.box_id }}</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <dl class="row">
+            <dt class="col-sm-4">Box ID:</dt>
+            <dd class="col-sm-8"><strong>{{ box.box_id }}</strong></dd>
+            <dt class="col-sm-4">Hardware Type:</dt>
+            <dd class="col-sm-8">
+              <span class="badge bg-primary">{{ hardware_type.name }}</span>
+            </dd>
+            <dt class="col-sm-4">Lot Number:</dt>
+            <dd class="col-sm-8">
+              <span class="badge bg-secondary">{{ lot_number.name }}</span>
+            </dd>
+          </dl>
+        </div>
+        <div class="col-md-6">
+          <dl class="row">
+            <dt class="col-sm-4">Box Number:</dt>
+            <dd class="col-sm-8">{{ box.box_number }}</dd>
+            <dt class="col-sm-4">Initial Quantity:</dt>
+            <dd class="col-sm-8">{{ box.initial_quantity }}</dd>
+            <dt class="col-sm-4">Available Quantity:</dt>
+            <dd class="col-sm-8">
+              <strong class="{{ 'text-danger' if box.remaining_quantity == 0 else 'text-warning' if box.remaining_quantity < 10 else 'text-success' }}">
+                {{ box.remaining_quantity }}
+              </strong>
+            </dd>
+          </dl>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Event History Table -->
-<div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">
-      <i class="fas fa-list me-2"></i>
-      Event History ({{ pull_events|length }} events)
-    </h5>
-  </div>
-  <div class="card-body p-0">
-    {% if pull_events %}
-      <div class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead class="table-dark">
-            <tr>
-              <th>Date & Time</th>
-              <th>Event Type</th>
-              <th>Quantity</th>
-              <th>MO</th>
-              <th>Operator</th>
-              <th>QC Personnel</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for event in pull_events %}
-            <tr>
-              <td>{{ event.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-              <td>
-                {% if event.quantity < 0 %}
-                  <span class="badge bg-warning text-dark">
-                    <i class="fas fa-minus me-1"></i>Pull
-                  </span>
-                {% else %}
-                  <span class="badge bg-success">
-                    <i class="fas fa-plus me-1"></i>Return
-                  </span>
-                {% endif %}
-              </td>
-              <td>
-                {% if event.quantity < 0 %}
-                  <span class="text-warning">{{ event.quantity }}</span>
-                {% else %}
-                  <span class="text-success">+{{ event.quantity }}</span>
-                {% endif %}
-              </td>
-              <td>{{ event.mo or '-' }}</td>
-              <td>{{ event.operator or '-' }}</td>
-              <td>{{ event.qc_personnel or '-' }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="text-center py-5">
-        <i class="fas fa-history fa-3x text-muted mb-3"></i>
-        <h5 class="text-muted">No events recorded</h5>
-        <p class="text-muted">
-          This box hasn't had any pulls or returns yet.
-          <a href="{{ url_for('log_event') }}">Log an event</a> to start.
-        </p>
-      </div>
-    {% endif %}
+  <!-- Event History Table -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">
+        <i class="fas fa-list me-2"></i>
+        Event History ({{ pull_events|length }} events)
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      {% if pull_events %}
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th>Date & Time</th>
+                <th>Event Type</th>
+                <th>Quantity</th>
+                <th>MO</th>
+                <th>Operator</th>
+                <th>QC Personnel</th>
+                <th>Signature</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for event in pull_events %}
+              <tr>
+                <td>{{ event.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                  {% if event.quantity < 0 %}
+                    <span class="badge bg-warning text-dark">
+                      <i class="fas fa-minus me-1"></i>Pull
+                    </span>
+                  {% else %}
+                    <span class="badge bg-success">
+                      <i class="fas fa-plus me-1"></i>Return
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if event.quantity < 0 %}
+                    <span class="text-warning">{{ event.quantity }}</span>
+                  {% else %}
+                    <span class="text-success">+{{ event.quantity }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ event.mo or '-' }}</td>
+                <td>{{ event.operator or '-' }}</td>
+                <td>{{ event.qc_personnel or '-' }}</td>
+                <td>{{ event.signature or '-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-history fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No events recorded</h5>
+          <p class="text-muted">
+            This box hasn't had any pulls or returns yet.
+            <a href="{{ url_for('log_event') }}">Log an event</a> to start.
+          </p>
+        </div>
+      {% endif %}
+    </div>
   </div>
 </div>
 
@@ -140,11 +148,63 @@
 {% block scripts %}
 <style>
 @media print {
-  /* hide everything except cards & the table */
+  /* 1) Landscape orientation */
+  @page { 
+    size: A4 landscape; 
+    margin: 1cm; 
+  }
+
+  /* 2) Hide everything except .printable */
   body * { visibility: hidden; }
-  .card, table, .card * , table * { visibility: visible; }
+  .printable, .printable * { visibility: visible; }
   .no-print { display: none !important; }
-  .card { page-break-inside: avoid; margin-bottom: 1rem; }
+
+  /* 3) Un-wrap overflow containers */
+  .table-responsive { overflow: visible !important; }
+
+  /* 4) Full-width, paged table */
+  table {
+    width: 100% !important;
+    table-layout: auto;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+  
+  thead { 
+    display: table-header-group; 
+  }
+  
+  tr { 
+    page-break-inside: avoid; 
+    page-break-after: auto; 
+  }
+  
+  th, td {
+    word-wrap: break-word;
+    padding: 0.3rem;
+    font-size: 12pt;
+  }
+
+  /* 5) Card improvements for print */
+  .card { 
+    page-break-inside: avoid; 
+    margin-bottom: 1rem;
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+  }
+  
+  .card-header {
+    background-color: #f8f9fa !important;
+    color: #000 !important;
+    border-bottom: 1px solid #000 !important;
+  }
+  
+  /* 6) Badge improvements for print */
+  .badge {
+    color: #000 !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #000 !important;
+  }
 }
 </style>
 {% endblock %}

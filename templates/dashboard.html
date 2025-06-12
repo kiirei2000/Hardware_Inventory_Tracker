@@ -3,7 +3,7 @@
 {% block title %}Inventory Dashboard - Hardware Inventory{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
     <h2>
         <i class="fas fa-chart-bar me-2"></i>
         Inventory Dashboard
@@ -18,6 +18,8 @@
         </button>
     </div>
 </div>
+
+<div class="printable">
 
 <!-- Filters -->
 <div class="card mb-4">
@@ -59,7 +61,7 @@
                 </div>
             </div>
         </form>
-        
+
         {% if type_filter or lot_filter %}
         <div class="mt-3">
             <small class="text-muted">
@@ -152,11 +154,13 @@
                     {% for type_code, type_lot_groups in grouped_data.items() %}
                         {% for type_lot_key, group_data in type_lot_groups.items() %}
                             <!-- Type-Lot Group Header Row -->
-                            <tr class="table-info">
-                                <td colspan="9">
-                                    <strong><i class="fas fa-layer-group me-2"></i>{{ group_data.type_name }} - Lot: {{ group_data.lot_name }}</strong>
-                                    <span class="badge bg-dark ms-2">{{ group_data.box_count }} boxes</span>
-                                    <span class="badge bg-secondary ms-1">{{ group_data.total_remaining }}/{{ group_data.total_initial }} total qty</span>
+                            <tr class="table-secondary">
+                                <td colspan="8">
+                                    <strong><i class="fas fa-folder me-2"></i>{{ group_data.type_name }} - Lot: {{ group_data.lot_name }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-dark text-white me-1">Boxes: {{ group_data.box_count }}</span>
+                                    <span class="badge bg-secondary text-white">Total quantity: {{ group_data.total_remaining }}</span>
                                 </td>
                             </tr>
                             {% for box_data in group_data.boxes %}
@@ -216,30 +220,75 @@
     </div>
 </div>
 
-
+</div> <!-- End printable div -->
 {% endblock %}
 
 {% block scripts %}
 <style>
 @media print {
-    .btn-group, .card-header, nav, footer, .no-print {
-        display: none !important;
-    }
-    
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    .table {
-        font-size: 12px;
-    }
-    
-    .badge {
-        border: 1px solid #000;
-        color: #000 !important;
-        background-color: #fff !important;
-    }
+  /* 1) Landscape orientation */
+  @page { 
+    size: A4 landscape; 
+    margin: 1cm; 
+  }
+
+  /* 2) Hide everything except .printable */
+  body * { visibility: hidden; }
+  .printable, .printable * { visibility: visible; }
+  .no-print { display: none !important; }
+
+  /* 3) Un-wrap overflow containers */
+  .table-responsive { overflow: visible !important; }
+
+  /* 4) Full-width, paged table */
+  table {
+    width: 100% !important;
+    table-layout: auto;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+  
+  thead { 
+    display: table-header-group; 
+  }
+  
+  tr { 
+    page-break-inside: avoid; 
+    page-break-after: auto; 
+  }
+  
+  th, td {
+    word-wrap: break-word;
+    padding: 0.3rem;
+    font-size: 11pt;
+  }
+
+  /* 5) Card improvements for print */
+  .card { 
+    page-break-inside: avoid; 
+    margin-bottom: 1rem;
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+  }
+  
+  .card-header {
+    background-color: #f8f9fa !important;
+    color: #000 !important;
+    border-bottom: 1px solid #000 !important;
+  }
+  
+  /* 6) Badge improvements for print */
+  .badge {
+    color: #000 !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #000 !important;
+  }
+
+  /* 7) Statistics cards in landscape */
+  .row .col-md-3 {
+    width: 25% !important;
+    float: left;
+  }
 }
 </style>
 {% endblock %}

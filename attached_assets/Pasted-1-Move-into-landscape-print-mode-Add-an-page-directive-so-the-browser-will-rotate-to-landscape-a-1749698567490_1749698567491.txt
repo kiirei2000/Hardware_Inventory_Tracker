@@ -1,0 +1,133 @@
+1) Move into “landscape” print mode
+Add an @page directive so the browser will rotate to landscape and give you more horizontal real estate:
+
+css
+Copier
+@media print {
+  @page {
+    size: A4 landscape;     /* or “letter landscape” */
+    margin: 1cm;            /* tighten margins if you need more room */
+  }
+}
+2) “Un‐wrap” your overflow container
+If you’ve wrapped your <table> in a horizontally scrolling <div>, override it on print so it just spills out naturally:
+
+css
+Copier
+@media print {
+  .table-responsive,      /* Bootstrap’s scroll wrapper */
+  .scroll-wrapper {       /* (or whatever class you used) */
+    overflow: visible !important;
+  }
+}
+3) Force the table to fill the width
+Make your table stretch, break cells nicely, and page‐break as needed:
+
+css
+Copier
+@media print {
+  table {
+    width: 100% !important;
+    table-layout: auto;          /* allow columns to size to content */
+    border-collapse: collapse;
+    page-break-inside: auto;     /* let rows flow onto next page */
+  }
+  thead {
+    display: table-header-group; /* repeat headers on each page */
+  }
+  tr {
+    page-break-inside: avoid;    /* don’t cut a row in half */
+    page-break-after: auto;
+  }
+  th, td {
+    word-wrap: break-word;
+    padding: 0.3rem;             /* tighten up for print */
+    font-size: 12pt;
+  }
+}
+4) Scope print visibility only to your report area
+Instead of body * { visibility: hidden; }, give your printable section a class (e.g. printable) and then reveal just that. In your template wrap:
+
+html
+Copier
+<div class="printable">
+  <!-- Box info card -->
+  <div class="card mb-4">…</div>
+
+  <!-- Event history table -->
+  <div class="table-responsive">
+    <table class="table">…</table>
+  </div>
+</div>
+And in your print CSS:
+
+css
+Copier
+@media print {
+  body * { visibility: hidden; }
+  .printable, .printable * {
+    visibility: visible;
+  }
+  .no-print { display: none !important; }
+}
+Putting it into your box_logs.html
+html
+Copier
+<style>
+  @media print {
+    /* 1) Landscape */
+    @page { size: A4 landscape; margin: 1cm; }
+
+    /* 2) Hide everything except .printable */
+    body * { visibility: hidden; }
+    .printable, .printable * { visibility: visible; }
+    .no-print { display: none !important; }
+
+    /* 3) Un-wrap overflow */
+    .table-responsive { overflow: visible !important; }
+
+    /* 4) Full-width, paged table */
+    table {
+      width: 100% !important;
+      table-layout: auto;
+      border-collapse: collapse;
+      page-break-inside: auto;
+    }
+    thead { display: table-header-group; }
+    tr    { page-break-inside: avoid; page-break-after: auto; }
+    th, td {
+      word-wrap: break-word;
+      padding: .3rem;
+      font-size: 12pt;
+    }
+  }
+</style>
+
+<div class="printable">
+  <div class="card mb-4">
+    <!-- box info fields… -->
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered">
+      <!-- your event history rows… -->
+    </table>
+  </div>
+</div>
+
+<div class="no-print text-center mt-3">
+  <button onclick="window.print()" class="btn btn-secondary">
+    <i class="fas fa-print me-1"></i>Print Report
+  </button>
+</div>
+With those changes:
+
+The browser will switch to landscape on print.
+
+Your table will expand to the full page width.
+
+Headers repeat on each paper page.
+
+No scrollbars will appear—instead rows flow onto subsequent sheets automatically.
+
+All other UI (sidebar, buttons, etc.) stay hidden.
