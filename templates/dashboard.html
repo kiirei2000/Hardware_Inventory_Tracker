@@ -152,10 +152,10 @@
                     {% for type_code, type_lot_groups in grouped_data.items() %}
                         {% for type_lot_key, group_data in type_lot_groups.items() %}
                             <!-- Type-Lot Group Header Row -->
-                            <tr class="table-info">
+                            <tr class="table-secondary">
                                 <td colspan="9">
-                                    <strong><i class="fas fa-layer-group me-2"></i>{{ group_data.type_name }} - Lot: {{ group_data.lot_name }}</strong>
-                                    <span class="badge bg-dark ms-2">{{ group_data.box_count }} boxes</span>
+                                    <strong><i class="fas fa-folder me-2"></i>{{ group_data.type_name }} - Lot: {{ group_data.lot_name }}</strong>
+                                    <span class="badge bg-info ms-2">{{ group_data.box_count }} boxes</span>
                                     <span class="badge bg-secondary ms-1">{{ group_data.total_remaining }}/{{ group_data.total_initial }} total qty</span>
                                 </td>
                             </tr>
