@@ -4,19 +4,18 @@
 {% block title %}Log Event - Hardware Inventory{% endblock %}
 
 {% block content %}
-<!-- Dynamic Header Section -->
-<div class="card mb-2" id="event-header">
-    <div class="card-header bg-danger text-white text-center py-2">
-        <h4 class="text-white mb-0" id="event-title">
-            <i class="fas fa-minus-circle me-2 text-white"></i>
-            Log Pull Event
-        </h4>
-    </div>
-</div>
-
 <!-- Main Form Section -->
 <div class="row justify-content-center">
     <div class="col-lg-8 col-xl-6">
+        <!-- Dynamic Header Section -->
+        <div class="card mb-2" id="event-header">
+            <div class="card-header bg-danger text-white text-center py-2">
+                <h4 class="text-white mb-0" id="event-title">
+                    <i class="fas fa-minus-circle me-2 text-white"></i>
+                    Log Pull Event
+                </h4>
+            </div>
+        </div>
         <div class="card shadow-sm border-0">
             <div class="card-body p-3">
                 <form method="POST" action="{{ url_for('log_event') }}" id="logEventForm">
