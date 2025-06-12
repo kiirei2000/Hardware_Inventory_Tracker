@@ -1,0 +1,96 @@
+1 — Break the white-on-white
+Add a very-light neutral backdrop just for the login page so the white cards lift off the page.
+
+I’ll reuse the same #f3f5f7 cloud-gray we discussed earlier.
+
+css
+Copier
+Modifier
+/* static/css/custom.css  (or inline <style> if you prefer) */
+body.login-page {
+  background: #f3f5f7;      /* subtle contrast */
+}
+Then, in the template:
+
+jinja
+Copier
+Modifier
+{% extends "base.html" %}
+{% block body_class %}login-page{% endblock %}   {# base.html should output this var in <body> #}
+(If base.html doesn’t already allow a body class block, just add
+<body class="{% block body_class %}{% endblock %}"> once.)
+
+2 — Keep everything in one viewport
+Instead of giving the wrapper 100 vh (which can cause mobile viewport quirks), use min-height and Bootstrap’s flex utilities:
+
+css
+Copier
+Modifier
+.login-container {
+  min-height: 100vh;               /* enough to center, but allows shorter screens */
+}
+…and in your markup:
+
+html
+Copier
+Modifier
+<div class="d-flex align-items-center justify-content-center login-container">
+  <!-- single column stays centered, no scroll -->
+</div>
+Because the entire column is no taller than ~460 px, it will now fit all common laptop / phone heights without scrolling.
+
+3 — Restyle the “Admin Access Required” banner
+Goals: rounded corners, new color, one-line text.
+
+html
+Copier
+Modifier
+<!-- Banner -->
+<div class="card shadow mb-3 rounded-4 border-0">
+  <div class="card-body bg-primary text-white text-center py-3 rounded-4">
+    <h5 class="mb-0 text-truncate">
+      <i class="fas fa-shield-alt me-2"></i>Admin Access
+    </h5>
+  </div>
+</div>
+Color → bg-primary text-white (matches your brand blue).
+
+Rounded → rounded-4 on both the .card and its .card-body.
+
+Single line → smaller <h5> + text-truncate keeps it in one row and adds an ellipsis if someone shrinks the window below 320 px.
+
+4 — Minor polish & accessibility
+Item	Quick win
+Labels	Add for / id pairs (you already did ✓) and aria-labels on buttons if you remove label text later.
+Autofocus	Works, but consider disabling on mobile (can trigger keyboard pop-up).
+Demo creds	Wrap in a faint border or use alert-secondary so demo users spot it faster.
+
+Final condensed snippet (only the bits that change)
+jinja
+Copier
+Modifier
+{% extends "base.html" %}
+{% block title %}Admin Login - Hardware Inventory{% endblock %}
+{% block body_class %}login-page{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center login-container">
+  <div class="col-md-6 col-lg-4">
+
+    <!-- Banner -->
+    <div class="card shadow mb-3 rounded-4 border-0">
+      <div class="card-body bg-primary text-white text-center py-3 rounded-4">
+        <h5 class="mb-0 text-truncate">
+          <i class="fas fa-shield-alt me-2"></i>Admin Access
+        </h5>
+      </div>
+    </div>
+
+    <!-- Login Form (unchanged except maybe rounded-4 on card) -->
+    <div class="card shadow rounded-4">
+      ...
+    </div>
+
+  </div>
+</div>
+{% endblock %}
