@@ -456,9 +456,10 @@ def log_pull():
             pull_event = PullEvent()
             pull_event.box_id = box.id
             pull_event.quantity = quantity_pulled  # Keep original sign
+            pull_event.qc_personnel = qc_personnel  # Required field
+            pull_event.signature = signature        # Optional field
             pull_event.mo = ""  # Not used in this function
-            pull_event.operator = qc_personnel
-            pull_event.qc_operator = signature
+            pull_event.operator = ""  # Not used in this function
             
             db.session.add(pull_event)
             db.session.commit()
