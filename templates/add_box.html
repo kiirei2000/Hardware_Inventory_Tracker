@@ -1,158 +1,154 @@
+
 {% extends "base.html" %}
 
 {% block title %}Add New Box - Hardware Inventory{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0">
-                    <i class="fas fa-plus-circle me-2"></i>
-                    Add New Box to Inventory
-                </h4>
-            </div>
-            <div class="card-body">
-                <form method="POST" id="addBoxForm">
-                    <div class="row">
-                        <!-- Hardware Type -->
-                        <div class="col-md-6 mb-3">
-                            <label for="hardware_type" class="form-label">
-                                <i class="fas fa-cogs me-1"></i>Hardware Type
-                            </label>
-                            <select class="form-select" id="hardware_type" name="hardware_type">
-                                <option value="">Select existing type...</option>
-                                {% for type in types %}
-                                <option value="{{ type.name }}" 
-                                    {{ 'selected' if form_data and form_data.get('hardware_type') == type.name }}>
-                                    {{ type.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <div class="mt-2">
-                                <input type="text" class="form-control" id="new_hardware_type" 
-                                       name="new_hardware_type" placeholder="Or enter new type..."
-                                       value="{{ form_data.get('new_hardware_type', '') if form_data }}">
-                                <small class="form-text text-muted">Leave existing selection empty to add new type</small>
-                            </div>
-                        </div>
-
-                        <!-- Lot Number -->
-                        <div class="col-md-6 mb-3">
-                            <label for="lot_number" class="form-label">
-                                <i class="fas fa-tag me-1"></i>Lot Number
-                            </label>
-                            <select class="form-select" id="lot_number" name="lot_number">
-                                <option value="">Select existing lot...</option>
-                                {% for lot in lots %}
-                                <option value="{{ lot.name }}"
-                                    {{ 'selected' if form_data and form_data.get('lot_number') == lot.name }}>
-                                    {{ lot.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <div class="mt-2">
-                                <input type="text" class="form-control" id="new_lot_number" 
-                                       name="new_lot_number" placeholder="Or enter new lot..."
-                                       value="{{ form_data.get('new_lot_number', '') if form_data }}">
-                                <small class="form-text text-muted">Leave existing selection empty to add new lot</small>
-                            </div>
-                        </div>
-
-                        <!-- Box Number -->
-                        <div class="col-md-6 mb-3">
-                            <label for="box_number" class="form-label">
-                                <i class="fas fa-box me-1"></i>Box Number
-                            </label>
-                            <input type="text" class="form-control" id="box_number" name="box_number" 
-                                   placeholder="e.g., 001, A1, etc."
-                                   value="{{ form_data.get('box_number', '') if form_data }}" required>
-                        </div>
-
-                        <!-- Initial Quantity -->
-                        <div class="col-md-6 mb-3">
-                            <label for="initial_quantity" class="form-label">
-                                <i class="fas fa-hashtag me-1"></i>Initial Quantity
-                            </label>
-                            <input type="number" class="form-control" id="initial_quantity" name="initial_quantity" 
-                                   min="1" placeholder="Enter quantity"
-                                   value="{{ form_data.get('initial_quantity', '') if form_data }}" required>
-                        </div>
-
-                        <!-- Barcode -->
-                        <div class="col-12 mb-3">
-                            <label for="barcode" class="form-label">
-                                <i class="fas fa-barcode me-1"></i>Barcode
-                            </label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="barcode" name="barcode" 
-                                       placeholder="Scan or enter barcode"
-                                       value="{{ form_data.get('barcode', '') if form_data }}" required>
-                                <button class="btn btn-outline-secondary" type="button" id="scanBarcodeBtn">
-                                    <i class="fas fa-camera me-1"></i>Scan
-                                </button>
-                            </div>
-                            <small class="form-text text-muted">Barcode must be unique across all boxes</small>
-                        </div>
-
-                        <!-- Operator -->
-                        <div class="col-md-6 mb-3">
-                            <label for="operator" class="form-label">
-                                <i class="fas fa-user me-1"></i>Operator
-                            </label>
-                            <input type="text" name="operator" id="operator" class="form-control" 
-                                   placeholder="Enter operator name" 
-                                   value="{{ form_data.get('operator', '') if form_data }}" required>
-                        </div>
-
-                        <!-- QC Operator -->
-                        <div class="col-md-6 mb-3">
-                            <label for="qc_operator" class="form-label">
-                                <i class="fas fa-user-check me-1"></i>QC Operator
-                            </label>
-                            <input type="text" name="qc_operator" id="qc_operator" class="form-control" 
-                                   placeholder="Enter QC operator name" 
-                                   value="{{ form_data.get('qc_operator', '') if form_data }}" required>
-                            <small class="form-text text-muted">QC Operator must be different from the Operator</small>
-                        </div>
-                    </div>
-
-                    <!-- Preview Box ID -->
-                    <div class="alert alert-info" id="boxIdPreview" style="display: none;">
-                        <strong><i class="fas fa-info-circle me-1"></i>Generated Box ID:</strong>
-                        <span id="previewText"></span>
-                    </div>
-
-                    <!-- Submit Buttons -->
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times me-1"></i>Cancel
-                        </a>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-plus me-1"></i>Add Box
-                        </button>
-                    </div>
-                </form>
+<div class="container-fluid vh-100 d-flex flex-column justify-content-between p-0">
+    <!-- Header Section -->
+    <div class="row flex-shrink-0">
+        <div class="col-12">
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle me-2 text-white"></i>
+                        Add New Box to Inventory
+                    </h4>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Barcode Scanner Container -->
-<div id="barcodeScannerContainer" style="display: none;">
-    <div class="modal fade" id="barcodeScannerModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Scan Barcode</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Main Form Section -->
+    <div class="row flex-grow-1 justify-content-center align-items-center">
+        <div class="col-lg-10">
+            <div class="card shadow border-0">
+                <div class="card-body p-4">
+                    <form method="POST" id="addBoxForm">
+                        <div class="row g-3">
+                            <!-- Hardware Type -->
+                            <div class="col-md-6">
+                                <label for="hardware_type" class="form-label">
+                                    <i class="fas fa-cogs me-1"></i>Hardware Type
+                                </label>
+                                <select class="form-select" id="hardware_type" name="hardware_type">
+                                    <option value="">Select existing type...</option>
+                                    {% for type in types %}
+                                    <option value="{{ type.name }}" 
+                                        {{ 'selected' if form_data and form_data.get('hardware_type') == type.name }}>
+                                        {{ type.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" class="form-control mt-2" id="new_hardware_type" 
+                                       name="new_hardware_type" placeholder="Or enter new type..."
+                                       value="{{ form_data.get('new_hardware_type', '') if form_data }}">
+                            </div>
+
+                            <!-- Lot Number -->
+                            <div class="col-md-6">
+                                <label for="lot_number" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>Lot Number
+                                </label>
+                                <select class="form-select" id="lot_number" name="lot_number">
+                                    <option value="">Select existing lot...</option>
+                                    {% for lot in lots %}
+                                    <option value="{{ lot.name }}"
+                                        {{ 'selected' if form_data and form_data.get('lot_number') == lot.name }}>
+                                        {{ lot.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" class="form-control mt-2" id="new_lot_number" 
+                                       name="new_lot_number" placeholder="Or enter new lot..."
+                                       value="{{ form_data.get('new_lot_number', '') if form_data }}">
+                            </div>
+
+                            <!-- Box Number -->
+                            <div class="col-md-6">
+                                <label for="box_number" class="form-label">
+                                    <i class="fas fa-box me-1"></i>Box Number
+                                </label>
+                                <input type="text" class="form-control" id="box_number" name="box_number" 
+                                       placeholder="e.g., 001, A1, etc."
+                                       value="{{ form_data.get('box_number', '') if form_data }}" required>
+                            </div>
+
+                            <!-- Initial Quantity -->
+                            <div class="col-md-6">
+                                <label for="initial_quantity" class="form-label">
+                                    <i class="fas fa-hashtag me-1"></i>Initial Quantity
+                                </label>
+                                <input type="number" class="form-control" id="initial_quantity" name="initial_quantity" 
+                                       min="1" placeholder="Enter quantity"
+                                       value="{{ form_data.get('initial_quantity', '') if form_data }}" required>
+                            </div>
+
+                            <!-- Barcode -->
+                            <div class="col-12">
+                                <label for="barcode" class="form-label">
+                                    <i class="fas fa-barcode me-1"></i>Barcode
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="barcode" name="barcode" 
+                                           placeholder="Scan or enter barcode"
+                                           value="{{ form_data.get('barcode', '') if form_data }}" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="scanBarcodeBtn">
+                                        <i class="fas fa-camera me-1"></i>Scan
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Operator -->
+                            <div class="col-md-6">
+                                <label for="operator" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Operator
+                                </label>
+                                <input type="text" name="operator" id="operator" class="form-control" 
+                                       placeholder="Enter operator name" 
+                                       value="{{ form_data.get('operator', '') if form_data }}" required>
+                            </div>
+
+                            <!-- QC Operator -->
+                            <div class="col-md-6">
+                                <label for="qc_operator" class="form-label">
+                                    <i class="fas fa-user-check me-1"></i>QC Operator
+                                </label>
+                                <input type="text" name="qc_operator" id="qc_operator" class="form-control" 
+                                       placeholder="Enter QC operator name" 
+                                       value="{{ form_data.get('qc_operator', '') if form_data }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Preview Box ID -->
+                        <div class="alert alert-info mt-3" id="boxIdPreview" style="display: none;">
+                            <strong><i class="fas fa-info-circle me-1"></i>Generated Box ID:</strong>
+                            <span id="previewText"></span>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-plus me-1"></i>Add Box
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-body">
-                    <div id="reader" style="width: 100%;"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="row flex-shrink-0">
+        <div class="col-12">
+            <div class="text-center py-2">
+                <small class="text-muted">
+                    <i class="fas fa-box me-1"></i>
+                    Hardware Inventory Tracker &copy; 2025
+                </small>
             </div>
         </div>
     </div>
@@ -162,7 +158,6 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Box ID preview functionality
     function updateBoxIdPreview() {
         const hardwareType = document.getElementById('hardware_type').value || 
                            document.getElementById('new_hardware_type').value;
@@ -171,7 +166,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const boxNumber = document.getElementById('box_number').value;
         
         if (hardwareType && lotNumber && boxNumber) {
-            // Sanitize components (basic client-side preview)
             const typeClean = hardwareType.replace(/[^\w\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
             const lotClean = lotNumber.replace(/[^\w\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
             const boxClean = boxNumber.replace(/[^\w\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
@@ -184,41 +178,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Add event listeners for preview
     ['hardware_type', 'new_hardware_type', 'lot_number', 'new_lot_number', 'box_number'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateBoxIdPreview);
         document.getElementById(id).addEventListener('change', updateBoxIdPreview);
     });
     
-    // Clear opposite field when typing in new field
     document.getElementById('new_hardware_type').addEventListener('input', function() {
-        if (this.value) {
-            document.getElementById('hardware_type').value = '';
-        }
+        if (this.value) document.getElementById('hardware_type').value = '';
     });
     
     document.getElementById('hardware_type').addEventListener('change', function() {
-        if (this.value) {
-            document.getElementById('new_hardware_type').value = '';
-        }
+        if (this.value) document.getElementById('new_hardware_type').value = '';
     });
     
     document.getElementById('new_lot_number').addEventListener('input', function() {
-        if (this.value) {
-            document.getElementById('lot_number').value = '';
-        }
+        if (this.value) document.getElementById('lot_number').value = '';
     });
     
     document.getElementById('lot_number').addEventListener('change', function() {
-        if (this.value) {
-            document.getElementById('new_lot_number').value = '';
-        }
+        if (this.value) document.getElementById('new_lot_number').value = '';
     });
     
-    // Initial preview update
     updateBoxIdPreview();
     
-    // Barcode scanner functionality (placeholder for now)
     document.getElementById('scanBarcodeBtn').addEventListener('click', function() {
         alert('Barcode scanning would be implemented here with camera access. For now, please enter the barcode manually.');
     });
