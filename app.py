@@ -377,7 +377,7 @@ def add_box():
             )
             
             flash(f"Box {box_id} added successfully!", 'success')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('add_box'))
             
         except Exception as e:
             db.session.rollback()
@@ -492,7 +492,7 @@ def log_pull():
                 flash(f"Return logged successfully! {actual_quantity} items returned. New quantity: {box.remaining_quantity}", 'success')
             else:
                 flash(f"Pull event logged successfully! Remaining quantity: {box.remaining_quantity}", 'success')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('log_pull'))
             
         except Exception as e:
             db.session.rollback()
@@ -604,7 +604,7 @@ def log_event():
             db.session.commit()
             
             flash("Event logged successfully!", "success")
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('log_event'))
             
         except Exception as e:
             db.session.rollback()
