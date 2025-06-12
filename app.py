@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 from datetime import datetime, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
 from flask_sqlalchemy import SQLAlchemy
@@ -84,15 +85,13 @@ def generate_box_id(hardware_type_name, lot_number_name, box_number):
 def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=None, details=None):
     """Log an admin action"""
     try:
-        import json
-        action_log = ActionLog(
-            action_type=action_type,
-            user=user,
-            box_id=box_id,
-            hardware_type=hardware_type,
-            lot_number=lot_number,
-            details=json.dumps(details) if details else None
-        )
+        action_log = ActionLog()
+        action_log.action_type = action_type
+        action_log.user = user
+        action_log.box_id = box_id
+        action_log.hardware_type = hardware_type
+        action_log.lot_number = lot_number
+        action_log.details = json.dumps(details) if details else None
         db.session.add(action_log)
         db.session.commit()
     except Exception as e:
@@ -270,7 +269,8 @@ def add_box():
                 if existing_type:
                     hardware_type = existing_type
                 else:
-                    hardware_type = HardwareType(name=new_hardware_type)
+                    hardware_type = HardwareType()
+                    hardware_type.name = new_hardware_type
                     db.session.add(hardware_type)
                     db.session.flush()  # Get the ID without committing
             elif hardware_type_name:
