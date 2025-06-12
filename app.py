@@ -564,14 +564,12 @@ def log_event():
                 box.remaining_quantity = new_qty
                 
                 # Create pull event record
-                pull_event = PullEvent(
-                    box_id=box.id,
-                    quantity=change,
-                    mo=mo,
-                    operator=operator,
-                    qc_operator=qc_operator,
-                    timestamp=datetime.now(timezone.utc)
-                )
+                pull_event = PullEvent()
+                pull_event.box_id = box.id
+                pull_event.quantity = change
+                pull_event.mo = mo
+                pull_event.operator = operator
+                pull_event.qc_operator = qc_operator
                 
                 db.session.add(pull_event)
                 
@@ -824,7 +822,8 @@ def edit_box(box_id):
                 if existing_type:
                     target_hardware_type = existing_type
                 else:
-                    target_hardware_type = HardwareType(name=new_hardware_type)
+                    target_hardware_type = HardwareType()
+                    target_hardware_type.name = new_hardware_type
                     db.session.add(target_hardware_type)
                     db.session.flush()
             elif hardware_type_name:
@@ -841,7 +840,8 @@ def edit_box(box_id):
                 if existing_lot:
                     target_lot_number = existing_lot
                 else:
-                    target_lot_number = LotNumber(name=new_lot_number)
+                    target_lot_number = LotNumber()
+                    target_lot_number.name = new_lot_number
                     db.session.add(target_lot_number)
                     db.session.flush()
             elif lot_number_name:
