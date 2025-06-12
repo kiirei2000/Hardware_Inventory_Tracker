@@ -127,16 +127,20 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if details.remaining_quantity %}
-                                <span class="text-info">{{ details.remaining_quantity }}</span>
+                            {% if details.previous_quantity is defined %}
+                                <span class="text-info">{{ details.previous_quantity }}</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if log.action_type == 'pull' %}
+                            {% if log.action_type == 'Pull' %}
                                 <span class="badge bg-warning text-dark">
                                     <i class="fas fa-minus me-1"></i>Pull
+                                </span>
+                            {% elif log.action_type == 'Return' %}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-plus me-1"></i>Return
                                 </span>
                             {% elif log.action_type == 'box_add' %}
                                 <span class="badge bg-success">
@@ -157,8 +161,10 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if details.quantity %}
-                                <span class="fw-bold">{{ details.quantity }}</span>
+                            {% if details.quantity_change %}
+                                <span class="fw-bold">{{ details.quantity_change }}</span>
+                            {% elif details.initial_quantity %}
+                                <span class="fw-bold">{{ details.initial_quantity }}</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
@@ -167,7 +173,9 @@
                             <strong>{{ log.user }}</strong>
                         </td>
                         <td>
-                            {% if details.qc_operator %}
+                            {% if details.qc_personnel %}
+                                <span class="text-primary">{{ details.qc_personnel }}</span>
+                            {% elif details.qc_operator %}
                                 <span class="text-primary">{{ details.qc_operator }}</span>
                             {% else %}
                                 <span class="text-muted">-</span>

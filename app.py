@@ -361,13 +361,18 @@ def add_box():
             # Log the box addition
             log_action(
                 action_type='box_add',
-                user='System',  # Could be admin if logged in
+                user=operator or 'System',
                 box_id=box_id,
                 hardware_type=hardware_type.name,
                 lot_number=lot_number.name,
                 details={
                     'initial_quantity': initial_quantity,
-                    'barcode': barcode
+                    'previous_quantity': 0,
+                    'quantity_change': initial_quantity,
+                    'new_quantity': initial_quantity,
+                    'barcode': barcode,
+                    'operator': operator,
+                    'qc_operator': qc_operator
                 }
             )
             
@@ -561,6 +566,9 @@ def log_event():
                 flash("Not enough quantity in box", "danger")
                 return redirect(url_for('log_event'))
 
+            # Store previous quantity for action log
+            previous_qty = box.remaining_quantity
+            
             # Update box quantity
             box.remaining_quantity = new_qty
             
@@ -575,22 +583,24 @@ def log_event():
             
             db.session.add(pull_event)
             
-            # Create action log record
-            action_log = ActionLog()
-            action_log.action_type = event_type
-            action_log.user = operator
-            action_log.box_id = box.box_id
-            action_log.hardware_type = box.hardware_type.name
-            action_log.lot_number = box.lot_number.name
-            action_log.details = json.dumps({
-                'quantity_changed': change,
-                'new_remaining': new_qty,
-                'mo': mo,
-                'qc_personnel': qc_personnel,
-                'signature': signature
-            })
+            # Create action log record with proper quantity tracking
+            log_action(
+                action_type=event_type,
+                user=operator,
+                box_id=box.box_id,
+                hardware_type=box.hardware_type.name,
+                lot_number=box.lot_number.name,
+                details={
+                    'previous_quantity': previous_qty,
+                    'quantity_change': abs(change),
+                    'new_quantity': new_qty,
+                    'mo': mo,
+                    'operator': operator,
+                    'qc_personnel': qc_personnel,
+                    'signature': signature
+                }
+            )
             
-            db.session.add(action_log)
             db.session.commit()
             
             flash("Event logged successfully!", "success")
@@ -641,8 +651,8 @@ def box_logs(box_id):
     hardware_type = HardwareType.query.get(box.hardware_type_id)
     lot_number = LotNumber.query.get(box.lot_number_id)
     
-    # Get pull events for this box
-    pull_events = PullEvent.query.filter_by(box_id=box_id)\
+    # Get pull events for this box (box_id in PullEvent refers to Box.id, not Box.box_id)
+    pull_events = PullEvent.query.filter_by(box_id=box.id)\
                                 .order_by(PullEvent.timestamp.desc()).all()
     
     return render_template('box_logs.html', 
