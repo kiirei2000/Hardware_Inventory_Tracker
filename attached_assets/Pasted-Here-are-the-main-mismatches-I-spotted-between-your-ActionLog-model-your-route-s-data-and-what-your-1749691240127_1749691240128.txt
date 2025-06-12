@@ -1,0 +1,89 @@
+Here are the main mismatches I spotted between your ActionLog model, your route’s data and what your template is trying to show:
+
+1. Template is referencing columns that don’t exist
+What you show in the table	What your model actually has
+Previous Quantity	No previous_quantity column
+Quantity Change	Not a dedicated column—only buried in details JSON
+Operator	Model has user, not operator
+QC Operator	No top-level qc_operator column—again only in details
+
+Fixes
+Previous Quantity:
+– Either add a real previous_quantity column to ActionLog, or include it in your details JSON and then parse it in Python (e.g. log.details = json.loads(event.details) before sending to the template).
+
+Quantity Change:
+– Pull it out of details too (e.g. details['quantity_changed']) or add a dedicated quantity_change column.
+
+Operator vs user:
+– In your template use {{ event.user }} instead of event.operator, or rename the model column to operator to match your UI.
+
+QC Operator:
+– Either add qc_operator = db.Column(db.String(...)) to ActionLog, or read it from details['qc_operator'] in the route and pass it as a separate variable.
+
+2. You’re storing everything in a free-form JSON blob but then trying to treat fields as first-class attributes
+E.g. your route does:
+
+python
+Copier
+action_log.details = json.dumps({
+    'quantity_changed': change,
+    'new_remaining': new_qty,
+    'mo': mo,
+    'qc_operator': qc_operator
+})
+…yet your template wants {{ event.mo }} or {{ event.qc_operator }}. Those live inside event.details, not on event itself.
+
+Fix
+Before rendering, unpack the JSON:
+
+python
+Copier
+for e in action_logs:
+    e.details = json.loads(e.details or '{}')
+Then in your template you can do {{ e.details.mo }} or better yet add a model property:
+
+python
+Copier
+@property
+def details_json(self):
+    return json.loads(self.details or '{}')
+3. Summary‐section “counts” probably won’t work as written
+You mentioned a summary bar of “Pull Events, Boxes Added, …” in the template—unless you’ve explicitly counted those in the route (e.g. counts = Counter([e.action_type for e in action_logs])) the template can’t magically know how many box_edit vs pull entries exist.
+
+Fix
+In your view, build a small dict:
+
+python
+Copier
+from collections import Counter
+counts = Counter(e.action_type for e in action_logs)
+return render_template('admin_action_log.html',
+                       action_logs=action_logs,
+                       counts=counts,
+                       …)
+Then in Jinja:
+
+jinja
+Copier
+Pull Events: {{ counts['pull'] }}
+Boxes Added: {{ counts['box_add'] }}
+…
+4. Minor data‐typing & filtering edge-cases
+user_filter with ilike(f'%{user_filter}%') is fine, but watch out if user_filter can contain % or _—you may need to escape.
+
+You currently limit(500) after sorting, which is OK, but if you ever add pagination you’ll want to .offset() as well.
+
+In summary
+Align your model vs UI: either add missing columns (qc_operator, previous_quantity, etc.), or unpack your JSON details into template-usable attributes.
+
+Unpack details in Python (route or model property) so you can directly reference event.details['mo'], ['quantity_changed'], ['qc_operator'], etc.
+
+Compute your summary counts server-side, and pass a counts dict to the template.
+
+Once you’ve synced up model ↔ view ↔ template, all of those action-log fields will render correctly.
+
+
+
+
+
+

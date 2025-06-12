@@ -92,13 +92,13 @@
                         <th>Previous Quantity</th>
                         <th>Action</th>
                         <th>Quantity</th>
+                        <th>Available Quantity</th>
                         <th>Operator</th>
                         <th>QC Operator</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in action_logs %}
-                    {% set details = log.details|from_json if log.details else {} %}
                     <tr>
                         <td>
                             <small class="text-muted">
@@ -127,8 +127,8 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if details.previous_quantity is defined %}
-                                <span class="text-info">{{ details.previous_quantity }}</span>
+                            {% if log.previous_quantity is not none %}
+                                <span class="text-info">{{ log.previous_quantity }}</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
@@ -139,7 +139,7 @@
                                     <i class="fas fa-minus me-1"></i>Pull
                                 </span>
                             {% elif log.action_type == 'Return' %}
-                                <span class="badge bg-primary">
+                                <span class="badge bg-success">
                                     <i class="fas fa-plus me-1"></i>Return
                                 </span>
                             {% elif log.action_type == 'box_add' %}
@@ -161,22 +161,35 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if details.quantity_change %}
-                                <span class="fw-bold">{{ details.quantity_change }}</span>
-                            {% elif details.initial_quantity %}
-                                <span class="fw-bold">{{ details.initial_quantity }}</span>
+                            {% if log.quantity_change is not none %}
+                                {% if log.quantity_change < 0 %}
+                                    <span class="text-warning fw-bold">{{ log.quantity_change }}</span>
+                                {% elif log.quantity_change > 0 %}
+                                    <span class="text-success fw-bold">+{{ log.quantity_change }}</span>
+                                {% else %}
+                                    <span class="fw-bold">0</span>
+                                {% endif %}
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td>
-                            <strong>{{ log.user }}</strong>
+                            {% if log.available_quantity is not none %}
+                                <span class="text-primary fw-bold">{{ log.available_quantity }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
                         </td>
                         <td>
-                            {% if details.qc_personnel %}
-                                <span class="text-primary">{{ details.qc_personnel }}</span>
-                            {% elif details.qc_operator %}
-                                <span class="text-primary">{{ details.qc_operator }}</span>
+                            {% if log.operator %}
+                                <strong>{{ log.operator }}</strong>
+                            {% else %}
+                                <strong>{{ log.user }}</strong>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.qc_operator %}
+                                <span class="text-primary">{{ log.qc_operator }}</span>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
