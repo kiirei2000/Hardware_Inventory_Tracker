@@ -256,7 +256,7 @@ body {
 
 /* Event type header colors */
 .bg-pull-event {
-    background-color: #8B4A47 !important; /* Light burgundy */
+    background-color: #ff6b6b !important; /* Light red */
 }
 
 .bg-return-event {
