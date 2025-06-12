@@ -509,7 +509,8 @@ def log_event():
             event_type = request.form.get('event_type', '').strip().lower()
             mo = request.form.get('mo', '').strip()
             operator = request.form.get('operator', '').strip()
-            qc_operator = request.form.get('qc_operator', '').strip()
+            qc_personnel = request.form.get('qc_personnel', '').strip()
+            signature = request.form.get('signature', '').strip()
             
             # Validation
             errors = []
@@ -533,11 +534,11 @@ def log_event():
             if not operator:
                 errors.append("Operator name is required")
             
-            if not qc_operator:
-                errors.append("QC Operator name is required")
+            if not qc_personnel:
+                errors.append("QC Personnel name is required")
             
-            if operator == qc_operator:
-                errors.append("Operator and QC Operator cannot be the same")
+            if operator == qc_personnel:
+                errors.append("Operator and QC Personnel cannot be the same")
             
             # Find the box
             box = None
@@ -566,9 +567,10 @@ def log_event():
             pull_event = PullEvent()
             pull_event.box_id = box.id
             pull_event.quantity = change
+            pull_event.qc_personnel = qc_personnel
+            pull_event.signature = signature
             pull_event.mo = mo
             pull_event.operator = operator
-            pull_event.qc_operator = qc_operator
             
             db.session.add(pull_event)
             
@@ -583,7 +585,8 @@ def log_event():
                 'quantity_changed': change,
                 'new_remaining': new_qty,
                 'mo': mo,
-                'qc_operator': qc_operator
+                'qc_personnel': qc_personnel,
+                'signature': signature
             })
             
             db.session.add(action_log)
