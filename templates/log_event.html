@@ -91,17 +91,26 @@
                                    placeholder="Enter operator name" required>
                         </div>
 
-                        <!-- QC Operator -->
-                        <div class="col-12 mb-3">
-                            <label for="qc_operator" class="form-label">
-                                <i class="fas fa-user-check me-1"></i>QC Operator
+                        <!-- QC Personnel -->
+                        <div class="col-md-6 mb-3">
+                            <label for="qc_personnel" class="form-label">
+                                <i class="fas fa-user-check me-1"></i>QC Personnel
                             </label>
-                            <input type="text" name="qc_operator" id="qc_operator" class="form-control" 
-                                   placeholder="Enter QC operator name" required>
+                            <input type="text" name="qc_personnel" id="qc_personnel" class="form-control" 
+                                   placeholder="Enter QC personnel name" required>
                             <small class="form-text text-muted">
                                 <i class="fas fa-info-circle me-1"></i>
-                                QC Operator must be different from the Operator.
+                                QC Personnel must be different from the Operator.
                             </small>
+                        </div>
+
+                        <!-- Signature (Optional) -->
+                        <div class="col-md-6 mb-3">
+                            <label for="signature" class="form-label">
+                                <i class="fas fa-signature me-1"></i>Signature (Optional)
+                            </label>
+                            <input type="text" name="signature" id="signature" class="form-control" 
+                                   placeholder="Enter signature">
                         </div>
                     </div>
 
@@ -219,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form validation
     document.getElementById('logEventForm').addEventListener('submit', function(e) {
         const operator = document.getElementById('operator').value.trim();
-        const qcOperator = document.getElementById('qc_operator').value.trim();
+        const qcPersonnel = document.getElementById('qc_personnel').value.trim();
         const quantity = parseInt(document.getElementById('quantity').value);
         const barcode = document.getElementById('barcode').value.trim();
         
@@ -240,9 +249,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Validate operators are different
-        if (operator === qcOperator) {
+        if (operator === qcPersonnel) {
             e.preventDefault();
-            errorMsg.textContent = 'Operator and QC Operator cannot be the same.';
+            errorMsg.textContent = 'Operator and QC Personnel cannot be the same.';
             return;
         }
     });
