@@ -1,0 +1,96 @@
+1. PullEvent model is missing columns
+Your database schema for pull_events requires qc_personnel (NOT NULL) and signature, but your SQLAlchemy model only declares:
+
+python
+Copier
+    mo = db.Column(db.String(50))
+    operator = db.Column(db.String(50))
+    qc_operator = db.Column(db.String(50))
+    timestamp = db.Column(db.DateTime, …)
+Fix: add these two columns to your model:
+
+python
+Copier
+    qc_personnel = db.Column(db.String(50), nullable=False)
+    signature    = db.Column(db.String(100), nullable=True)
+After that, run a migration (or drop&recreate) so the ORM and actual schema match.
+
+2. log_event never sets qc_personnel or signature
+In your improved log_event handler you collect:
+
+python
+Copier
+    qc_operator = request.form['qc_operator']
+    # but no request.form.get('qc_personnel') or signature
+Fix:
+
+Read them from the form:
+
+python
+Copier
+qc_personnel = request.form.get('qc_personnel', '').strip()
+signature    = request.form.get('signature', '').strip()
+Validate them alongside the other fields.
+
+Assign them to the new columns on pull_event before db.session.add():
+
+python
+Copier
+pull_event.qc_personnel = qc_personnel
+pull_event.signature    = signature
+3. log_pull mixes up the operator fields
+Your working log_pull endpoint does:
+
+python
+Copier
+pull_event.operator    = qc_personnel
+pull_event.qc_operator = signature
+# but never sets pull_event.qc_personnel or pull_event.signature
+That means your “QC Personnel” is being stored in the wrong column, and the required qc_personnel is still empty.
+
+Fix:
+
+If you intend operator to be the person who pulled, and qc_personnel the checker, then map accordingly:
+
+python
+Copier
+pull_event.operator     = request.form['operator']      # who did the pull
+pull_event.qc_personnel = request.form['qc_personnel']  # QC checker
+pull_event.signature    = request.form['signature']
+Drop the qc_operator column altogether if it isn’t needed, or rename it if it really meant “QC signature.”
+
+4. Column naming consistency
+You currently have three variations in your code/schema:
+
+Concept	Schema column	Model attribute	Form field
+Who pulled	—	operator	operator
+QC checker	qc_personnel	missing	qc_personnel
+Signature	signature	missing	signature
+QC operator?	—	qc_operator	qc_operator
+
+Decide on exactly two roles—“operator” and “QC personnel”—plus the optional signature, then:
+
+Update your DB schema to match (or generate a migration).
+
+Update your SQLAlchemy model to define exactly those three columns.
+
+Update both log_pull and log_event to read & assign those fields.
+
+Remove any leftover qc_operator references if you don’t need them.
+
+5. Final sanity check
+After those fixes, walk through:
+
+Form → server: make sure every <input name="…"> has a matching request.form.get('…').
+
+Server → model: every required db.Column(nullable=False) is assigned before session.add().
+
+Commit: check your logs (or interactive shell) to ensure no NOT NULL constraint errors.
+
+With those aligned, your “important action” will fire properly, your events will get committed, and you’ll see full audit data for each pull or return.
+
+
+
+
+
+

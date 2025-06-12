@@ -53,10 +53,12 @@ class PullEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     box_id = db.Column(db.Integer, db.ForeignKey('boxes.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)  # Can be negative for returns
+    qc_personnel = db.Column(db.String(50), nullable=False)  # QC checker - required
+    signature = db.Column(db.String(100), nullable=True)  # Optional signature
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     mo = db.Column(db.String(50))  # Manufacturing Order
     operator = db.Column(db.String(50))
     qc_operator = db.Column(db.String(50))
-    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationship
     box = db.relationship('Box', backref='pull_events')
