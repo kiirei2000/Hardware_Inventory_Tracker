@@ -54,16 +54,16 @@ with app.app_context():
             conn.execute(text("ALTER TABLE pull_events RENAME COLUMN quantity_pulled TO quantity"))
             cols.append("quantity")
 
-        if "qc_personnel" in cols and "qc_operator" not in cols:
-            conn.execute(text("ALTER TABLE pull_events RENAME COLUMN qc_personnel TO qc_operator"))
-            cols.append("qc_operator")
+        if "qc_operator" in cols and "qc_personnel" not in cols:
+            conn.execute(text("ALTER TABLE pull_events RENAME COLUMN qc_operator TO qc_personnel"))
+            cols.append("qc_personnel")
 
         # Add any brand-new columns that still don’t exist
         migrations = {
             "quantity":    "ALTER TABLE pull_events ADD COLUMN quantity INTEGER NOT NULL DEFAULT 0",
             "mo":          "ALTER TABLE pull_events ADD COLUMN mo VARCHAR(50)",
             "operator":    "ALTER TABLE pull_events ADD COLUMN operator VARCHAR(50)",
-            "qc_operator": "ALTER TABLE pull_events ADD COLUMN qc_operator VARCHAR(50)",
+            "qc_personnel": "ALTER TABLE pull_events ADD COLUMN qc_personnel VARCHAR(50)",
         }
         for col, ddl in migrations.items():
             if col not in cols:
@@ -439,7 +439,7 @@ def log_event():
             event_type    = request.form["event_type"].lower()
             mo            = request.form["mo"].strip()
             operator      = request.form["operator"].strip()
-            qc_operator   = request.form["qc_personnel"].strip()
+            qc_personnel  = request.form["qc_personnel"].strip()
             signature     = request.form.get("signature", "").strip()
             
             # Validation
@@ -498,12 +498,12 @@ def log_event():
             
             # Create pull event record
             db.session.add(PullEvent(
-                box_id      = box.id,
-                quantity    = change,
-                mo          = mo,
-                operator    = operator,
-                qc_operator = qc_operator,
-                signature   = signature
+                box_id       = box.id,
+                quantity     = change,
+                mo           = mo,
+                operator     = operator,
+                qc_personnel = qc_personnel,
+                signature    = signature
             ))
             
             # Create action log record with proper quantity tracking
@@ -517,7 +517,7 @@ def log_event():
                 quantity_change    = change,
                 available_quantity = box.remaining_quantity,
                 operator           = operator,
-                qc_operator        = qc_operator,
+                qc_personnel       = qc_personnel,
                 details            = {"mo": mo, "signature": signature}
             )
             
