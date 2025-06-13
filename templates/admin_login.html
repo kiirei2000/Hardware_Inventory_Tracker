@@ -1,13 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Admin Login - Hardware Inventory{% endblock %}
+{% block title %}Admin Login – Hardware Inventory{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center align-items-center" 
-     style="height: calc(100vh - 60px);">
-  <div class="col-lg-4">
+<style>
+  /* Content-area wrapper fill all available vertical space */
+  .content-wrapper {
+    height: calc(100vh 
+      /* minus navbar height */ - 56px 
+      /* minus footer height */ - 56px);
+  }
+</style>
 
+<div class="row content-wrapper d-flex align-items-center justify-content-center">
+  <div class="col-md-6 col-lg-4">
     <!-- Admin Access Required Panel -->
-    <div class="card shadow mb-3">
+    <div class="card shadow mb-3 hover-lift">
       <div class="card-body bg-primary text-white text-center">
         <h6 class="mb-0">
           <i class="fas fa-shield-alt me-2"></i>Admin Access Required
@@ -16,7 +23,7 @@
     </div>
 
     <!-- Login Form -->
-    <div class="card shadow">
+    <div class="card shadow hover-lift">
       <div class="card-body text-center py-4">
         <form method="POST">
           <div class="mb-3">
@@ -48,7 +55,6 @@
         </form>
       </div>
     </div>
-
   </div>
 </div>
 {% endblock %}
