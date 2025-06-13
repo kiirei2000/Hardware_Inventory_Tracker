@@ -461,7 +461,7 @@ def add_box():
                 quantity_change=initial_quantity,
                 available_quantity=initial_quantity,
                 operator=operator,
-                qc_operator=qc_operator,
+                qc_personnel=qc_operator,
                 details={
                     'barcode': barcode
                 }
