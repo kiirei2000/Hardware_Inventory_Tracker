@@ -46,27 +46,27 @@ with app.app_context():
 
     # Patch the boxes table in-place
     with db.engine.begin() as conn:
-        rows = conn.execute(text("PRAGMA table_info(boxes)"))
-        cols = [row[1] for row in rows]   # index 1 is the column name
-        if "operator" not in cols:
-            conn.execute(text("ALTER TABLE boxes ADD COLUMN operator VARCHAR(50)"))
-        if "qc_operator" not in cols:
-            conn.execute(text("ALTER TABLE boxes ADD COLUMN qc_operator VARCHAR(50)"))
-    
-    # Patch pull_events table
-    with db.engine.begin() as conn:
-        rows = conn.execute(text("PRAGMA table_info(pull_events)"))
-        cols = [row[1] for row in rows]
+        # Patch pull_events
+        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(pull_events)"))]
 
+        # Rename legacy column if present
+        if "quantity_pulled" in cols and "quantity" not in cols:
+            conn.execute(text("ALTER TABLE pull_events RENAME COLUMN quantity_pulled TO quantity"))
+            cols.append("quantity")
+
+        if "qc_personnel" in cols and "qc_operator" not in cols:
+            conn.execute(text("ALTER TABLE pull_events RENAME COLUMN qc_personnel TO qc_operator"))
+            cols.append("qc_operator")
+
+        # Add any brand-new columns that still don’t exist
         migrations = {
-            "quantity":   "ALTER TABLE pull_events ADD COLUMN quantity   INTEGER     NOT NULL DEFAULT 0",
-            "mo":         "ALTER TABLE pull_events ADD COLUMN mo         VARCHAR(50)",
-            "operator":   "ALTER TABLE pull_events ADD COLUMN operator   VARCHAR(50)",
-            "qc_operator":"ALTER TABLE pull_events ADD COLUMN qc_operator VARCHAR(50)",
+            "quantity":    "ALTER TABLE pull_events ADD COLUMN quantity INTEGER NOT NULL DEFAULT 0",
+            "mo":          "ALTER TABLE pull_events ADD COLUMN mo VARCHAR(50)",
+            "operator":    "ALTER TABLE pull_events ADD COLUMN operator VARCHAR(50)",
+            "qc_operator": "ALTER TABLE pull_events ADD COLUMN qc_operator VARCHAR(50)",
         }
-
-        for col_name, ddl in migrations.items():
-            if col_name not in cols:
+        for col, ddl in migrations.items():
+            if col not in cols:
                 conn.execute(text(ddl))
     print("✅ Database schema auto-migration complete")
 
@@ -427,120 +427,6 @@ def add_box():
     lots = LotNumber.query.all()
     return render_template('add_box.html', types=types, lots=lots)
 
-@app.route('/log_pull', methods=['GET', 'POST'])
-def log_pull():
-    """Log a pull event"""
-    if request.method == 'POST':
-        try:
-            # Get form data
-            barcode = request.form.get('barcode', '').strip()
-            quantity_pulled = request.form.get('quantity_pulled', 0)
-            qc_personnel = request.form.get('qc_personnel', '').strip()
-            signature = request.form.get('signature', '').strip()
-            
-            # Validation
-            errors = []
-            
-            if not barcode:
-                errors.append("Barcode is required")
-            
-            try:
-                quantity_pulled = int(quantity_pulled)
-                # Allow negative quantities for returns
-                if quantity_pulled == 0:
-                    errors.append("Quantity cannot be zero")
-            except (ValueError, TypeError):
-                errors.append("Quantity must be a valid number")
-            
-            if not qc_personnel:
-                errors.append("QC Personnel name is required")
-            
-            # Find the box
-            box = None
-            if barcode:
-                box = Box.query.filter_by(barcode=barcode).first()
-                if not box:
-                    errors.append("Barcode not found in inventory")
-                else:
-                    # Determine if this is a pull or return
-                    is_return = int(quantity_pulled) < 0
-                    actual_quantity = abs(int(quantity_pulled))
-                    
-                    # Validate against available quantity for pulls only
-                    if not is_return and actual_quantity > box.remaining_quantity:
-                        errors.append(f"Cannot pull {actual_quantity} items. Only {box.remaining_quantity} available.")
-                    
-                    # For returns, ensure we don't exceed initial capacity
-                    if is_return:
-                        new_quantity = box.remaining_quantity + actual_quantity
-                        if new_quantity > box.initial_quantity:
-                            errors.append(f"Cannot return {actual_quantity} items. Would exceed initial capacity of {box.initial_quantity}.")
-            
-            if errors:
-                for error in errors:
-                    flash(error, 'error')
-                # Preserve form data
-                form_data = request.form.to_dict()
-                types = HardwareType.query.all()
-                lots = LotNumber.query.all()
-                return render_template('log_pull.html', types=types, lots=lots, form_data=form_data)
-            
-            # Determine if this is a pull or return
-            is_return = quantity_pulled < 0
-            actual_quantity = abs(quantity_pulled)
-            
-            # Update box quantity (handles both pulls and returns)
-            if is_return:
-                box.remaining_quantity += actual_quantity
-            else:
-                box.remaining_quantity -= actual_quantity
-            
-            # Create pull/return event log
-            pull_event = PullEvent()
-            pull_event.box_id = box.id
-            pull_event.quantity = quantity_pulled  # Keep original sign
-            pull_event.qc_personnel = qc_personnel  # Required field
-            pull_event.signature = signature        # Optional field
-            pull_event.mo = ""  # Not used in this function
-            pull_event.operator = ""  # Not used in this function
-            
-            db.session.add(pull_event)
-            db.session.commit()
-            
-            # Log the action with correct type
-            action_type = 'return' if is_return else 'pull'
-            hardware_type = HardwareType.query.get(box.hardware_type_id)
-            lot_number = LotNumber.query.get(box.lot_number_id)
-            log_action(
-                action_type="pull" if not is_return else "return",
-                user=qc_personnel,
-                box_id=box.box_id,
-                hardware_type=box.hardware_type.name if box.hardware_type else None,
-                lot_number=box.lot_number.name if box.lot_number else None,
-                details={
-                    'quantity': actual_quantity,
-                    'remaining_quantity': box.remaining_quantity,
-                    'signature': signature,
-                    'is_return': is_return
-                }
-            )
-            
-            # Updated flash message
-            if is_return:
-                flash(f"Return logged successfully! {actual_quantity} items returned. New quantity: {box.remaining_quantity}", 'success')
-            else:
-                flash(f"Pull event logged successfully! Remaining quantity: {box.remaining_quantity}", 'success')
-            return redirect(url_for('log_pull'))
-            
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f"Error logging pull event: {str(e)}")
-            flash("An error occurred while logging the pull event", 'error')
-    
-    # GET request - show form
-    types = HardwareType.query.all()
-    lots = LotNumber.query.all()
-    return render_template('log_pull.html', types=types, lots=lots)
 
 @app.route('/log_event', methods=['GET', 'POST'])
 def log_event():
@@ -548,13 +434,13 @@ def log_event():
     if request.method == 'POST':
         try:
             # Get form data
-            barcode = request.form.get('barcode', '').strip()
-            quantity = request.form.get('quantity')
-            event_type = request.form.get('event_type', '').strip().lower()
-            mo = request.form.get('mo', '').strip()
-            operator = request.form.get('operator', '').strip()
-            qc_personnel = request.form.get('qc_personnel', '').strip()
-            signature = request.form.get('signature', '').strip()
+            barcode       = request.form["barcode"].strip()
+            qty_str       = request.form["quantity"]
+            event_type    = request.form["event_type"].lower()
+            mo            = request.form["mo"].strip()
+            operator      = request.form["operator"].strip()
+            qc_operator   = request.form["qc_personnel"].strip()
+            signature     = request.form.get("signature", "").strip()
             
             # Validation
             errors = []
@@ -611,32 +497,28 @@ def log_event():
             box.remaining_quantity = new_qty
             
             # Create pull event record
-            pull_event = PullEvent()
-            pull_event.box_id = box.id
-            pull_event.quantity = change
-            pull_event.qc_personnel = qc_personnel
-            pull_event.signature = signature
-            pull_event.mo = mo
-            pull_event.operator = operator
-            
-            db.session.add(pull_event)
+            db.session.add(PullEvent(
+                box_id      = box.id,
+                quantity    = change,
+                mo          = mo,
+                operator    = operator,
+                qc_operator = qc_operator,
+                signature   = signature
+            ))
             
             # Create action log record with proper quantity tracking
             log_action(
-                action_type=event_type,
-                user=operator,
-                box_id=box.box_id,
-                hardware_type=box.hardware_type.name,
-                lot_number=box.lot_number.name,
-                previous_quantity=previous_qty,
-                quantity_change=change,  # Keep original sign (negative for pulls, positive for returns)
-                available_quantity=new_qty,
-                operator=operator,
-                qc_operator=qc_personnel,
-                details={
-                    'mo': mo,
-                    'signature': signature
-                }
+                action_type        = event_type,
+                user               = operator,
+                box_id             = box.box_id,
+                hardware_type      = box.hardware_type.name,
+                lot_number         = box.lot_number.name,
+                previous_quantity  = prev_qty,
+                quantity_change    = change,
+                available_quantity = box.remaining_quantity,
+                operator           = operator,
+                qc_operator        = qc_operator,
+                details            = {"mo": mo, "signature": signature}
             )
             
             db.session.commit()
