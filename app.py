@@ -169,7 +169,7 @@ def generate_box_id(hardware_type_name, lot_number_name, box_number):
 
 def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=None, 
                previous_quantity=None, quantity_change=None, available_quantity=None,
-               operator=None, qc_operator=None, details=None):
+               operator=None, qc_personnel=None, details=None):
     """Log an admin action with enhanced tracking"""
     try:
         action_log = ActionLog()
@@ -182,7 +182,7 @@ def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=No
         action_log.quantity_change = quantity_change
         action_log.available_quantity = available_quantity
         action_log.operator = operator
-        action_log.qc_personnel = qc_operator
+        action_log.qc_personnel = qc_personnel
         action_log.details = json.dumps(details) if details else None
         db.session.add(action_log)
         db.session.commit()
@@ -502,7 +502,7 @@ def log_event():
                 errors.append("Barcode is required")
             
             try:
-                quantity = int(quantity)
+                quantity = int(qty_str)
                 if quantity <= 0:
                     errors.append("Quantity must be greater than 0")
             except (ValueError, TypeError):
@@ -550,14 +550,14 @@ def log_event():
             box.remaining_quantity = new_qty
             
             # Create pull event record
-            db.session.add(PullEvent(
-                box_id       = box.id,
-                quantity     = change,
-                mo           = mo,
-                operator     = operator,
-                qc_personnel = qc_personnel,
-                signature    = signature
-            ))
+            pull_event = PullEvent()
+            pull_event.box_id = box.id
+            pull_event.quantity = change
+            pull_event.mo = mo
+            pull_event.operator = operator
+            pull_event.qc_personnel = qc_personnel
+            pull_event.signature = signature
+            db.session.add(pull_event)
             
             # Create action log record with proper quantity tracking
             log_action(
@@ -566,7 +566,7 @@ def log_event():
                 box_id             = box.box_id,
                 hardware_type      = box.hardware_type.name,
                 lot_number         = box.lot_number.name,
-                previous_quantity  = prev_qty,
+                previous_quantity  = previous_qty,
                 quantity_change    = change,
                 available_quantity = box.remaining_quantity,
                 operator           = operator,

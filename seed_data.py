@@ -165,7 +165,7 @@ def seed_database():
             
             pull_event = PullEvent(
                 box_id=box.id,
-                quantity_pulled=event['qty'],
+                quantity=event['qty'],
                 qc_personnel=event['qc'],
                 signature=event['sig'],
                 timestamp=timestamp
