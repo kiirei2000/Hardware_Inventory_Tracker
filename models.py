@@ -58,7 +58,6 @@ class PullEvent(db.Model):
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     mo = db.Column(db.String(50))  # Manufacturing Order
     operator = db.Column(db.String(50))
-    qc_operator = db.Column(db.String(50))
     
     # Relationship
     box = db.relationship('Box', backref='pull_events')
