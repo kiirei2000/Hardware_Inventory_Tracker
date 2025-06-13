@@ -36,7 +36,7 @@ class Box(db.Model):
     remaining_quantity = db.Column(db.Integer, nullable=False)
     barcode = db.Column(db.String(100), unique=True, nullable=False)
     operator = db.Column(db.String(50))  # Box creation operator
-    qc_operator = db.Column(db.String(50))  # Box creation QC operator
+    qc_personnel = db.Column(db.String(50))  # Box creation QC personnel
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
@@ -53,7 +53,7 @@ class PullEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     box_id = db.Column(db.Integer, db.ForeignKey('boxes.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)  # Can be negative for returns
-    qc_operator = db.Column(db.String(50), nullable=False)  # QC checker - required
+    qc_personnel = db.Column(db.String(50), nullable=False)  # QC checker - required
     signature = db.Column(db.String(100), nullable=True)  # Optional signature
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     mo = db.Column(db.String(50))  # Manufacturing Order
@@ -80,7 +80,7 @@ class ActionLog(db.Model):
     quantity_change = db.Column(db.Integer)  # Amount changed (positive or negative)
     available_quantity = db.Column(db.Integer)  # Quantity after the action
     operator = db.Column(db.String(100))  # Operator who performed the action
-    qc_operator = db.Column(db.String(100))  # QC Personnel who approved/checked
+    qc_personnel = db.Column(db.String(100))  # QC Personnel who approved/checked
     details = db.Column(db.Text)  # JSON or text details of the action
     
     @property
