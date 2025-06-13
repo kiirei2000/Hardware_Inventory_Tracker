@@ -403,7 +403,7 @@ def add_box():
             new_box.remaining_quantity = initial_quantity
             new_box.barcode = barcode
             new_box.operator = operator
-            new_box.qc_operator = qc_operator
+            new_box.qc_personnel = qc_operator
             
             db.session.add(new_box)
             db.session.commit()
