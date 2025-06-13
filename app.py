@@ -37,16 +37,22 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 db.init_app(app)
 from sqlalchemy import text
 
-# Ensure new tables exist
+# Auto-migrate on startup
 with app.app_context():
-    # import models that need `db` to be ready
+    # 1) load all model classes
     from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
 
-    # Create tables the first time
+    # 2) create tables that don’t exist yet
     db.create_all()
 
-# Import models after db initialization
-from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
+    # 3) patch the boxes table in-place
+    with db.engine.begin() as conn:
+        rows = conn.execute(text("PRAGMA table_info(boxes)"))
+        cols = [row[1] for row in rows]   # index 1 is the column name
+        if "operator" not in cols:
+            conn.execute(text("ALTER TABLE boxes ADD COLUMN operator VARCHAR(50)"))
+        if "qc_operator" not in cols:
+            conn.execute(text("ALTER TABLE boxes ADD COLUMN qc_operator VARCHAR(50)"))
 
 # Add JSON filter for templates
 @app.template_filter('from_json')
