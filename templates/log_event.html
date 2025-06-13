@@ -3,19 +3,20 @@
 
 {% block content %}
 <style>
-  /* Make the content-area fill the viewport (minus navbar+footer) */
   .content-wrapper {
     height: calc(100vh - 112px);
   }
+  /* Header Event Colors */
+  .bg-pull-event   { background-color: #dc3545 !important; }
+  .bg-return-event { background-color: #198754 !important; }
 </style>
 
 <div class="row content-wrapper d-flex align-items-center justify-content-center">
   <div class="col-lg-8 col-xl-6">
 
-    <!-- Separate Header Card -->
-    <div class="card shadow-lg mb-3 rounded">
-      <div id="event-header"
-           class="card-header bg-pull-event text-white text-center rounded">
+    <!-- Fully-rounded, shadowed header card -->
+    <div class="card shadow-lg mb-3 rounded overflow-hidden">
+      <div id="event-header" class="bg-pull-event text-white text-center py-3">
         <h4 id="event-title" class="mb-0">
           <i id="event-icon" class="fas fa-minus-circle me-2"></i>
           Log Pull Event
@@ -23,11 +24,10 @@
       </div>
     </div>
 
-    <!-- Separate Form Card -->
-    <div class="card shadow-lg rounded">
+    <!-- Fully-rounded, shadowed form card -->
+    <div class="card shadow-lg rounded overflow-hidden">
       <div class="card-body p-3">
         <form method="POST" action="{{ url_for('log_event') }}" id="logEventForm">
-          <div class="row gx-3 gy-2">
                            
                         <!-- Barcode -->
                         <div class="col-12">
