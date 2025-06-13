@@ -1,14 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Add New Box - Hardware Inventory{% endblock %}
 
-{% block content %}
 <style>
-  /* Fill the screen */
-  .content-wrapper {
-    height: calc(100vh - 112px);
+  /* Disable the auto-scroll on the main area */
+  main.main-content {
+    overflow: hidden;
+  }
+
+  /* Turn the container into a centered flexbox */
+  main.main-content > .container-fluid {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>
 
+{% block content %} 
 <div class="row content-wrapper d-flex align-items-center justify-content-center">
   <div class="col-lg-8 col-xl-6">
 
@@ -25,6 +33,7 @@
       <div class="card-body p-3">
         <form method="POST" id="addBoxForm">
           <div class="row gx-3 gy-2">
+            
             <!-- Hardware Type -->
             <div class="col-md-6">
               <label for="hardware_type" class="form-label">
