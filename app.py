@@ -47,7 +47,13 @@ with app.app_context():
     # Patch the boxes table in-place
     with db.engine.begin() as conn:
         # Patch pull_events
-        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(pull_events)"))]
+        # PostgreSQL-compatible column checking
+        result = conn.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'pull_events' AND table_schema = 'public'
+        """))
+        cols = [row[0] for row in result.fetchall()]
 
         # Rename legacy column if present
         if "quantity_pulled" in cols and "quantity" not in cols:
@@ -60,14 +66,19 @@ with app.app_context():
 
         # Add any brand-new columns that still don’t exist
         migrations = {
-            "quantity":    "ALTER TABLE pull_events ADD COLUMN quantity INTEGER NOT NULL DEFAULT 0",
+            "quantity":    "ALTER TABLE pull_events ADD COLUMN quantity INTEGER DEFAULT 0",
             "mo":          "ALTER TABLE pull_events ADD COLUMN mo VARCHAR(50)",
             "operator":    "ALTER TABLE pull_events ADD COLUMN operator VARCHAR(50)",
             "qc_personnel": "ALTER TABLE pull_events ADD COLUMN qc_personnel VARCHAR(50)",
         }
         for col, ddl in migrations.items():
             if col not in cols:
-                conn.execute(text(ddl))
+                try:
+                    conn.execute(text(ddl))
+                except Exception as e:
+                    # Column might already exist, continue
+                    print(f"Migration warning for {col}: {str(e)}")
+                    pass
     print("✅ Database schema auto-migration complete")
 
 
@@ -129,7 +140,7 @@ def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=No
         action_log.quantity_change = quantity_change
         action_log.available_quantity = available_quantity
         action_log.operator = operator
-        action_log.qc_operator = qc_operator
+        action_log.qc_personnel = qc_operator
         action_log.details = json.dumps(details) if details else None
         db.session.add(action_log)
         db.session.commit()
