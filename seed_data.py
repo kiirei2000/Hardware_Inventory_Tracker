@@ -163,13 +163,12 @@ def seed_database():
             hours_ago = random.randint(0, 23)
             timestamp = timestamp - timedelta(days=days_ago, hours=hours_ago)
             
-            pull_event = PullEvent(
-                box_id=box.id,
-                quantity=event['qty'],
-                qc_personnel=event['qc'],
-                signature=event['sig'],
-                timestamp=timestamp
-            )
+            pull_event = PullEvent()
+            pull_event.box_id = box.id
+            pull_event.quantity = -event['qty']  # Negative for pull events
+            pull_event.qc_personnel = event['qc']
+            pull_event.signature = event['sig']
+            pull_event.timestamp = timestamp
             db.session.add(pull_event)
             
             # Update box remaining quantity

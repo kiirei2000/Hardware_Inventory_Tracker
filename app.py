@@ -410,10 +410,10 @@ def add_box():
                 errors.append("Operator name is required")
             
             if not qc_operator:
-                errors.append("QC Operator name is required")
+                errors.append("QC Personnel name is required")
             
             if operator == qc_operator:
-                errors.append("Operator and QC Operator cannot be the same")
+                errors.append("Operator and QC Personnel cannot be the same")
             
             if errors:
                 for error in errors:
