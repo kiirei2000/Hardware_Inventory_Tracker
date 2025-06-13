@@ -47,13 +47,23 @@ with app.app_context():
     # Patch the boxes table in-place
     with db.engine.begin() as conn:
         # Patch pull_events
-        # PostgreSQL-compatible column checking
-        result = conn.execute(text("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'pull_events' AND table_schema = 'public'
-        """))
-        cols = [row[0] for row in result.fetchall()]
+        # Database-agnostic column checking
+        try:
+            dialect_name = conn.dialect.name.lower()
+            if dialect_name == 'postgresql':
+                result = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'pull_events' AND table_schema = 'public'
+                """))
+                cols = [row[0] for row in result.fetchall()]
+            elif dialect_name == 'sqlite':
+                result = conn.execute(text("PRAGMA table_info(pull_events)"))
+                cols = [row[1] for row in result.fetchall()]
+            else:
+                cols = []
+        except Exception:
+            cols = []
 
         # Rename legacy column if present
         if "quantity_pulled" in cols and "quantity" not in cols:
@@ -79,6 +89,38 @@ with app.app_context():
                     # Column might already exist, continue
                     print(f"Migration warning for {col}: {str(e)}")
                     pass
+
+        # Also migrate boxes table
+        try:
+            if dialect_name == 'postgresql':
+                result = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'boxes' AND table_schema = 'public'
+                """))
+                box_cols = [row[0] for row in result.fetchall()]
+            elif dialect_name == 'sqlite':
+                result = conn.execute(text("PRAGMA table_info(boxes)"))
+                box_cols = [row[1] for row in result.fetchall()]
+            else:
+                box_cols = []
+                
+            if box_cols:
+                box_migrations = {
+                    "operator": "ALTER TABLE boxes ADD COLUMN operator VARCHAR(50)",
+                    "qc_personnel": "ALTER TABLE boxes ADD COLUMN qc_personnel VARCHAR(50)",
+                }
+                for col, ddl in box_migrations.items():
+                    if col not in box_cols:
+                        try:
+                            conn.execute(text(ddl))
+                        except Exception as e:
+                            print(f"Migration warning for boxes.{col}: {str(e)}")
+                            pass
+        except Exception as e:
+            print(f"Boxes migration warning: {str(e)}")
+            pass
+            
     print("✅ Database schema auto-migration complete")
 
 
