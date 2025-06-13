@@ -36,16 +36,15 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 # Initialize the app with the extension
 db.init_app(app)
 from sqlalchemy import text
+from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
 
 # Auto-migrate on startup
 with app.app_context():
-    # 1) load all model classes
-    from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
 
-    # 2) create tables that don’t exist yet
+    # Create tables that don’t exist yet
     db.create_all()
 
-    # 3) patch the boxes table in-place
+    # Patch the boxes table in-place
     with db.engine.begin() as conn:
         rows = conn.execute(text("PRAGMA table_info(boxes)"))
         cols = [row[1] for row in rows]   # index 1 is the column name
@@ -53,6 +52,24 @@ with app.app_context():
             conn.execute(text("ALTER TABLE boxes ADD COLUMN operator VARCHAR(50)"))
         if "qc_operator" not in cols:
             conn.execute(text("ALTER TABLE boxes ADD COLUMN qc_operator VARCHAR(50)"))
+    
+    # Patch pull_events table
+    with db.engine.begin() as conn:
+        rows = conn.execute(text("PRAGMA table_info(pull_events)"))
+        cols = [row[1] for row in rows]
+
+        migrations = {
+            "quantity":   "ALTER TABLE pull_events ADD COLUMN quantity   INTEGER     NOT NULL DEFAULT 0",
+            "mo":         "ALTER TABLE pull_events ADD COLUMN mo         VARCHAR(50)",
+            "operator":   "ALTER TABLE pull_events ADD COLUMN operator   VARCHAR(50)",
+            "qc_operator":"ALTER TABLE pull_events ADD COLUMN qc_operator VARCHAR(50)",
+        }
+
+        for col_name, ddl in migrations.items():
+            if col_name not in cols:
+                conn.execute(text(ddl))
+    print("✅ Database schema auto-migration complete")
+
 
 # Add JSON filter for templates
 @app.template_filter('from_json')
