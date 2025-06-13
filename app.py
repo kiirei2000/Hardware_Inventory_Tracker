@@ -120,6 +120,36 @@ with app.app_context():
         except Exception as e:
             print(f"Boxes migration warning: {str(e)}")
             pass
+
+        # Also migrate action_logs table
+        try:
+            if dialect_name == 'postgresql':
+                result = conn.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'action_logs' AND table_schema = 'public'
+                """))
+                action_cols = [row[0] for row in result.fetchall()]
+            elif dialect_name == 'sqlite':
+                result = conn.execute(text("PRAGMA table_info(action_logs)"))
+                action_cols = [row[1] for row in result.fetchall()]
+            else:
+                action_cols = []
+                
+            if action_cols:
+                action_migrations = {
+                    "qc_personnel": "ALTER TABLE action_logs ADD COLUMN qc_personnel VARCHAR(100)",
+                }
+                for col, ddl in action_migrations.items():
+                    if col not in action_cols:
+                        try:
+                            conn.execute(text(ddl))
+                        except Exception as e:
+                            print(f"Migration warning for action_logs.{col}: {str(e)}")
+                            pass
+        except Exception as e:
+            print(f"Action logs migration warning: {str(e)}")
+            pass
             
     print("✅ Database schema auto-migration complete")
 
