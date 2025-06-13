@@ -14,7 +14,7 @@
 
     <!-- Dynamic Header Card -->
     <div class="card mb-0 rounded">
-      <div id="event-header" class="card-header bg-danger text-white text-center rounded py-2">
+      <div id="event-header" class="card-header bg-danger text-white text-center rounded">
         <h4 id="event-title" class="mb-0">
           <i id="event-icon" class="fas fa-minus-circle me-2"></i>
           Log Pull Event
@@ -134,29 +134,32 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const barcodeInput = document.getElementById('barcode');
-    const lookupBtn = document.getElementById('lookupBarcodeBtn');
-    const scanBtn = document.getElementById('scanBarcodeBtn');
-    const boxInfoDiv = document.getElementById('boxInfo');
+    const lookupBtn    = document.getElementById('lookupBarcodeBtn');
+    const scanBtn      = document.getElementById('scanBarcodeBtn');
+    const boxInfoDiv   = document.getElementById('boxInfo');
     const boxInfoContent = document.getElementById('boxInfoContent');
-    const errorMsg = document.getElementById('error-msg');
-    
-    document.getElementById("event_type").addEventListener("change", function() {
-        const title = document.getElementById("event-title");
-        const header = document.querySelector("#event-header .card-header");
-        const type = this.value;
-        
-        if (title && header) {
-            if (type === "Pull") {
-                title.innerHTML = '<i class="fas fa-minus-circle me-2 text-white"></i>Log Pull Event';
-                header.className = "card-header bg-pull-event text-white text-center";
-            } else {
-                title.innerHTML = '<i class="fas fa-plus-circle me-2 text-white"></i>Log Return Event';
-                header.className = "card-header bg-return-event text-white text-center";
-            }
-            title.className = "text-white mb-0";
-        }
-    });
+    const errorMsg     = document.getElementById('error-msg');
+    const header       = document.getElementById('event-header');
+    const title        = document.getElementById('event-title');
+    const select       = document.getElementById('event_type');
+    const icon         = document.getElementById('event-icon');
 
+    // Dynamic header color & text
+    select.addEventListener("change", function() {
+        const type = this.value;
+        if (type === "Pull") {
+            title.innerHTML = '<i class="fas fa-minus-circle me-2 text-white"></i>Log Pull Event';
+            header.className = "card-header bg-pull-event text-white text-center rounded";
+        } else {
+            title.innerHTML = '<i class="fas fa-plus-circle me-2 text-white"></i>Log Return Event';
+            header.className = "card-header bg-return-event text-white text-center rounded";
+        }
+        title.className = "text-white mb-0";
+    });
+  
+    // initialize on page load
+    select.dispatchEvent(new Event('change'));
+  
     async function lookupBarcode(barcode) {
         if (!barcode.trim()) {
             boxInfoDiv.style.display = 'none';
