@@ -12,9 +12,10 @@
 <div class="row content-wrapper d-flex align-items-center justify-content-center">
   <div class="col-lg-8 col-xl-6">
 
-    <!-- Dynamic Header Card -->
-    <div class="card mb-0 rounded">
-      <div id="event-header" class="card-header bg-danger text-white text-center rounded">
+    <!-- Separate Header Card -->
+    <div class="card shadow-lg mb-3 rounded">
+      <div id="event-header"
+           class="card-header bg-pull-event text-white text-center rounded">
         <h4 id="event-title" class="mb-0">
           <i id="event-icon" class="fas fa-minus-circle me-2"></i>
           Log Pull Event
@@ -22,13 +23,12 @@
       </div>
     </div>
 
-    <!-- Form Card -->
-    <div class="card shadow-sm border-0 rounded">
+    <!-- Separate Form Card -->
+    <div class="card shadow-lg rounded">
       <div class="card-body p-3">
         <form method="POST" action="{{ url_for('log_event') }}" id="logEventForm">
-
           <div class="row gx-3 gy-2">
-                        
+                           
                         <!-- Barcode -->
                         <div class="col-12">
                             <label for="barcode" class="form-label">
@@ -46,7 +46,7 @@
                                 </button>
                             </div>
                         </div>
-
+            
                         <!-- Box Info Display -->
                         <div id="boxInfo" class="col-12" style="display: none;">
                             <div class="alert alert-info">
@@ -54,7 +54,7 @@
                                 <div id="boxInfoContent"></div>
                             </div>
                         </div>
-
+            
                         <!-- Event Type -->
                         <div class="col-md-6">
                             <label for="event_type" class="form-label">
@@ -65,7 +65,7 @@
                                 <option value="Return">Return</option>
                             </select>
                         </div>
-
+            
                         <!-- Quantity -->
                         <div class="col-md-6">
                             <label for="quantity" class="form-label">
@@ -74,7 +74,7 @@
                             <input type="number" min="1" name="quantity" id="quantity" class="form-control form-control-lg" 
                                    placeholder="Enter quantity" required>
                         </div>
-
+            
                         <!-- Manufacturing Order -->
                         <div class="col-md-6">
                             <label for="mo" class="form-label">
@@ -83,7 +83,7 @@
                             <input type="text" name="mo" id="mo" class="form-control form-control-lg" 
                                    placeholder="Enter MO number" required>
                         </div>
-
+            
                         <!-- Operator -->
                         <div class="col-md-6">
                             <label for="operator" class="form-label">
@@ -92,7 +92,7 @@
                             <input type="text" name="operator" id="operator" class="form-control form-control-lg" 
                                    placeholder="Enter operator name" required>
                         </div>
-
+            
                         <!-- QC Personnel -->
                         <div class="col-md-6">
                             <label for="qc_personnel" class="form-label">
@@ -101,7 +101,7 @@
                             <input type="text" name="qc_personnel" id="qc_personnel" class="form-control form-control-lg" 
                                    placeholder="Enter QC personnel name" required>
                         </div>
-
+            
                         <!-- Signature -->
                         <div class="col-md-6">
                             <label for="signature" class="form-label">
@@ -111,9 +111,9 @@
                                    placeholder="Enter signature">
                         </div>
                     </div>
-
+            
                     <div id="error-msg" class="text-danger mt-2"></div>
-
+            
                     <!-- Submit Buttons -->
                     <div class="d-flex justify-content-end gap-3 mt-3">
                         <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg px-4">
