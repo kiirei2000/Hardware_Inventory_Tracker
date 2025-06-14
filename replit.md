@@ -94,6 +94,7 @@ The application uses four main entities:
 - June 14, 2025. Customizable print templates - Added editable text boxes under barcode images with delete functionality and finalize/print button
 - June 14, 2025. Deployment-agnostic hardening - Converted dropdown actions from anchor tags to button elements, added GET method fallbacks to prevent 405 errors, implemented comprehensive event handling with preventDefault for future-proof operation
 - June 14, 2025. Lightweight template system - Added MVP print template designer with 4 stock templates (2×5/2×3 for Letter/A4), barcode size slider, logo upload, custom text field toggles, template save/load functionality using localStorage for offline compatibility
+- June 14, 2025. Word document export - Added "Export to Word" button alongside "Finalize & Print" using python-docx library for enhanced user control over print layouts, formatting, and editing capabilities
 
 ## User Preferences
 

@@ -1450,6 +1450,101 @@ def print_box_history(box_id):
     """Print history for a specific box"""
     return redirect(url_for('export_box_history', box_id=box_id))
 
+@app.route('/export_word', methods=['POST'])
+def export_word():
+    """Export barcode layout to Word document"""
+    try:
+        barcode_data = json.loads(request.form.get('barcode_data', '[]'))
+        template_data = json.loads(request.form.get('template', '{}'))
+        
+        # Create Word document
+        doc = Document()
+        
+        # Set document orientation and margins
+        section = doc.sections[0]
+        section.orientation = section.orientation  # Portrait by default
+        section.page_width = Inches(8.5)  # Letter width
+        section.page_height = Inches(11)  # Letter height
+        section.left_margin = Inches(0.5)
+        section.right_margin = Inches(0.5)
+        section.top_margin = Inches(0.5)
+        section.bottom_margin = Inches(0.5)
+        
+        # Add title
+        title = doc.add_heading('Barcode Print Layout', 0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        # Get template settings
+        columns = template_data.get('columns', 2)
+        rows = template_data.get('rows', 5)
+        
+        # Create table with proper dimensions
+        table = doc.add_table(rows=rows, cols=columns)
+        table.style = 'Table Grid'
+        
+        # Fill table with barcode data
+        for i, item_data in enumerate(barcode_data):
+            if i >= rows * columns:
+                break
+                
+            row_idx = i // columns
+            col_idx = i % columns
+            cell = table.cell(row_idx, col_idx)
+            
+            # Add barcode info to cell
+            barcode_code = item_data.get('barcode', '')
+            dataset = item_data.get('dataset', {})
+            text_fields = item_data.get('text_fields', {})
+            
+            # Create cell content
+            p = cell.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            
+            # Add barcode code
+            run = p.add_run(f"Barcode: {barcode_code}")
+            run.bold = True
+            p.add_run('\n')
+            
+            # Add dataset information
+            if dataset:
+                if dataset.get('type'):
+                    p.add_run(f"Type: {dataset['type']}\n")
+                if dataset.get('lot'):
+                    p.add_run(f"Lot: {dataset['lot']}\n")
+                if dataset.get('quantity'):
+                    p.add_run(f"Qty: {dataset['quantity']}\n")
+                if dataset.get('boxId'):
+                    p.add_run(f"Box ID: {dataset['boxId']}\n")
+            
+            # Add custom text fields
+            for field_type, value in text_fields.items():
+                p.add_run(f"{field_type.title()}: {value}\n")
+            
+            # Add space for barcode image placeholder
+            p.add_run('\n[Barcode Image Placeholder]')
+        
+        # Save to BytesIO
+        doc_buffer = io.BytesIO()
+        doc.save(doc_buffer)
+        doc_buffer.seek(0)
+        
+        # Create filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'barcode_layout_{timestamp}.docx'
+        
+        return make_response(
+            doc_buffer.getvalue(),
+            200,
+            {
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition': f'attachment; filename="{filename}"'
+            }
+        )
+        
+    except Exception as e:
+        flash(f'Error generating Word document: {str(e)}', 'error')
+        return redirect(url_for('print_template'))
+
 # Create tables
 with app.app_context():
     db.create_all()
