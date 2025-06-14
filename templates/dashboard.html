@@ -15,15 +15,15 @@
                 <i class="fas fa-ellipsis-v me-1"></i>More Actions
             </button>
             <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
-                <li><a class="dropdown-item" href="#" onclick="bulkPrintBarcodes('qrcode')">
+                <li><button class="dropdown-item" type="button" onclick="bulkPrintBarcodes('qrcode', event)">
                     <i class="fas fa-qrcode me-2"></i>Print QR Codes
-                </a></li>
-                <li><a class="dropdown-item" href="#" onclick="bulkPrintBarcodes('code128')">
+                </button></li>
+                <li><button class="dropdown-item" type="button" onclick="bulkPrintBarcodes('code128', event)">
                     <i class="fas fa-barcode me-2"></i>Print Barcode 128
-                </a></li>
-                <li><a class="dropdown-item" href="#" onclick="bulkPrintLogs()">
+                </button></li>
+                <li><button class="dropdown-item" type="button" onclick="bulkPrintLogs(event)">
                     <i class="fas fa-file-export me-2"></i>Print Logs
-                </a></li>
+                </button></li>
             </ul>
         </div>
         <a href="{{ url_for('export_excel', type_filter=type_filter, lot_filter=lot_filter) }}" 
@@ -366,11 +366,13 @@ function updateBulkActions() {
     dropdown.disabled = checkboxes.length === 0;
 }
 
-function bulkPrintBarcodes(barcodeType = 'qrcode') {
+function bulkPrintBarcodes(barcodeType = 'qrcode', event) {
+    event?.preventDefault();
+    
     const selectedBoxes = Array.from(document.querySelectorAll('.box-checkbox:checked')).map(cb => cb.value);
     if (selectedBoxes.length === 0) {
         alert('Please select boxes first');
-        return;
+        return false;
     }
     
     const form = document.createElement('form');
@@ -394,13 +396,16 @@ function bulkPrintBarcodes(barcodeType = 'qrcode') {
     
     document.body.appendChild(form);
     form.submit();
+    return false;
 }
 
-function bulkPrintLogs() {
+function bulkPrintLogs(event) {
+    event?.preventDefault();
+    
     const selectedBoxes = Array.from(document.querySelectorAll('.box-checkbox:checked')).map(cb => cb.value);
     if (selectedBoxes.length === 0) {
         alert('Please select boxes first');
-        return;
+        return false;
     }
     
     const form = document.createElement('form');
@@ -417,6 +422,7 @@ function bulkPrintLogs() {
     
     document.body.appendChild(form);
     form.submit();
+    return false;
 }
 </script>
 {% endblock %}

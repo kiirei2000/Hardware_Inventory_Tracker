@@ -1345,10 +1345,17 @@ def print_template():
     
     return render_template('print_template.html', barcode_data=barcode_data)
 
-@app.route('/bulk_print_barcodes', methods=['POST'])
+@app.route('/bulk_print_barcodes', methods=['GET', 'POST'])
 @admin_required
 def bulk_print_barcodes():
-    """Handle bulk barcode printing from dashboard"""
+    """Handle bulk barcode printing with GET fallback"""
+    
+    if request.method == 'GET':
+        # Graceful fallback for accidental GET requests
+        flash("Please select boxes from the dashboard to print barcodes", 'info')
+        return redirect(url_for('dashboard'))
+    
+    # Original POST logic
     selected_boxes = request.form.getlist('selected_boxes')
     barcode_type = request.form.get('barcode_type', 'qrcode')
     
@@ -1359,10 +1366,17 @@ def bulk_print_barcodes():
     # Redirect to print template with selected box IDs and barcode type
     return redirect(url_for('print_template', box_ids=selected_boxes, type=barcode_type))
 
-@app.route('/bulk_print_logs', methods=['POST'])
+@app.route('/bulk_print_logs', methods=['GET', 'POST'])
 @admin_required
 def bulk_print_logs():
-    """Handle bulk log printing from dashboard"""
+    """Handle bulk log printing with GET fallback"""
+    
+    if request.method == 'GET':
+        # Graceful fallback for accidental GET requests
+        flash("Please select boxes from the dashboard to print logs", 'info')
+        return redirect(url_for('dashboard'))
+    
+    # Original POST logic follows
     selected_boxes = request.form.getlist('selected_boxes')
     if not selected_boxes:
         flash("No boxes selected for log printing", 'warning')
