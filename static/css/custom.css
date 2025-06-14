@@ -17,6 +17,24 @@ body {
     justify-content: center;
 }
 
+/* Purple outline button similar to log event page */
+.btn-outline-purple {
+    color: #6f42c1;
+    border-color: #6f42c1;
+    background-color: transparent;
+}
+
+.btn-outline-purple:hover {
+    color: #fff;
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+}
+
+.btn-outline-purple:focus,
+.btn-outline-purple.focus {
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.5);
+}
+
 .btn i {
     margin-right: 0.5rem;
 }

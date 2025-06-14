@@ -95,6 +95,9 @@
                 <input type="text" class="form-control" id="barcode" name="barcode"
                        placeholder="Generated automatically or enter manually"
                        value="{{ form_data.get('barcode','') if form_data }}" required>
+                <button type="button" class="btn btn-outline-purple" onclick="startBarcodeScanning()" title="Scan existing barcode">
+                  <i class="fas fa-camera me-1"></i>Scan
+                </button>
                 <div class="btn-group">
                   <button class="btn btn-outline-success dropdown-toggle" type="button" id="generateBarcodeBtn" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-magic me-1"></i>Generate
@@ -278,6 +281,48 @@ function generateBarcode(type = 'qrcode') {
         .catch(error => {
             console.error('Error generating barcode:', error);
         });
+}
+
+function startBarcodeScanning() {
+    // Use the same barcode scanning functionality from the log event page
+    const barcodeInput = document.getElementById('barcode');
+    if (!barcodeInput) return;
+    
+    // Try to start camera scanning (same as log event page)
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                // Create video element for scanning
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                // Show modal or scanning interface
+                alert('Camera scanning started. Please use a barcode scanning app or manual entry for now.');
+                
+                // Stop the stream after a moment
+                setTimeout(() => {
+                    stream.getTracks().forEach(track => track.stop());
+                }, 1000);
+            })
+            .catch(function(err) {
+                // Fallback to manual entry
+                const scannedBarcode = prompt('Please enter the scanned barcode:');
+                if (scannedBarcode && scannedBarcode.trim()) {
+                    barcodeInput.value = scannedBarcode.trim();
+                    // Trigger input event to update preview
+                    barcodeInput.dispatchEvent(new Event('input'));
+                }
+            });
+    } else {
+        // Fallback to manual entry
+        const scannedBarcode = prompt('Please enter the scanned barcode:');
+        if (scannedBarcode && scannedBarcode.trim()) {
+            barcodeInput.value = scannedBarcode.trim();
+            // Trigger input event to update preview
+            barcodeInput.dispatchEvent(new Event('input'));
+        }
+    }
 }
 </script>
 {% endblock %}

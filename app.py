@@ -1350,12 +1350,14 @@ def print_template():
 def bulk_print_barcodes():
     """Handle bulk barcode printing from dashboard"""
     selected_boxes = request.form.getlist('selected_boxes')
+    barcode_type = request.form.get('barcode_type', 'qrcode')
+    
     if not selected_boxes:
         flash("No boxes selected for printing", 'warning')
         return redirect(url_for('dashboard'))
     
-    # Redirect to print template with selected box IDs
-    return redirect(url_for('print_template', box_ids=selected_boxes))
+    # Redirect to print template with selected box IDs and barcode type
+    return redirect(url_for('print_template', box_ids=selected_boxes, type=barcode_type))
 
 @app.route('/bulk_print_logs', methods=['POST'])
 @admin_required
