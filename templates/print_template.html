@@ -23,27 +23,105 @@
     top: 0.5rem;
     right: 0.5rem;
 }
-@media print {
-    #generator-section,
-    .text-controls,
-    .btn,
-    .dropdown {
-        display: none !important;
-    }
-    .custom-text-input {
-        border: none;
-        background: transparent;
-        padding: 0;
-        white-space: pre-wrap;
-    }
-    .barcode-item {
-        border: 1px solid #000;
-        page-break-inside: avoid;
-    }
-    .container-fluid {
-        padding: 0;
-    }
+
+/* === Print ONLY rules === */
+@page {
+  size: letter portrait;
+  margin: 0.5in;
 }
+
+@media print {
+  /* 1) Hide all UI chrome except the print-area */
+  body * {
+    visibility: hidden !important;
+  }
+  #print-area, 
+  #print-area * {
+    visibility: visible !important;
+  }
+  
+  /* Prevent the grid from shifting down */
+  #print-area {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 2) Kill header row (page title + buttons) */
+  .row.align-items-center.mb-4 {
+    display: none !important;
+  }
+
+  /* 3) Hide sidebar, footer, and any other wrappers */
+  .sidebar,
+  .app-footer,
+  .navbar,
+  .no-print,
+  #generator-section,
+  .text-controls,
+  .btn,
+  .dropdown,
+  .finalize-controls {
+    display: none !important;
+  }
+
+  /* 4) Remove any leftover scrollbars */
+  html, body {
+    overflow: visible !important;
+  }
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* 5) Force a 2-column, 5-row grid for Letter paper */
+  .barcode-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-auto-rows: auto !important;
+    gap: 0.5in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* 6) Keep each barcode card together */
+  .barcode-item {
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+    border: 1px solid #000 !important;
+    padding: 0.25in !important;
+    text-align: center !important;
+    background: white !important;
+    border-radius: 0 !important;
+  }
+
+  /* 7) Clean text styling for print */
+  .custom-text-input {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    white-space: pre-wrap !important;
+    font-size: 10pt !important;
+    margin-top: 0.1in !important;
+  }
+
+  /* 8) Barcode image sizing */
+  .barcode-image {
+    max-width: 100% !important;
+    height: auto !important;
+    margin-bottom: 0.1in !important;
+  }
+
+  /* 9) Remove container padding */
+  .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
 .barcode-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -169,7 +247,7 @@
 
   <!-- Finalize & Print -->
   {% if barcode_data %}
-  <div class="d-flex justify-content-center my-4">
+  <div class="d-flex justify-content-center my-4 finalize-controls">
     <button onclick="finalizeAndPrint()" class="btn btn-success btn-lg px-4">
       <i class="fas fa-print me-2"></i>Finalize & Print
     </button>
@@ -298,55 +376,37 @@ function deleteTextBox(button) {
 }
 
 function finalizeAndPrint() {
-    // Store original states
-    const controls = document.querySelectorAll('.text-controls, .finalize-controls, .no-print');
-    const containers = document.querySelectorAll('.custom-text-container');
+    // Store original states for restoration
     const textareas = document.querySelectorAll('.custom-text-input');
-    
-    const originalStates = Array.from(containers).map(container => ({
-        container: container,
-        containerDisplay: container.style.display,
-        textarea: container.querySelector('.custom-text-input'),
-        textareaDisplay: container.querySelector('.custom-text-input').style.display,
-        value: container.querySelector('.custom-text-input').value
+    const originalStates = Array.from(textareas).map(textarea => ({
+        textarea: textarea,
+        value: textarea.value
     }));
     
-    // Hide controls for printing
-    controls.forEach(control => control.style.display = 'none');
-    
-    // Convert textareas to divs for cleaner printing
-    containers.forEach(container => {
-        const textarea = container.querySelector('.custom-text-input');
-        if (container.style.display !== 'none' && textarea.style.display !== 'none' && textarea.value.trim()) {
+    // Convert textareas to static text divs for clean printing
+    textareas.forEach(textarea => {
+        if (textarea.value.trim()) {
             const div = document.createElement('div');
             div.className = 'custom-text-print';
-            div.style.cssText = 'font-size: 12px; margin-top: 8px; text-align: center; word-wrap: break-word; white-space: pre-line;';
+            div.style.cssText = 'font-size: 10pt; margin-top: 0.1in; text-align: center; word-wrap: break-word; white-space: pre-line;';
             div.textContent = textarea.value;
-            container.appendChild(div);
-            textarea.style.display = 'none';
-        } else if (container.style.display !== 'none') {
+            textarea.parentElement.appendChild(div);
             textarea.style.display = 'none';
         }
     });
     
-    // Trigger print dialog
+    // Trigger print dialog - CSS handles all layout and hiding
     window.print();
     
     // Restore everything after printing
     setTimeout(() => {
-        // Restore controls
-        controls.forEach(control => control.style.display = '');
-        
-        // Restore containers and textareas exactly as they were
+        // Remove temporary print divs and restore textareas
         originalStates.forEach(state => {
-            state.container.style.display = state.containerDisplay;
-            state.textarea.style.display = state.textareaDisplay;
-            state.textarea.value = state.value;
+            const printDivs = state.textarea.parentElement.querySelectorAll('.custom-text-print');
+            printDivs.forEach(div => div.remove());
+            state.textarea.style.display = '';
         });
-        
-        // Remove print divs
-        document.querySelectorAll('.custom-text-print').forEach(div => div.remove());
-    }, 1000);
+    }, 100);
 }
 
 // Wait for DOM to be ready
