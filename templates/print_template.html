@@ -3,6 +3,71 @@
 {% block title %}Barcode Print Template{% endblock %}
 
 {% block content %}
+<style>
+.custom-text-container {
+    margin-top: 10px;
+    position: relative;
+}
+
+.custom-text-input {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+}
+
+.text-controls {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.custom-text-container:hover .text-controls {
+    opacity: 1;
+}
+
+.finalize-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+@media print {
+    .text-controls,
+    .finalize-controls,
+    .no-print,
+    #generator-section,
+    .btn,
+    .dropdown {
+        display: none !important;
+    }
+    
+    .custom-text-input {
+        border: none;
+        background: transparent;
+        resize: none;
+        outline: none;
+        padding: 0;
+        white-space: pre-wrap;
+    }
+    
+    .barcode-item {
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+    
+    .container-fluid {
+        padding: 0;
+    }
+}
+</style>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -98,12 +163,15 @@
                         <img src="{{ item.image }}" alt="Barcode: {{ item.barcode }}" class="barcode-image">
                         {% endif %}
                         <div class="barcode-text">{{ item.barcode }}</div>
-                        {% if item.type %}
-                        <div class="box-info">
-                            <strong>Box Type:</strong><br>
-                            <small>{{ item.type }}</small>
+                        <!-- Customizable text boxes -->
+                        <div class="custom-text-container">
+                            <textarea class="custom-text-input" placeholder="Add custom text..." data-default-text="{% if item.type %}Box Type: {{ item.type }}{% endif %}">{% if item.type %}Box Type: {{ item.type }}{% endif %}</textarea>
+                            <div class="text-controls">
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-text" onclick="deleteTextBox(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
-                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -115,6 +183,15 @@
                 </div>
                 {% endif %}
             </div>
+
+            <!-- Finalize and Print Button -->
+            {% if barcode_data %}
+            <div class="finalize-controls">
+                <button onclick="finalizeAndPrint()" class="btn btn-success btn-lg">
+                    <i class="fas fa-print"></i> Finalize & Print
+                </button>
+            </div>
+            {% endif %}
 
             <!-- Generated Barcodes Container (hidden by default) -->
             <div id="generated-barcodes" style="display: none;">
@@ -271,17 +348,70 @@ function printWithBarcodeType(type = 'qrcode') {
     window.location.href = newUrl;
 }
 
-document.getElementById('manual-barcode-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const barcode = document.getElementById('manual-barcode-input').value.trim();
-    if (barcode) {
-        fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode))
-            .then(r => r.json())
-            .then(data => {
-                generatedBarcodes.push({barcode: barcode, image: data.image});
-                displayGeneratedBarcodes();
-                document.getElementById('manual-barcode-input').value = '';
-            });
+function deleteTextBox(button) {
+    const textContainer = button.closest('.custom-text-container');
+    const textarea = textContainer.querySelector('.custom-text-input');
+    
+    if (confirm('Delete this text box?')) {
+        textarea.value = '';
+        textarea.style.display = 'none';
+        button.style.display = 'none';
+    }
+}
+
+function finalizeAndPrint() {
+    // Hide all edit controls and finalize button for printing
+    const controls = document.querySelectorAll('.text-controls, .finalize-controls, .no-print');
+    controls.forEach(control => control.style.display = 'none');
+    
+    // Convert textareas to divs for cleaner printing
+    const textareas = document.querySelectorAll('.custom-text-input');
+    textareas.forEach(textarea => {
+        if (textarea.style.display !== 'none' && textarea.value.trim()) {
+            const div = document.createElement('div');
+            div.className = 'custom-text-print';
+            div.style.cssText = 'font-size: 12px; margin-top: 8px; text-align: center; word-wrap: break-word;';
+            div.textContent = textarea.value;
+            textarea.parentNode.appendChild(div);
+            textarea.style.display = 'none';
+        } else if (textarea.style.display !== 'none') {
+            textarea.style.display = 'none';
+        }
+    });
+    
+    // Trigger print dialog
+    window.print();
+    
+    // Restore controls after printing (user might cancel)
+    setTimeout(() => {
+        controls.forEach(control => control.style.display = '');
+        textareas.forEach(textarea => {
+            if (textarea.value.trim() || textarea.style.display === 'none') {
+                textarea.style.display = textarea.style.display === 'none' ? 'none' : '';
+            }
+        });
+        // Remove print divs
+        document.querySelectorAll('.custom-text-print').forEach(div => div.remove());
+    }, 1000);
+}
+
+// Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', function() {
+    const manualForm = document.getElementById('manual-barcode-form');
+    if (manualForm) {
+        manualForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const barcode = document.getElementById('manual-barcode-input').value.trim();
+            if (barcode) {
+                fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode))
+                    .then(r => r.json())
+                    .then(data => {
+                        generatedBarcodes.push({barcode: barcode, image: data.image});
+                        displayGeneratedBarcodes();
+                        document.getElementById('manual-barcode-input').value = '';
+                    });
+            }
+        });
     }
 });
 </script>
