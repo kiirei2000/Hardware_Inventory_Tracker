@@ -11,13 +11,14 @@
 
 .custom-text-input {
     width: 100%;
-    min-height: 60px;
+    height: 60px;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    resize: vertical;
+    resize: none;
     font-size: 12px;
     font-family: Arial, sans-serif;
+    overflow: hidden;
 }
 
 .text-controls {
@@ -34,7 +35,7 @@
 
 .finalize-controls {
     position: fixed;
-    bottom: 20px;
+    bottom: 80px;
     right: 20px;
     z-index: 1000;
 }
@@ -162,10 +163,9 @@
                         {% if item.image %}
                         <img src="{{ item.image }}" alt="Barcode: {{ item.barcode }}" class="barcode-image">
                         {% endif %}
-                        <div class="barcode-text">{{ item.barcode }}</div>
                         <!-- Customizable text boxes -->
                         <div class="custom-text-container">
-                            <textarea class="custom-text-input" placeholder="Add custom text..." data-default-text="{% if item.type %}Box Type: {{ item.type }}{% endif %}">{% if item.type %}Box Type: {{ item.type }}{% endif %}</textarea>
+                            <textarea class="custom-text-input" placeholder="Add custom text..." data-default-text="{% if item.type %}{{ item.barcode }}&#10;Box Type: {{ item.type }}{% else %}{{ item.barcode }}{% endif %}">{% if item.type %}{{ item.barcode }}&#10;Box Type: {{ item.type }}{% else %}{{ item.barcode }}{% endif %}</textarea>
                             <div class="text-controls">
                                 <button type="button" class="btn btn-sm btn-outline-danger delete-text" onclick="deleteTextBox(this)">
                                     <i class="fas fa-trash"></i>
@@ -354,27 +354,38 @@ function deleteTextBox(button) {
     
     if (confirm('Delete this text box?')) {
         textarea.value = '';
-        textarea.style.display = 'none';
-        button.style.display = 'none';
+        textContainer.style.display = 'none';
     }
 }
 
 function finalizeAndPrint() {
-    // Hide all edit controls and finalize button for printing
+    // Store original states
     const controls = document.querySelectorAll('.text-controls, .finalize-controls, .no-print');
+    const containers = document.querySelectorAll('.custom-text-container');
+    const textareas = document.querySelectorAll('.custom-text-input');
+    
+    const originalStates = Array.from(containers).map(container => ({
+        container: container,
+        containerDisplay: container.style.display,
+        textarea: container.querySelector('.custom-text-input'),
+        textareaDisplay: container.querySelector('.custom-text-input').style.display,
+        value: container.querySelector('.custom-text-input').value
+    }));
+    
+    // Hide controls for printing
     controls.forEach(control => control.style.display = 'none');
     
     // Convert textareas to divs for cleaner printing
-    const textareas = document.querySelectorAll('.custom-text-input');
-    textareas.forEach(textarea => {
-        if (textarea.style.display !== 'none' && textarea.value.trim()) {
+    containers.forEach(container => {
+        const textarea = container.querySelector('.custom-text-input');
+        if (container.style.display !== 'none' && textarea.style.display !== 'none' && textarea.value.trim()) {
             const div = document.createElement('div');
             div.className = 'custom-text-print';
-            div.style.cssText = 'font-size: 12px; margin-top: 8px; text-align: center; word-wrap: break-word;';
+            div.style.cssText = 'font-size: 12px; margin-top: 8px; text-align: center; word-wrap: break-word; white-space: pre-line;';
             div.textContent = textarea.value;
-            textarea.parentNode.appendChild(div);
+            container.appendChild(div);
             textarea.style.display = 'none';
-        } else if (textarea.style.display !== 'none') {
+        } else if (container.style.display !== 'none') {
             textarea.style.display = 'none';
         }
     });
@@ -382,14 +393,18 @@ function finalizeAndPrint() {
     // Trigger print dialog
     window.print();
     
-    // Restore controls after printing (user might cancel)
+    // Restore everything after printing
     setTimeout(() => {
+        // Restore controls
         controls.forEach(control => control.style.display = '');
-        textareas.forEach(textarea => {
-            if (textarea.value.trim() || textarea.style.display === 'none') {
-                textarea.style.display = textarea.style.display === 'none' ? 'none' : '';
-            }
+        
+        // Restore containers and textareas exactly as they were
+        originalStates.forEach(state => {
+            state.container.style.display = state.containerDisplay;
+            state.textarea.style.display = state.textareaDisplay;
+            state.textarea.value = state.value;
         });
+        
         // Remove print divs
         document.querySelectorAll('.custom-text-print').forEach(div => div.remove());
     }, 1000);
