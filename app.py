@@ -1420,7 +1420,8 @@ def bulk_print_logs():
 @admin_required
 def print_box_barcode(box_id):
     """Print barcode for a specific box"""
-    return redirect(url_for('print_template', box_ids=[box_id]))
+    barcode_type = request.args.get('type', 'qrcode')
+    return redirect(url_for('print_template', box_ids=[box_id], type=barcode_type))
 
 @app.route('/print_box_history/<box_id>')
 @admin_required

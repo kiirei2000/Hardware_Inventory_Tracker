@@ -37,9 +37,19 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
-                            <button onclick="generateRandomBarcodes()" class="btn btn-info btn-block mb-2">
-                                <i class="fas fa-random"></i> Generate Random Barcodes
-                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-info dropdown-toggle btn-block mb-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-random"></i> Generate Random Barcodes
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="generateRandomBarcodes('qrcode')">
+                                        <i class="fas fa-qrcode me-2"></i>Generate QR Codes
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="generateRandomBarcodes('code128')">
+                                        <i class="fas fa-barcode me-2"></i>Generate Barcode 128
+                                    </a></li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="col-md-4">
                             <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-block mb-2">
@@ -110,9 +120,19 @@
             <div id="generated-barcodes" style="display: none;">
                 <h4>Generated Barcodes</h4>
                 <div id="barcode-list"></div>
-                <button onclick="printGeneratedBarcodes()" class="btn btn-primary mt-3">
-                    <i class="fas fa-print"></i> Print These Barcodes
-                </button>
+                <div class="dropdown mt-3">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-print"></i> Print These Barcodes
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="printGeneratedBarcodes('qrcode')">
+                            <i class="fas fa-qrcode me-2"></i>Print as QR Codes
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="printGeneratedBarcodes('code128')">
+                            <i class="fas fa-barcode me-2"></i>Print as Barcode 128
+                        </a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -187,11 +207,11 @@
 <script>
 let generatedBarcodes = [];
 
-function generateRandomBarcodes() {
+function generateRandomBarcodes(type = 'qrcode') {
     // Generate 6 random barcodes
     const promises = [];
     for (let i = 0; i < 6; i++) {
-        promises.push(fetch('/generate_barcode_api').then(r => r.json()));
+        promises.push(fetch(`/generate_barcode_api?type=${type}`).then(r => r.json()));
     }
     
     Promise.all(promises).then(results => {
@@ -235,11 +255,20 @@ function removeBarcode(index) {
     displayGeneratedBarcodes();
 }
 
-function printGeneratedBarcodes() {
+function printGeneratedBarcodes(type = 'qrcode') {
     const barcodes = generatedBarcodes.map(item => item.barcode);
     const url = new URL(window.location.origin + '/print_template');
     barcodes.forEach(barcode => url.searchParams.append('barcodes', barcode));
+    url.searchParams.append('type', type);
     window.location.href = url.toString();
+}
+
+function printWithBarcodeType(type = 'qrcode') {
+    // Get current URL parameters and update with new barcode type
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('type', type);
+    const newUrl = window.location.pathname + '?' + urlParams.toString();
+    window.location.href = newUrl;
 }
 
 document.getElementById('manual-barcode-form').addEventListener('submit', function(e) {

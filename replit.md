@@ -90,6 +90,7 @@ The application uses four main entities:
 
 ## Changelog
 - June 14, 2025. Initial setup
+- June 14, 2025. Enhanced barcode functionality - Added dual barcode type support (Code128/QR), purple scan button, comprehensive print options with type selection
 
 ## User Preferences
 
