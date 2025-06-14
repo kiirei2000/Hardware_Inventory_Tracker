@@ -10,3 +10,5 @@ qrcode
 pillow
 python-barcode
 python-barcode
+pillow
+python-barcode[images]

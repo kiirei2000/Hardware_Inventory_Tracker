@@ -15,20 +15,36 @@ from urllib.parse import urlparse
 import uuid
 import qrcode
 from PIL import Image
-# Import barcode libraries with fallback handling
-try:
-    import barcode
-    from barcode import get_barcode_class
-    from barcode.writer import ImageWriter
-    BARCODE_AVAILABLE = True
-except ImportError:
-    print("python-barcode not available, using QR codes only")
-    BARCODE_AVAILABLE = False
+# Import barcode libraries with correct python-barcode structure
+from barcode.codex import Code128
+from barcode.writer import ImageWriter
 import base64
 import csv
+import logging
+import traceback
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+
+# Configure barcode-specific logger
+os.makedirs('logs', exist_ok=True)
+barcode_logger = logging.getLogger('barcode_generation')
+barcode_logger.setLevel(logging.INFO)
+
+handler = logging.FileHandler('logs/barcode_generation.log')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+barcode_logger.addHandler(handler)
+
+def log_barcode_operation(operation, barcode_data, barcode_type, success, error=None):
+    """Log barcode generation operations with detailed information"""
+    timestamp = datetime.now().isoformat()
+    if success:
+        barcode_logger.info(f"{operation} - {barcode_type} - {barcode_data} - SUCCESS")
+    else:
+        barcode_logger.error(f"{operation} - {barcode_type} - {barcode_data} - FAILED: {error}")
+        barcode_logger.error(f"Stack trace: {traceback.format_exc()}")
 
 class Base(DeclarativeBase):
     pass
