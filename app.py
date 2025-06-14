@@ -1507,14 +1507,20 @@ def export_word():
         
         # No title - removed as requested
         
-        # 1) Pull template settings from template_data
+        # 1) Pull template settings with debug logging
+        app.logger.debug("Word export received template_data: %s", template_data)
+        
         cols = template_data.get('columns', 2)
         rows = template_data.get('rows', 5)
         cell_w_in = template_data.get('cell_width', 4)
         cell_h_in = template_data.get('cell_height', 2)
         barcode_in = template_data.get('barcode_area', 0.66)
         size_pct = template_data.get('barcode_size_pct', 100) / 100
-        active_fields = template_data.get('fields', ['type', 'lot', 'quantity', 'boxId'])
+        active_fields = template_data.get('fields', [])
+        selected_type = template_data.get('barcode_type', 'qrcode')
+        
+        app.logger.debug("Extracted values - type: %s, size: %s%%, fields: %s", 
+                         selected_type, template_data.get('barcode_size_pct', 100), active_fields)
         
         # Add space for company logo at top
         logo_para = doc.add_paragraph()
@@ -1534,7 +1540,7 @@ def export_word():
             r.height = Inches(cell_h_in)
             r.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
         
-        # 3) Fill each cell with template-driven content
+        # 3) Fill each cell with corrected logic
         for i, item_data in enumerate(barcode_data):
             if i >= rows * cols:
                 break
@@ -1548,56 +1554,70 @@ def export_word():
             dataset = item_data.get('dataset', {})
             img_src = item_data.get('image', '')
             
-            # Embed barcode at fixed height using image path
+            # Try to embed barcode with TYPE PRIORITY
             img_found = False
-            if img_src:
-                img_path = img_src.lstrip('/')
-                abs_path = os.path.join(app.root_path, img_path)
-                if os.path.exists(abs_path):
-                    try:
-                        run = p.add_run()
-                        run.add_picture(abs_path, height=Inches(barcode_in * size_pct))
-                        img_found = True
-                    except Exception:
-                        pass
             
-            # Fallback: try to find image by barcode code
-            if not img_found:
-                barcode_code = item_data.get('barcode', '').replace('Barcode: ', '')
-                if not barcode_code and 'boxId' in dataset:
-                    barcode_code = dataset['boxId']
-                
-                if barcode_code:
+            # Get barcode code from multiple sources
+            barcode_code = (item_data.get('barcode', '') or 
+                           dataset.get('boxId', '') or 
+                           'unknown').replace('Barcode: ', '')
+            
+            app.logger.debug("Processing item %d - barcode: %s, type: %s", i, barcode_code, selected_type)
+            
+            if barcode_code and barcode_code != 'unknown':
+                # PRIORITY-BASED path selection
+                if selected_type == 'code128':
                     possible_paths = [
-                        f"static/barcodes/{barcode_code}_qrcode.png",
-                        f"static/barcodes/{barcode_code}_code128.png", 
-                        f"static/barcodes/{barcode_code}.png"
+                        f"static/barcodes/{barcode_code}_code128.png",  # PRIORITY
+                        f"static/barcodes/{barcode_code}_qrcode.png",   # fallback
+                        f"static/barcodes/{barcode_code}.png"          # fallback
                     ]
-                    
-                    for img_path in possible_paths:
-                        abs_path = os.path.join(app.root_path, img_path)
-                        if os.path.exists(abs_path):
-                            try:
-                                run = p.add_run()
-                                run.add_picture(abs_path, height=Inches(barcode_in * size_pct))
-                                img_found = True
-                                break
-                            except Exception:
-                                continue
+                else:  # qrcode
+                    possible_paths = [
+                        f"static/barcodes/{barcode_code}_qrcode.png",   # PRIORITY
+                        f"static/barcodes/{barcode_code}_code128.png",  # fallback
+                        f"static/barcodes/{barcode_code}.png"          # fallback
+                    ]
+                
+                for img_path in possible_paths:
+                    abs_path = os.path.join(app.root_path, img_path)
+                    app.logger.debug("Trying image path: %s", abs_path)
+                    if os.path.exists(abs_path):
+                        try:
+                            run = p.add_run()
+                            final_height = barcode_in * size_pct
+                            run.add_picture(abs_path, height=Inches(final_height))
+                            img_found = True
+                            app.logger.debug("Successfully loaded image: %s with height: %.2f", abs_path, final_height)
+                            break
+                        except Exception as e:
+                            app.logger.debug("Failed to load image %s: %s", abs_path, e)
+                            continue
             
-            # If still no image, add placeholder
+            # Fallback placeholder
             if not img_found:
-                p.add_run('[QR Code Space]')
+                p.add_run('[Barcode Image]')
+                app.logger.debug("No image found for barcode: %s", barcode_code)
             
-            # Add only the fields they toggled on
+            # Add ONLY selected fields
             labels = {'boxId': 'Box ID', 'type': 'Type', 'lot': 'Lot', 'quantity': 'Quantity'}
-            for key in active_fields:
-                value = item_data.get(key) or dataset.get(key)
-                if value:
-                    p.add_run(f"\n{labels.get(key, key.title())}: {value}")
             
-            # Apply table styling - use Table Grid for borders
-            table.style = 'Table Grid'
+            if active_fields:
+                app.logger.debug("Adding fields: %s for item %d", active_fields, i)
+                for key in active_fields:
+                    value = dataset.get(key)
+                    if value:
+                        label = labels.get(key, key.title())
+                        p.add_run(f"\n{label}: {value}")
+                        app.logger.debug("Added field %s: %s", label, value)
+            else:
+                # Minimal fallback
+                box_id = dataset.get('boxId', barcode_code)
+                p.add_run(f"\n{box_id}")
+                app.logger.debug("No active fields, added minimal info: %s", box_id)
+        
+        # Apply table styling
+        table.style = 'Table Grid'
         
         # Save to BytesIO
         doc_buffer = io.BytesIO()

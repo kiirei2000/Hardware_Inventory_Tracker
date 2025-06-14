@@ -1,0 +1,74 @@
+there are still a few moving parts you need to double-check to make sure those patches actually take:
+
+1) Barcode Type
+Are you actually setting window.lastSelectedBarcodeType on every print-type change?
+Make sure your two “Print → QR” and “Print → Barcode128” buttons both call
+
+js
+Copier
+Modifier
+function printWithBarcodeType(type, …) {
+  window.lastSelectedBarcodeType = type;
+  // …then perform the actual print…
+}
+If the user never clicks one of those right before “Export to Word,” lastSelectedBarcodeType will still be undefined and your code will fall back to 'qrcode'.
+
+Verify in your debug logs that inside exportToWord() you actually see the correct WORD EXPORT DATA: { barcode_type: 'code128', … }.
+
+2) Field Toggles
+Button IDs & Classes
+You’re looking for #field-type, #field-lot, #field-quantity, #field-box-id, and checking for .btn-secondary to signify “active.”
+
+Are those exactly the IDs on your toggle buttons?
+
+Does clicking them add and remove .btn-secondary, vs. some other class like .active?
+
+Backend mapping
+Your Python loop does
+
+py
+Copier
+Modifier
+active_fields = template_data.get('fields', [])
+for key in active_fields:
+    value = item_data.get(key) or dataset.get(key)
+    …
+Make sure that item_data or dataset actually has keys named exactly 'boxId', 'type', 'lot' or 'quantity'. If your server passed them as 'box_id' or 'lot_number' the lookup will never hit and you’ll end up rendering everything in the “else” fallback.
+
+3) Barcode Size
+Slider ID
+You’re reading
+
+js
+Copier
+Modifier
+document.querySelector('#barcode-size-main').value
+Confirm your <input type="range"> really has id="barcode-size-main" and not something like id="barcode-size" (or vice-versa). A mismatch there means you’ll always submit 100.
+
+barcode_in on the Python side
+You’re doing
+
+py
+Copier
+Modifier
+run.add_picture(abs_path, height=Inches(barcode_in * actual_size_pct))
+but you never explicitly pull barcode_in = template_data.get('barcode_area', …) at the top of export_word(). Make sure you do:
+
+py
+Copier
+Modifier
+barcode_in = template_data.get('barcode_area', 0.66)
+otherwise you’ll get a NameError or default to zero.
+
+Final sanity checks
+Console-log everything
+
+In exportToWord(), log the exact templateData you’re submitting.
+
+In your Flask route, app.logger.debug("template_data = %r", template_data) immediately after you json.loads() it.
+
+Verify file existence
+In your Flask logs you should see “Trying image path: /full/path/to/static/barcodes/…png” and “Successfully loaded image: …”. If you never see the “loaded” log or if “exists?” is false, you still won’t embed the real barcode.
+
+Dataset key consistency
+Make sure the same field names are used everywhere: JS pushes 'boxId', 'type', 'lot', 'quantity' and your Python dataset = item_data.get('dataset') really contains those exact keys.

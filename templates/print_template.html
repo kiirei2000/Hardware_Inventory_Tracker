@@ -543,7 +543,25 @@ function exportToWord() {
             return;
         }
         
-        // Collect current barcode data with text field values
+        // 1. Get current barcode type from URL params (how print system works)
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentBarcodeType = urlParams.get('type') || 'qrcode';
+        
+        // 2. Get barcode size from correct element
+        const barcodeSlider = document.getElementById('barcode-size');
+        const barcodeSize = barcodeSlider ? parseInt(barcodeSlider.value) : 100;
+        
+        // 3. Get active fields from toggle buttons (correct IDs and class check)
+        const activeFields = [];
+        ['box-id', 'type', 'lot'].forEach(fieldType => {
+            const button = document.getElementById(`field-${fieldType}`);
+            if (button && button.classList.contains('btn-secondary')) {
+                // Convert box-id to boxId for backend compatibility
+                activeFields.push(fieldType === 'box-id' ? 'boxId' : fieldType);
+            }
+        });
+        
+        // 4. Collect barcode data with proper dataset conversion
         const barcodeData = [];
         document.querySelectorAll('.barcode-item').forEach(item => {
             const barcode = item.querySelector('.barcode-image')?.alt || '';
@@ -559,15 +577,41 @@ function exportToWord() {
                 }
             });
             
+            // Convert dataset to proper format
+            const dataset = {
+                boxId: item.dataset.boxId || item.dataset.boxid,
+                type: item.dataset.type || item.dataset.hardwareType,
+                lot: item.dataset.lot || item.dataset.lotNumber,
+                quantity: item.dataset.quantity || item.dataset.remainingQuantity
+            };
+            
             barcodeData.push({
                 barcode: barcode.replace('Barcode: ', ''),
-                image_url: barcodeImg,
-                dataset: item.dataset,
+                image: barcodeImg, // Use 'image' key as backend expects
+                dataset: dataset,
                 text_fields: textFields
             });
         });
         
-        // Send data to backend for Word generation
+        // 5. Create template data with all required fields
+        const templateData = currentTemplate || {};
+        templateData.barcode_type = currentBarcodeType;
+        templateData.barcode_size_pct = barcodeSize;
+        templateData.fields = activeFields;
+        templateData.columns = templateData.columns || 2;
+        templateData.rows = templateData.rows || 5;
+        templateData.barcode_area = templateData.barcode_area || 0.66;
+        
+        // 6. Debug logging
+        console.log('WORD EXPORT DEBUG:', {
+            barcode_type: currentBarcodeType,
+            barcode_size_pct: barcodeSize,
+            active_fields: activeFields,
+            template_data: templateData,
+            first_item_dataset: barcodeData[0]?.dataset
+        });
+        
+        // 7. Submit form
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/export_word';
@@ -581,7 +625,7 @@ function exportToWord() {
         const templateInput = document.createElement('input');
         templateInput.type = 'hidden';
         templateInput.name = 'template';
-        templateInput.value = JSON.stringify(currentTemplate || {columns: 2, rows: 5});
+        templateInput.value = JSON.stringify(templateData);
         
         form.appendChild(dataInput);
         form.appendChild(templateInput);

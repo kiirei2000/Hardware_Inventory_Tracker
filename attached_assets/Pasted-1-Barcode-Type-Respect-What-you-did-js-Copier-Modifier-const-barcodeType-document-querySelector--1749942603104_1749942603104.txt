@@ -1,0 +1,89 @@
+1. Barcode Type Respect
+What you did
+js
+Copier
+Modifier
+const barcodeType = document.querySelector('input[name="barcode_type"]:checked')?.value || 'qrcode';
+templateData.barcode_type = barcodeType;
+py
+Copier
+Modifier
+selected_type = template_data.get('barcode_type', 'qrcode')
+if selected_type=='qrcode':
+  possible_paths = [ “…_qrcode.png”, “…_code128.png”, “…png” ]
+else:
+  possible_paths = [ “…_code128.png”, “…_qrcode.png”, “…png” ]
+What to verify
+HTML radio/name: Confirm your print-template page really has <input name="barcode_type" value="qrcode"> / value="code128". If that control is missing or the name is wrong, barcode_type will always default to 'qrcode'.
+
+Backend priority: You break out of the loop on first existing file. That’s good—just make sure your /static/barcodes/..._code128.png files actually exist.
+
+2. Field Toggles
+What you did
+js
+Copier
+Modifier
+['type','lot','quantity','box-id'].forEach(field => {
+  if (document.querySelector(`#toggle-${field}`).classList.contains('active')) {
+    activeFields.push(field==='box-id'?'boxId':field);
+  }
+});
+templateData.fields = activeFields;
+py
+Copier
+Modifier
+active_fields = template_data.get('fields', [])
+for key in active_fields:
+  … add only those runs …
+What to verify
+Button IDs: Your JavaScript looks for #toggle-type, #toggle-lot, #toggle-quantity, #toggle-box-id. Make sure those exact IDs exist on your “Text Fields” buttons, and that toggling them adds/removes an 'active' class.
+
+No fallback: If active_fields is empty, your code falls back to “minimal info.” If you still see every field, then either the JS never pushed into fields[], or the Python snippet accidentally ignores the if active_fields: guard and still iterates over the full label list.
+
+3. Barcode Size
+What you did
+js
+Copier
+Modifier
+const barcodeSize = document.querySelector('#barcode-size')?.value || 100;
+templateData.barcode_size_pct = parseInt(barcodeSize);
+py
+Copier
+Modifier
+actual_size_pct = template_data.get('barcode_size_pct',100)/100
+run.add_picture(abs_path, height=Inches(barcode_in * actual_size_pct))
+What to verify
+Slider id match: In earlier code your slider was <input id="slider-barcode-size">, but here you’re reading #barcode-size. Those must match—or your JS will always submit 100.
+
+barcode_in Definition: The Python uses barcode_in (the template’s allotted inches for the barcode) to compute final height. Make sure you pulled that value from template_data at the top of export_word, e.g.:
+
+py
+Copier
+Modifier
+barcode_in = template_data.get('barcode_area', 0.66)
+If you never set barcode_in, Python will throw a NameError (or silently treat it as zero).
+
+Final Sanity Steps
+Console-log your submitted JSON right before form submission:
+
+js
+Copier
+Modifier
+console.log('SUBMIT→', { barcodeData, templateData });
+Make sure it contains your chosen barcode_type, barcode_size_pct, and fields.
+
+Inspect template_data at the top of your Flask route:
+
+py
+Copier
+Modifier
+app.logger.debug("template_data = %s", template_data)
+Confirm you’re receiving exactly what you submitted.
+
+Check file existence by temporarily printing which abs_paths you tried:
+
+py
+Copier
+Modifier
+app.logger.debug("Trying image path: %s", abs_path)
+to catch typos or working‐directory mismatches.
