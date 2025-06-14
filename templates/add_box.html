@@ -95,9 +95,19 @@
                 <input type="text" class="form-control" id="barcode" name="barcode"
                        placeholder="Generated automatically or enter manually"
                        value="{{ form_data.get('barcode','') if form_data }}" required>
-                <button class="btn btn-outline-success" type="button" id="generateBarcodeBtn" onclick="generateBarcode()">
-                  <i class="fas fa-magic me-1"></i>Generate
-                </button>
+                <div class="btn-group">
+                  <button class="btn btn-outline-success dropdown-toggle" type="button" id="generateBarcodeBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-magic me-1"></i>Generate
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="generateBarcode('code128')">
+                      <i class="fas fa-barcode me-2"></i>Barcode 128
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="generateBarcode('qrcode')">
+                      <i class="fas fa-qrcode me-2"></i>QR Code
+                    </a></li>
+                  </ul>
+                </div>
               </div>
               <!-- Barcode Preview -->
               <div id="barcodePreview" class="mt-2" style="display: none;">
@@ -214,12 +224,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     updateBoxIdPreview();
     
-    // Auto-generate barcode when page loads
-    generateBarcode();
+    // Auto-generate QR code when page loads
+    generateBarcode('qrcode');
 });
 
-function generateBarcode() {
-    fetch('/generate_barcode_api')
+function generateBarcode(type = 'qrcode') {
+    fetch(`/generate_barcode_api?type=${type}`)
         .then(response => response.json())
         .then(data => {
             document.getElementById('barcode').value = data.barcode;

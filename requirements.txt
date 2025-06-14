@@ -10,3 +10,4 @@ qrcode
 barcode
 pillow
 python-barcode
+python-barcode

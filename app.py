@@ -15,6 +15,8 @@ from urllib.parse import urlparse
 import uuid
 import qrcode
 from PIL import Image
+import barcode
+from barcode.writer import ImageWriter
 import base64
 import csv
 
@@ -219,30 +221,41 @@ def generate_unique_barcode(length=10):
     
     raise ValueError("Unable to generate a unique barcode after many attempts.")
 
-def generate_barcode_image(barcode_data, format='png'):
-    """Generate QR code image and save to static/barcodes/"""
+def generate_barcode_image(barcode_data, barcode_type='qrcode', format='png'):
+    """Generate barcode image and save to static/barcodes/"""
     try:
         # Ensure barcodes directory exists
         barcodes_dir = os.path.join('static', 'barcodes')
         os.makedirs(barcodes_dir, exist_ok=True)
         
-        # Generate QR code
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(barcode_data)
-        qr.make(fit=True)
-        
-        # Create image
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Save to file
-        filename = f"{barcode_data}.png"
+        # Generate filename with type suffix
+        filename = f"{barcode_data}_{barcode_type}.png"
         filepath = os.path.join(barcodes_dir, filename)
-        img.save(filepath)
+        
+        if barcode_type == 'code128':
+            # Generate Code 128 barcode
+            try:
+                code128_class = barcode.get_barcode_class('code128')
+                code128 = code128_class(barcode_data, writer=ImageWriter())
+                code128.save(filepath.replace('.png', ''))  # barcode library adds .png automatically
+            except Exception as e:
+                print(f"Error with barcode library, falling back to QR code: {e}")
+                # Fallback to QR code if Code 128 fails
+                return generate_barcode_image(barcode_data, 'qrcode', format)
+        else:
+            # Generate QR code
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(barcode_data)
+            qr.make(fit=True)
+            
+            # Create image
+            img = qr.make_image(fill_color="black", back_color="white")
+            img.save(filepath)
         
         # Return URL path for HTML
         return f"/static/barcodes/{filename}"
@@ -1230,6 +1243,7 @@ def generate_barcode_api():
     """API endpoint to generate a new barcode"""
     # Check if custom barcode is provided
     custom_barcode = request.args.get('barcode', '').strip()
+    barcode_type = request.args.get('type', 'qrcode')  # Default to QR code
     
     if custom_barcode:
         # Use provided barcode
@@ -1238,11 +1252,12 @@ def generate_barcode_api():
         # Generate new unique barcode
         barcode_data = generate_unique_barcode()
     
-    barcode_image = generate_barcode_image(barcode_data)
+    barcode_image = generate_barcode_image(barcode_data, barcode_type)
     
     return jsonify({
         'barcode': barcode_data,
-        'image': barcode_image
+        'image': barcode_image,
+        'type': barcode_type
     })
 
 @app.route('/print_template')
