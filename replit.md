@@ -96,6 +96,7 @@ The application uses four main entities:
 - June 14, 2025. Lightweight template system - Added MVP print template designer with 4 stock templates (2×5/2×3 for Letter/A4), barcode size slider, logo upload, custom text field toggles, template save/load functionality using localStorage for offline compatibility
 - June 14, 2025. Word document export - Added "Export to Word" button alongside "Finalize & Print" using python-docx library for enhanced user control over print layouts, formatting, and editing capabilities
 - June 14, 2025. Word export fixes - Resolved critical issues with barcode type selection (prioritizes Code128 when selected), field toggle respect (only exports toggled fields), and dynamic barcode sizing. Added comprehensive debug logging for troubleshooting and verification of data flow from frontend to backend
+- June 14, 2025. Word layout optimization - Increased barcode area to 1.5" and text area to 0.5" for better barcode visibility and scanning reliability. Adjusted cell height to 2.2" to accommodate larger barcode dimensions
 
 ## User Preferences
 

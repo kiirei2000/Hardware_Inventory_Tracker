@@ -1513,8 +1513,8 @@ def export_word():
         cols = template_data.get('columns', 2)
         rows = template_data.get('rows', 5)
         cell_w_in = template_data.get('cell_width', 4)
-        cell_h_in = template_data.get('cell_height', 2)
-        barcode_in = template_data.get('barcode_area', 0.66)
+        cell_h_in = template_data.get('cell_height', 2.2)
+        barcode_in = template_data.get('barcode_area', 1.5)
         size_pct = template_data.get('barcode_size_pct', 100) / 100
         active_fields = template_data.get('fields', [])
         selected_type = template_data.get('barcode_type', 'qrcode')
