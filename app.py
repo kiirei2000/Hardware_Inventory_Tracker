@@ -63,6 +63,29 @@ def set_cell_border(cell):
         elm.set(qn('w:color'), '000000')  # black
         tcPr.append(elm)
 
+def set_individual_cell_border(cell):
+    """Add individual borders for each cell without sharing borders"""
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    
+    # Add margins for spacing between cells
+    mar = OxmlElement('w:tcMar')
+    for side in ('top', 'left', 'bottom', 'right'):
+        side_mar = OxmlElement(f'w:{side}')
+        side_mar.set(qn('w:w'), '100')  # 100 twips spacing
+        side_mar.set(qn('w:type'), 'dxa')
+        mar.append(side_mar)
+    tcPr.append(mar)
+    
+    # Add thick borders around each cell
+    for edge in ('top', 'left', 'bottom', 'right'):
+        elm = OxmlElement(f'w:{edge}')
+        elm.set(qn('w:val'), 'single')
+        elm.set(qn('w:sz'), '18')  # Thicker border - 18 eighth-points = 2.25pt
+        elm.set(qn('w:color'), '000000')  # black
+        elm.set(qn('w:space'), '0')
+        tcPr.append(elm)
+
 class Base(DeclarativeBase):
     pass
 
@@ -1487,9 +1510,16 @@ def export_word():
         columns = template_data.get('columns', 2)
         rows = template_data.get('rows', 5)
         
-        # Create table with proper dimensions
+        # Add space for company logo at top
+        logo_para = doc.add_paragraph()
+        logo_para.add_run('\n' * 3)  # Space for logo
+        
+        # Create table with proper dimensions and spacing
         table = doc.add_table(rows=rows, cols=columns)
-        table.style = 'Table Grid'
+        table.style = None  # Remove default style to avoid shared borders
+        
+        # Set table spacing to separate labels
+        table.autofit = False
         
         # Fill table with barcode data using improved approach
         for i, item_data in enumerate(barcode_data):
@@ -1498,51 +1528,88 @@ def export_word():
                 
             # Use cleaner cell access
             cell = table.rows[i // columns].cells[i % columns]
+            
+            # Clear cell and add proper spacing
+            cell.paragraphs[0].clear()
             p = cell.paragraphs[0]
-            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT
             
-            # 1) Embed the real barcode image
-            run = p.add_run()
-            img_src = item_data.get('image_url', '')
-            try:
-                if img_src.startswith('data:'):
-                    # Handle base64 data URLs
-                    header, data = img_src.split(',', 1)
-                    img_bytes = io.BytesIO(base64.b64decode(data))
-                    run.add_picture(img_bytes, width=Inches(2))
-                elif img_src.startswith('/static/'):
-                    # Handle relative file paths - convert to absolute
-                    img_path = img_src.lstrip('/')
+            # Add top padding
+            p.add_run('\n')
+            
+            # 1) Try to embed the real barcode image with better path handling
+            barcode_code = item_data.get('barcode', '').replace('Barcode: ', '')
+            img_found = False
+            
+            if barcode_code:
+                # Try multiple image paths and formats
+                possible_paths = [
+                    f"static/barcodes/{barcode_code}_qrcode.png",
+                    f"static/barcodes/{barcode_code}_code128.png", 
+                    f"static/barcodes/{barcode_code}.png"
+                ]
+                
+                for img_path in possible_paths:
                     if os.path.exists(img_path):
-                        run.add_picture(img_path, width=Inches(2))
-                    else:
-                        p.add_run(f"[Image not found: {img_path}]")
-                elif img_src and os.path.exists(img_src):
-                    # Handle absolute file paths
-                    run.add_picture(img_src, width=Inches(2))
-                else:
-                    p.add_run(f"[No image available]")
-            except Exception as img_err:
-                p.add_run(f"[Image error: {img_err}]")
+                        try:
+                            run = p.add_run()
+                            run.add_picture(img_path, width=Inches(1.8))
+                            img_found = True
+                            break
+                        except Exception as img_err:
+                            continue
             
-            # 2) Add data fields beneath the image
+            # Fallback if no image found
+            if not img_found:
+                img_src = item_data.get('image_url', '')
+                try:
+                    if img_src.startswith('data:'):
+                        header, data = img_src.split(',', 1)
+                        img_bytes = io.BytesIO(base64.b64decode(data))
+                        run = p.add_run()
+                        run.add_picture(img_bytes, width=Inches(1.8))
+                        img_found = True
+                    elif img_src.startswith('/static/'):
+                        img_path = img_src.lstrip('/')
+                        if os.path.exists(img_path):
+                            run = p.add_run()
+                            run.add_picture(img_path, width=Inches(1.8))
+                            img_found = True
+                except Exception:
+                    pass
+            
+            # If still no image, add placeholder space
+            if not img_found:
+                p.add_run('[QR Code Space]')
+            
+            # 2) Add spacing and data fields
+            p.add_run('\n\n')  # Space between image and data
+            
+            # Add dataset information
             dataset = item_data.get('dataset', {})
             text_fields = item_data.get('text_fields', {})
+            
+            # Add barcode code
+            if barcode_code:
+                p.add_run(f"Code: {barcode_code}\n")
             
             # Add dataset information with proper field mapping
             for label, key in (('Type', 'type'), ('Lot', 'lot'), 
                               ('Qty', 'quantity'), ('Box ID', 'boxId')):
                 val = dataset.get(key)
                 if val:
-                    p.add_run(f"\n{label}: {val}")
+                    p.add_run(f"{label}: {val}\n")
             
-            # Add custom text fields
+            # Add custom text fields  
             for field_type, value in text_fields.items():
-                if value.strip():
-                    p.add_run(f"\n{field_type.title()}: {value}")
+                if value and value.strip():
+                    p.add_run(f"{field_type.title()}: {value}\n")
             
-            # 3) Apply solid borders around the cell
-            set_cell_border(cell)
+            # Add bottom padding
+            p.add_run('\n')
+            
+            # 3) Apply individual borders (no shared borders)
+            set_individual_cell_border(cell)
         
         # Save to BytesIO
         doc_buffer = io.BytesIO()
