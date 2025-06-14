@@ -347,18 +347,15 @@
     {% if barcode_data %}
     <div class="barcode-grid">
       {% for item in barcode_data %}
-      <div class="barcode-item">
+      <div class="barcode-item" 
+           data-boxid="{{ item.box_id or 'N/A' }}"
+           data-type="{{ item.hardware_type or 'N/A' }}"
+           data-lot="{{ item.lot_number or 'N/A' }}"
+           data-quantity="{{ item.remaining_quantity or 'N/A' }}">
         {% if item.image %}
         <img src="{{ item.image }}" alt="Barcode: {{ item.barcode }}" class="barcode-image">
         {% endif %}
-        <div class="custom-text-container">
-          <textarea class="custom-text-input" placeholder="Add custom text...">{% if item.type %}{{ item.barcode }}&#10;Box Type: {{ item.type }}{% else %}{{ item.barcode }}{% endif %}</textarea>
-          <div class="text-controls">
-            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTextBox(this)">
-              <i class="fas fa-trash me-1"></i>
-            </button>
-          </div>
-        </div>
+        <div class="details-container"></div>
       </div>
       {% endfor %}
     </div>
@@ -587,7 +584,7 @@ function applyTemplate() {
         
         currentTemplate = template;
         
-        // Generate scoped CSS for print area only with print-only styles
+        // Comprehensive CSS with error prevention
         const css = `
         @media print {
             @page {
@@ -595,29 +592,53 @@ function applyTemplate() {
                 margin: ${template.margin};
             }
             
-            #print-area .barcode-grid {
-                grid-template-columns: repeat(${template.columns}, 1fr) !important;
-                gap: ${template.gap} !important;
-            }
-            
-            #print-area .custom-text-input { 
+            /* Hide inputs, show static text */
+            .custom-text-input { 
                 display: none !important; 
             }
-            
-            #print-area .custom-text-print { 
+            .custom-text-print { 
                 display: block !important; 
+                font-size: 10pt;
+                text-align: center;
+                margin-top: 0.25rem;
+            }
+            
+            /* Grid layout */
+            .barcode-grid {
+                display: grid !important;
+                grid-template-columns: repeat(${template.columns}, 1fr) !important;
+                gap: ${template.gap} !important;
+                width: 100% !important;
+            }
+            
+            /* Prevent page breaks */
+            .barcode-item { 
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+            
+            /* Scale barcode images */
+            .barcode-image {
+                max-width: 100% !important;
+                height: auto !important;
+                transform: scale(${(document.getElementById('barcode-size')?.value || 100) / 100}) !important;
             }
         }
         `;
         
-        // Inject or update template-specific styles
+        // Force CSS injection
         let styleEl = document.getElementById('template-styles');
-        if (!styleEl) {
-            styleEl = document.createElement('style');
-            styleEl.id = 'template-styles';
-            document.head.appendChild(styleEl);
-        }
+        if (styleEl) styleEl.remove();
+        
+        styleEl = document.createElement('style');
+        styleEl.id = 'template-styles';
         styleEl.textContent = css;
+        document.head.appendChild(styleEl);
+        
+        // Verify injection
+        if (!document.getElementById('template-styles')) {
+            throw new Error('CSS injection failed');
+        }
         
         // Save to localStorage for persistence
         localStorage.setItem('printTemplate', JSON.stringify({
@@ -1255,7 +1276,7 @@ document.addEventListener('DOMContentLoaded', function() {
         performSanityChecks();
         
         // Validate text field buttons at startup
-        ['type','lot','quantity'].forEach(ft => {
+        ['type','lot','quantity','box-id'].forEach(ft => {
             if (!document.getElementById(`field-${ft}`)) 
                 console.warn(`Missing toggle button for field-${ft}`);
         });
