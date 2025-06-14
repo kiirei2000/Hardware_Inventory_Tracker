@@ -478,12 +478,13 @@ function generateNewBarcode() {
 
 function displayGeneratedBarcodes() {
     try {
-        const barcodeData = generatedBarcodes.map(item => 
-            `${item.barcode}:${item.image}${item.type ? ':' + item.type : ''}`
-        ).join(',');
-        
         const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('barcodes', barcodeData);
+        urlParams.delete('barcodes'); // Clear existing
+        
+        generatedBarcodes.forEach(item => {
+            urlParams.append('barcodes', item.barcode);
+        });
+        urlParams.set('type', generatedBarcodes[0]?.type || 'qrcode');
         
         const newUrl = window.location.pathname + '?' + urlParams.toString();
         window.location.href = newUrl;
@@ -517,46 +518,65 @@ function printWithBarcodeType(type, event) {
 
 function finalizeAndPrint() {
     try {
-        // Check if template is selected
+        const printArea = document.getElementById('print-area');
+        if (!printArea) {
+            console.error('No #print-area found');
+            alert('Print area not found. Cannot proceed with printing.');
+            return;
+        }
+        
         const templateSelect = document.getElementById('template-preset');
         if (templateSelect && !templateSelect.value) {
             alert('Please select a print template before printing.');
             return;
         }
         
-        // Store original states for restoration
-        const textareas = document.querySelectorAll('.custom-text-input');
-        const originalStates = Array.from(textareas).map(textarea => ({
-            textarea: textarea,
-            value: textarea.value
-        }));
+        // Apply template styles
+        if (currentTemplate) {
+            applyTemplate();
+        }
         
-        // Convert textareas to static text divs for clean printing
+        // Prepare text content for printing using DocumentFragment
+        const textareas = printArea.querySelectorAll('.custom-text-input');
+        const originalStates = [];
+        
         textareas.forEach(textarea => {
             if (textarea.value.trim()) {
-                const div = document.createElement('div');
-                div.className = 'custom-text-print';
-                div.style.cssText = 'font-size: 10pt; margin-top: 0.1in; text-align: center; word-wrap: break-word; white-space: pre-line;';
-                div.textContent = textarea.value;
-                textarea.parentElement.appendChild(div);
-                textarea.style.display = 'none';
+                const printDiv = textarea.parentElement.querySelector('.custom-text-print');
+                if (printDiv) {
+                    printDiv.textContent = textarea.value;
+                    printDiv.classList.remove('d-none');
+                }
+                originalStates.push({
+                    textarea: textarea,
+                    printDiv: printDiv,
+                    value: textarea.value
+                });
             }
         });
         
-        // Trigger print dialog
+        // Set up print completion handler
+        window.onafterprint = () => {
+            try {
+                // Restore original state
+                originalStates.forEach(state => {
+                    if (state.printDiv) {
+                        state.printDiv.classList.add('d-none');
+                    }
+                });
+            } catch (error) {
+                console.error('Error restoring after print:', error);
+            } finally {
+                window.onafterprint = null; // Clean up
+            }
+        };
+        
+        // Trigger print
         window.print();
         
-        // Restore everything after printing
-        setTimeout(() => {
-            originalStates.forEach(state => {
-                const printDivs = state.textarea.parentElement.querySelectorAll('.custom-text-print');
-                printDivs.forEach(div => div.remove());
-                state.textarea.style.display = '';
-            });
-        }, 100);
     } catch (error) {
         console.error('finalizeAndPrint error:', error);
-        alert('An error occurred while preparing to print.');
+        alert('An error occurred while preparing to print. Check console for details.');
     }
 }
 
@@ -566,6 +586,12 @@ function finalizeAndPrint() {
 
 function applyTemplate() {
     try {
+        const printArea = document.getElementById('print-area');
+        if (!printArea) {
+            console.error('No #print-area found');
+            throw new Error('Print area not found');
+        }
+        
         const select = document.getElementById('template-preset');
         if (!select) {
             console.warn('template-preset element not found');
@@ -581,7 +607,7 @@ function applyTemplate() {
         
         currentTemplate = template;
         
-        // Generate scoped CSS for print area only
+        // Generate scoped CSS for print area only with print-only styles
         const css = `
         @media print {
             @page {
@@ -589,9 +615,17 @@ function applyTemplate() {
                 margin: ${template.margin};
             }
             
-            .barcode-grid {
+            #print-area .barcode-grid {
                 grid-template-columns: repeat(${template.columns}, 1fr) !important;
                 gap: ${template.gap} !important;
+            }
+            
+            #print-area .custom-text-input { 
+                display: none !important; 
+            }
+            
+            #print-area .custom-text-print { 
+                display: block !important; 
             }
         }
         `;
@@ -613,6 +647,7 @@ function applyTemplate() {
         }));
     } catch (error) {
         console.error('applyTemplate error:', error);
+        throw error; // Re-throw for centralized error handling
     }
 }
 
@@ -686,27 +721,52 @@ function uploadLogo(input) {
 
 function toggleTextField(fieldType) {
     try {
+        // Whitelist validation for security
+        const allowedFields = ['type', 'lot', 'quantity'];
+        if (!allowedFields.includes(fieldType)) {
+            console.warn(`Invalid fieldType: ${fieldType}`);
+            return;
+        }
+        
         const button = document.getElementById(`field-${fieldType}`);
         if (!button) {
             console.warn(`field-${fieldType} button not found`);
             return;
         }
         
+        button.classList.toggle('btn-secondary');
+        button.classList.toggle('btn-outline-secondary');
+        
         const isActive = button.classList.contains('btn-secondary');
         
-        if (isActive) {
-            button.classList.remove('btn-secondary');
-            button.classList.add('btn-outline-secondary');
-        } else {
-            button.classList.remove('btn-outline-secondary');
-            button.classList.add('btn-secondary');
-        }
+        // Batch DOM updates with DocumentFragment
+        document.querySelectorAll('.barcode-item').forEach(item => {
+            let textField = item.querySelector(`.text-field-${fieldType}`);
+            if (!textField && isActive) {
+                textField = document.createElement('div');
+                textField.className = `text-field-${fieldType} custom-text-container mt-2`;
+                textField.innerHTML = `
+                    <textarea class="custom-text-input form-control" 
+                              placeholder="${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)}" 
+                              rows="2"></textarea>
+                    <div class="custom-text-print d-none"></div>
+                    <button type="button" class="btn btn-sm btn-danger mt-1" onclick="deleteTextBox(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                item.appendChild(textField);
+            }
+            
+            if (textField) {
+                textField.classList.toggle('d-none', !isActive);
+            }
+        });
         
         // Save active fields to localStorage
-        const activeFields = Array.from(document.querySelectorAll('[id^="field-"]'))
-            .filter(btn => btn.classList.contains('btn-secondary'))
-            .map(btn => btn.id.replace('field-', ''));
-        
+        const activeFields = allowedFields.filter(ft => {
+            const btn = document.getElementById(`field-${ft}`);
+            return btn && btn.classList.contains('btn-secondary');
+        });
         localStorage.setItem('activeFields', JSON.stringify(activeFields));
     } catch (error) {
         console.error('toggleTextField error:', error);
@@ -1006,6 +1066,40 @@ function resetTemplateMain() {
 }
 
 // ===========================================
+// TEMPLATE DROPDOWN FUNCTIONS
+// ===========================================
+
+function loadTemplateDropdown() {
+    let savedTemplates = {};
+    try {
+        savedTemplates = JSON.parse(localStorage.getItem('savedTemplates') || '{}');
+    } catch {
+        console.error('Could not parse savedTemplates from localStorage');
+        return;
+    }
+    const select = document.getElementById('template-preset');
+    if (!select) {
+        console.warn('#template-preset not found');
+        return;
+    }
+
+    // Remove old saved- options
+    select.querySelectorAll('option').forEach(opt => {
+        if (opt.value.startsWith('saved-')) opt.remove();
+    });
+
+    const names = Object.keys(savedTemplates);
+    if (!names.length) return;
+
+    names.forEach(name => {
+        const option = document.createElement('option');
+        option.value = `saved-${name}`;
+        option.textContent = `Saved: ${name}`;
+        select.appendChild(option);
+    });
+}
+
+// ===========================================
 // UTILITY FUNCTIONS
 // ===========================================
 
@@ -1168,6 +1262,26 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Perform sanity checks
         performSanityChecks();
+        
+        // Validate text field buttons at startup
+        ['type','lot','quantity'].forEach(ft => {
+            if (!document.getElementById(`field-${ft}`)) 
+                console.warn(`Missing toggle button for field-${ft}`);
+        });
+        
+        // Load and apply saved activeFields
+        const savedFields = localStorage.getItem('activeFields');
+        if (savedFields) {
+            try {
+                const fields = JSON.parse(savedFields);
+                fields.forEach(fieldType => toggleTextField(fieldType));
+            } catch (e) {
+                console.error('Error loading saved fields:', e);
+            }
+        }
+        
+        // Load template dropdown
+        loadTemplateDropdown();
         
         // Initialize template system
         initializeTemplateSystem();
