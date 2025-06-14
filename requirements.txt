@@ -14,3 +14,5 @@ pillow
 python-barcode[images]
 barcode
 python-docx
+docx
+python-docx

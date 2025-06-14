@@ -22,6 +22,7 @@ from barcode.writer import ImageWriter
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_ROW_HEIGHT_RULE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 import base64
@@ -1506,115 +1507,97 @@ def export_word():
         
         # No title - removed as requested
         
-        # Get template settings
-        columns = template_data.get('columns', 2)
+        # 1) Pull template settings from template_data
+        cols = template_data.get('columns', 2)
         rows = template_data.get('rows', 5)
+        cell_w_in = template_data.get('cell_width', 4)
+        cell_h_in = template_data.get('cell_height', 2)
+        barcode_in = template_data.get('barcode_area', 0.66)
+        size_pct = template_data.get('barcode_size_pct', 100) / 100
+        active_fields = template_data.get('fields', ['type', 'lot', 'quantity', 'boxId'])
         
         # Add space for company logo at top
         logo_para = doc.add_paragraph()
         logo_para.add_run('\n' * 3)  # Space for logo
         
-        # Create table with proper dimensions and spacing
-        table = doc.add_table(rows=rows, cols=columns)
-        table.style = None  # Remove default style to avoid shared borders
-        
-        # Set table spacing to separate labels
+        # 2) Build fixed-size table
+        table = doc.add_table(rows=rows, cols=cols)
         table.autofit = False
         
-        # Fill table with barcode data using improved approach
+        # Set fixed column widths
+        for c in table.columns:
+            for cell in c.cells:
+                cell.width = Inches(cell_w_in)
+        
+        # Set fixed row heights
+        for r in table.rows:
+            r.height = Inches(cell_h_in)
+            r.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+        
+        # 3) Fill each cell with template-driven content
         for i, item_data in enumerate(barcode_data):
-            if i >= rows * columns:
+            if i >= rows * cols:
                 break
                 
-            # Use cleaner cell access
-            cell = table.rows[i // columns].cells[i % columns]
-            
-            # Clear cell and add proper spacing
+            cell = table.rows[i // cols].cells[i % cols]
             cell.paragraphs[0].clear()
             p = cell.paragraphs[0]
-            p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             
-            # Add top padding
-            p.add_run('\n')
-            
-            # 1) Try to embed the real barcode image with correct path handling
+            # Get dataset and image information
             dataset = item_data.get('dataset', {})
-            barcode_code = item_data.get('barcode', '').replace('Barcode: ', '')
+            img_src = item_data.get('image', '')
             
-            # Try to get barcode from the actual data structure
-            if not barcode_code and 'boxId' in dataset:
-                # Use box ID as barcode identifier if no direct barcode
-                barcode_code = dataset['boxId']
-            
+            # Embed barcode at fixed height using image path
             img_found = False
-            if barcode_code:
-                # Try multiple image paths and formats
-                possible_paths = [
-                    f"static/barcodes/{barcode_code}_qrcode.png",
-                    f"static/barcodes/{barcode_code}_code128.png", 
-                    f"static/barcodes/{barcode_code}.png"
-                ]
-                
-                for img_path in possible_paths:
-                    if os.path.exists(img_path):
-                        try:
-                            run = p.add_run()
-                            run.add_picture(img_path, width=Inches(1.8))
-                            img_found = True
-                            break
-                        except Exception as img_err:
-                            continue
-            
-            # Fallback if no image found
-            if not img_found:
-                img_src = item_data.get('image_url', '')
-                try:
-                    if img_src.startswith('data:'):
-                        header, data = img_src.split(',', 1)
-                        img_bytes = io.BytesIO(base64.b64decode(data))
+            if img_src:
+                img_path = img_src.lstrip('/')
+                abs_path = os.path.join(app.root_path, img_path)
+                if os.path.exists(abs_path):
+                    try:
                         run = p.add_run()
-                        run.add_picture(img_bytes, width=Inches(1.8))
+                        run.add_picture(abs_path, height=Inches(barcode_in * size_pct))
                         img_found = True
-                    elif img_src.startswith('/static/'):
-                        img_path = img_src.lstrip('/')
-                        if os.path.exists(img_path):
-                            run = p.add_run()
-                            run.add_picture(img_path, width=Inches(1.8))
-                            img_found = True
-                except Exception:
-                    pass
+                    except Exception:
+                        pass
             
-            # If still no image, add placeholder space
+            # Fallback: try to find image by barcode code
+            if not img_found:
+                barcode_code = item_data.get('barcode', '').replace('Barcode: ', '')
+                if not barcode_code and 'boxId' in dataset:
+                    barcode_code = dataset['boxId']
+                
+                if barcode_code:
+                    possible_paths = [
+                        f"static/barcodes/{barcode_code}_qrcode.png",
+                        f"static/barcodes/{barcode_code}_code128.png", 
+                        f"static/barcodes/{barcode_code}.png"
+                    ]
+                    
+                    for img_path in possible_paths:
+                        abs_path = os.path.join(app.root_path, img_path)
+                        if os.path.exists(abs_path):
+                            try:
+                                run = p.add_run()
+                                run.add_picture(abs_path, height=Inches(barcode_in * size_pct))
+                                img_found = True
+                                break
+                            except Exception:
+                                continue
+            
+            # If still no image, add placeholder
             if not img_found:
                 p.add_run('[QR Code Space]')
             
-            # 2) Add spacing and data fields
-            p.add_run('\n\n')  # Space between image and data
+            # Add only the fields they toggled on
+            labels = {'boxId': 'Box ID', 'type': 'Type', 'lot': 'Lot', 'quantity': 'Quantity'}
+            for key in active_fields:
+                value = item_data.get(key) or dataset.get(key)
+                if value:
+                    p.add_run(f"\n{labels.get(key, key.title())}: {value}")
             
-            # Add dataset information (already defined above)
-            text_fields = item_data.get('text_fields', {})
-            
-            # Add barcode code
-            if barcode_code:
-                p.add_run(f"Code: {barcode_code}\n")
-            
-            # Add dataset information with proper field mapping
-            for label, key in (('Type', 'type'), ('Lot', 'lot'), 
-                              ('Qty', 'quantity'), ('Box ID', 'boxId')):
-                val = dataset.get(key)
-                if val:
-                    p.add_run(f"{label}: {val}\n")
-            
-            # Add custom text fields  
-            for field_type, value in text_fields.items():
-                if value and value.strip():
-                    p.add_run(f"{field_type.title()}: {value}\n")
-            
-            # Add bottom padding
-            p.add_run('\n')
-            
-            # 3) Apply individual borders (no shared borders)
-            set_cell_border(cell)
+            # Apply table styling - use Table Grid for borders
+            table.style = 'Table Grid'
         
         # Save to BytesIO
         doc_buffer = io.BytesIO()
