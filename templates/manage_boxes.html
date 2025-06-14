@@ -174,9 +174,9 @@
                                                     <i class="fas fa-file-export me-2"></i>Print History Log
                                                 </a></li>
                                                 <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete('{{ box.box_id }}', '{{ url_for('delete_box', box_id=box.id) }}')">
+                                                <li><button class="dropdown-item text-danger" type="button" onclick="confirmDelete('{{ box.box_id }}', '{{ url_for('delete_box', box_id=box.id) }}', event)">
                                                     <i class="fas fa-trash me-2"></i>Delete Box
-                                                </a></li>
+                                                </button></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -285,7 +285,9 @@
 
 {% block scripts %}
 <script>
-function confirmDelete(boxId, boxIdName) {
+function confirmDelete(boxId, boxIdName, event) {
+    event?.preventDefault();
+    
     // Set the box ID in the modal
     document.getElementById('deleteBoxId').textContent = boxIdName;
 
@@ -295,6 +297,8 @@ function confirmDelete(boxId, boxIdName) {
     // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
     modal.show();
+    
+    return false;
 }
 
 // Auto-submit search form on filter change

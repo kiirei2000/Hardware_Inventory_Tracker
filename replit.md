@@ -92,6 +92,7 @@ The application uses four main entities:
 - June 14, 2025. Initial setup
 - June 14, 2025. Enhanced barcode functionality - Added dual barcode type support (Code128/QR), purple scan button, comprehensive print options with type selection
 - June 14, 2025. Customizable print templates - Added editable text boxes under barcode images with delete functionality and finalize/print button
+- June 14, 2025. Deployment-agnostic hardening - Converted dropdown actions from anchor tags to button elements, added GET method fallbacks to prevent 405 errors, implemented comprehensive event handling with preventDefault for future-proof operation
 
 ## User Preferences
 
