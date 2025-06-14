@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Barcode Print Template{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-print"></i> Barcode Print Template</h2>
+                <div class="btn-group">
+                    <button onclick="window.print()" class="btn btn-primary">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            {% if not barcode_data %}
+            <!-- Template Generator Section -->
+            <div class="card mb-4" id="generator-section">
+                <div class="card-header">
+                    <h5><i class="fas fa-tools"></i> Barcode Generator</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <button onclick="generateRandomBarcodes()" class="btn btn-info btn-block mb-2">
+                                <i class="fas fa-random"></i> Generate Random Barcodes
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-block mb-2">
+                                <i class="fas fa-list"></i> Choose from Dashboard
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <button onclick="showManualEntry()" class="btn btn-warning btn-block mb-2">
+                                <i class="fas fa-plus"></i> Manual Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Manual Entry Form -->
+                    <div id="manual-entry" style="display: none;" class="mt-3">
+                        <form id="manual-barcode-form">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input type="text" id="manual-barcode-input" class="form-control" 
+                                           placeholder="Enter barcode or generate new one">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" onclick="generateNewBarcode()" class="btn btn-secondary btn-block">
+                                        Generate
+                                    </button>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary btn-block">
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Print Template Section -->
+            <div class="print-template" id="print-area">
+                {% if barcode_data %}
+                <div class="barcode-grid">
+                    {% for item in barcode_data %}
+                    <div class="barcode-item">
+                        {% if item.image %}
+                        <img src="{{ item.image }}" alt="Barcode: {{ item.barcode }}" class="barcode-image">
+                        {% endif %}
+                        <div class="barcode-text">{{ item.barcode }}</div>
+                        {% if item.box_id %}
+                        <div class="box-info">
+                            <small>{{ item.box_id }}</small><br>
+                            <small>{{ item.type }} - {{ item.lot }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-barcode fa-3x mb-3"></i>
+                    <h4>No barcodes to display</h4>
+                    <p>Use the generator above to create barcodes for printing</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Generated Barcodes Container (hidden by default) -->
+            <div id="generated-barcodes" style="display: none;">
+                <h4>Generated Barcodes</h4>
+                <div id="barcode-list"></div>
+                <button onclick="printGeneratedBarcodes()" class="btn btn-primary mt-3">
+                    <i class="fas fa-print"></i> Print These Barcodes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .card-header, #generator-section, .navbar, .container-fluid > .row > .col-12 > .d-flex {
+        display: none !important;
+    }
+    
+    .print-template {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+.barcode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.barcode-item {
+    text-align: center;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    background: white;
+    page-break-inside: avoid;
+}
+
+.barcode-image {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.barcode-text {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.box-info {
+    font-size: 12px;
+    color: #666;
+}
+
+@media print {
+    .barcode-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    .barcode-item {
+        border: 2px solid #000;
+        margin-bottom: 15px;
+    }
+}
+</style>
+
+<script>
+let generatedBarcodes = [];
+
+function generateRandomBarcodes() {
+    // Generate 6 random barcodes
+    const promises = [];
+    for (let i = 0; i < 6; i++) {
+        promises.push(fetch('/generate_barcode_api').then(r => r.json()));
+    }
+    
+    Promise.all(promises).then(results => {
+        generatedBarcodes = results;
+        displayGeneratedBarcodes();
+    });
+}
+
+function generateNewBarcode() {
+    fetch('/generate_barcode_api')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('manual-barcode-input').value = data.barcode;
+        });
+}
+
+function showManualEntry() {
+    document.getElementById('manual-entry').style.display = 'block';
+}
+
+function displayGeneratedBarcodes() {
+    const container = document.getElementById('barcode-list');
+    container.innerHTML = '';
+    
+    generatedBarcodes.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'barcode-item d-inline-block m-2';
+        div.innerHTML = `
+            <img src="${item.image}" alt="Barcode" style="max-width: 150px;">
+            <div class="barcode-text">${item.barcode}</div>
+            <button onclick="removeBarcode(${index})" class="btn btn-sm btn-danger mt-1">Remove</button>
+        `;
+        container.appendChild(div);
+    });
+    
+    document.getElementById('generated-barcodes').style.display = 'block';
+}
+
+function removeBarcode(index) {
+    generatedBarcodes.splice(index, 1);
+    displayGeneratedBarcodes();
+}
+
+function printGeneratedBarcodes() {
+    const barcodes = generatedBarcodes.map(item => item.barcode);
+    const url = new URL(window.location.origin + '/print_template');
+    barcodes.forEach(barcode => url.searchParams.append('barcodes', barcode));
+    window.location.href = url.toString();
+}
+
+document.getElementById('manual-barcode-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const barcode = document.getElementById('manual-barcode-input').value.trim();
+    if (barcode) {
+        fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode))
+            .then(r => r.json())
+            .then(data => {
+                generatedBarcodes.push({barcode: barcode, image: data.image});
+                displayGeneratedBarcodes();
+                document.getElementById('manual-barcode-input').value = '';
+            });
+    }
+});
+</script>
+{% endblock %}

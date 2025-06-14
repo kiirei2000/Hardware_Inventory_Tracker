@@ -5,3 +5,5 @@ openpyxl
 flask_sqlalchemy
 sqlalchemy
 werkzeug
+python-barcode
+qrcode

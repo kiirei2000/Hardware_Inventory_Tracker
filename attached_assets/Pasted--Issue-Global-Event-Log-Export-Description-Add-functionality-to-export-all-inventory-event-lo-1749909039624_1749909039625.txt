@@ -1,0 +1,83 @@
+🟩 Issue: Global Event Log Export
+
+Description: Add functionality to export all inventory event logs.
+
+Checklist:
+• Add “Download All Logs” button on Event Log page
+• Query all pull/return events from database
+• Add filters for:
+• Date range (from DD to DD)
+• Box type
+• Lot number
+• Export to CSV/Excel with columns:
+• Box ID, Type, Lot, MO, Previous Quantity, Event Type, Quantity, Operator, QC, Timestamp
+
+⸻
+
+🟩 Issue: Per-Box Event Log Export
+
+Description: Allow exporting event history for a specific box.
+
+Checklist:
+• Add “Export Box History” to Manage Box 3-dot menu
+• Filter logs by box ID
+• Export in same format as global export
+• Ensure file is named after Box ID or Lot
+• Use landscape layout for print/export
+• Format export to support multiple box export (multi-page, 1 page per box)
+
+⸻
+
+🟩 Issue: Barcode Auto-Generator in Add Box
+
+Description: Add automatic barcode generator to box creation form.
+
+Checklist:
+• Replace “Lookup” with “Generate” in Add Box section
+• Generate unique ID (UUID / custom hash / sequential)
+• Store generated code in DB
+• Generate and preview barcode image beside form (via python-barcode or qrcode)
+• Allow re-generating with new code if button clicked again
+
+⸻
+
+🟩 Issue: Dashboard Bulk Actions
+
+Description: Add bulk checkbox selection with actions for printing.
+
+Checklist:
+• Add checkbox column to Dashboard table rows
+• Add top-right “⋮ More” menu with:
+• “Print Barcodes” action
+• “Print Logs” action
+• If nothing selected, disable or gray out menu
+
+⸻
+
+🟩 Issue: Manage Box — Admin Options
+
+Description: Add actions to Admin’s 3-dot menu for each box.
+
+Checklist:
+• Add “Print Barcode”
+• Add “Print History Log”
+• Add “Delete Box” with confirmation modal
+
+⸻
+
+🟩 Issue: Barcode Template Page
+
+Description: Create a standalone page for barcode layout & printing.
+
+Checklist:
+• Add new route/page (e.g. /print-template)
+• Add sidebar navigation link to Template page
+• Template features:
+• Preview before printing
+• Support 1 barcode or multiple per page
+• Support different sizes/layouts (large/small)
+• If no barcodes passed in, show:
+• “Random Barcode Generator” → fills template with random barcodes
+• “Choose Box Barcode” → redirects to Dashboard
+• “Add Barcode” → manual input + add row
+• Redirect back to template + preview → then allow print

@@ -12,6 +12,12 @@ import io
 import re
 from functools import wraps
 from urllib.parse import urlparse
+import uuid
+import barcode
+from barcode.writer import ImageWriter
+import qrcode
+import base64
+import csv
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -196,6 +202,29 @@ def generate_box_id(hardware_type_name, lot_number_name, box_number):
     lot_clean = sanitize_box_id_component(lot_number_name)
     box_clean = sanitize_box_id_component(box_number)
     return f"{type_clean}_{lot_clean}_{box_clean}"
+
+def generate_unique_barcode():
+    """Generate a unique barcode using UUID"""
+    return str(uuid.uuid4())[:12].upper()
+
+def generate_barcode_image(barcode_data, format='png'):
+    """Generate barcode image as base64 string"""
+    try:
+        # Use Code128 barcode format
+        code128 = barcode.get_barcode_class('code128')
+        barcode_instance = code128(barcode_data, writer=ImageWriter())
+        
+        # Generate image in memory
+        buffer = io.BytesIO()
+        barcode_instance.write(buffer)
+        buffer.seek(0)
+        
+        # Convert to base64 for HTML display
+        img_base64 = base64.b64encode(buffer.getvalue()).decode()
+        return f"data:image/png;base64,{img_base64}"
+    except Exception as e:
+        print(f"Error generating barcode: {str(e)}")
+        return None
 
 def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=None, 
                previous_quantity=None, quantity_change=None, available_quantity=None,
@@ -1031,6 +1060,273 @@ def action_log():
                          counts=counts,
                          action_type_filter=action_type_filter,
                          user_filter=user_filter)
+
+@app.route('/export_all_logs')
+@admin_required
+def export_all_logs():
+    """Export all inventory event logs with filters"""
+    # Get filter parameters
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    box_type_filter = request.args.get('box_type', '')
+    lot_filter = request.args.get('lot', '')
+    format_type = request.args.get('format', 'excel')  # excel or csv
+    
+    # Build query for pull events
+    query = db.session.query(
+        PullEvent, Box, HardwareType, LotNumber
+    ).join(Box, PullEvent.box_id == Box.id
+    ).join(HardwareType, Box.hardware_type_id == HardwareType.id
+    ).join(LotNumber, Box.lot_number_id == LotNumber.id)
+    
+    # Apply filters
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, '%Y-%m-%d')
+            query = query.filter(PullEvent.timestamp >= from_date)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, '%Y-%m-%d')
+            # Add one day to include the entire end date
+            to_date = to_date.replace(hour=23, minute=59, second=59)
+            query = query.filter(PullEvent.timestamp <= to_date)
+        except ValueError:
+            pass
+    
+    if box_type_filter:
+        query = query.filter(HardwareType.name.ilike(f'%{box_type_filter}%'))
+    
+    if lot_filter:
+        query = query.filter(LotNumber.name.ilike(f'%{lot_filter}%'))
+    
+    # Order by timestamp
+    results = query.order_by(PullEvent.timestamp.desc()).all()
+    
+    # Prepare data for export
+    export_data = []
+    for pull_event, box, hardware_type, lot_number in results:
+        # Calculate previous quantity (current + quantity change)
+        previous_qty = box.remaining_quantity + abs(pull_event.quantity)
+        event_type = "Return" if pull_event.quantity > 0 else "Pull"
+        
+        export_data.append({
+            'Box ID': box.box_id,
+            'Type': hardware_type.name,
+            'Lot': lot_number.name,
+            'MO': pull_event.mo or '',
+            'Previous Quantity': previous_qty,
+            'Event Type': event_type,
+            'Quantity': abs(pull_event.quantity),
+            'Operator': pull_event.operator or '',
+            'QC Personnel': pull_event.qc_personnel or '',
+            'Timestamp': pull_event.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        })
+    
+    if format_type == 'csv':
+        # Generate CSV
+        output = io.StringIO()
+        if export_data:
+            writer = csv.DictWriter(output, fieldnames=export_data[0].keys())
+            writer.writeheader()
+            writer.writerows(export_data)
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename=all_inventory_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        return response
+    else:
+        # Generate Excel
+        df = pd.DataFrame(export_data)
+        output = io.BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Inventory Logs', index=False)
+        
+        output.seek(0)
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename=all_inventory_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        return response
+
+@app.route('/export_box_history/<box_id>')
+@admin_required
+def export_box_history(box_id):
+    """Export event history for a specific box"""
+    box = Box.query.filter_by(box_id=box_id).first()
+    if not box:
+        flash("Box not found", 'error')
+        return redirect(url_for('manage_boxes'))
+    
+    # Get pull events for this box
+    pull_events = PullEvent.query.filter_by(box_id=box.id).order_by(PullEvent.timestamp.desc()).all()
+    
+    # Prepare data for export
+    export_data = []
+    current_qty = box.remaining_quantity
+    
+    for event in reversed(pull_events):  # Process in chronological order
+        previous_qty = current_qty - event.quantity
+        event_type = "Return" if event.quantity > 0 else "Pull"
+        
+        export_data.append({
+            'Box ID': box.box_id,
+            'Type': box.hardware_type.name,
+            'Lot': box.lot_number.name,
+            'MO': event.mo or '',
+            'Previous Quantity': previous_qty,
+            'Event Type': event_type,
+            'Quantity': abs(event.quantity),
+            'Operator': event.operator or '',
+            'QC Personnel': event.qc_personnel or '',
+            'Timestamp': event.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        })
+        current_qty = previous_qty
+    
+    # Reverse to show most recent first
+    export_data.reverse()
+    
+    # Generate Excel
+    df = pd.DataFrame(export_data)
+    output = io.BytesIO()
+    
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name=f'Box_{box_id}_History', index=False)
+    
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = f'attachment; filename=box_{box_id}_history_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+    return response
+
+@app.route('/generate_barcode_api')
+def generate_barcode_api():
+    """API endpoint to generate a new barcode"""
+    new_barcode = generate_unique_barcode()
+    barcode_image = generate_barcode_image(new_barcode)
+    
+    return jsonify({
+        'barcode': new_barcode,
+        'image': barcode_image
+    })
+
+@app.route('/print_template')
+def print_template():
+    """Barcode template page for printing"""
+    # Get barcode data from query parameters
+    barcodes = request.args.getlist('barcodes')
+    box_ids = request.args.getlist('box_ids')
+    
+    # If specific box IDs provided, get their barcodes
+    if box_ids:
+        boxes = Box.query.filter(Box.box_id.in_(box_ids)).all()
+        barcode_data = []
+        for box in boxes:
+            barcode_data.append({
+                'barcode': box.barcode,
+                'box_id': box.box_id,
+                'type': box.hardware_type.name,
+                'lot': box.lot_number.name,
+                'image': generate_barcode_image(box.barcode)
+            })
+    elif barcodes:
+        # Custom barcodes provided
+        barcode_data = []
+        for barcode in barcodes:
+            barcode_data.append({
+                'barcode': barcode,
+                'box_id': '',
+                'type': '',
+                'lot': '',
+                'image': generate_barcode_image(barcode)
+            })
+    else:
+        barcode_data = []
+    
+    return render_template('print_template.html', barcode_data=barcode_data)
+
+@app.route('/bulk_print_barcodes', methods=['POST'])
+@admin_required
+def bulk_print_barcodes():
+    """Handle bulk barcode printing from dashboard"""
+    selected_boxes = request.form.getlist('selected_boxes')
+    if not selected_boxes:
+        flash("No boxes selected for printing", 'warning')
+        return redirect(url_for('dashboard'))
+    
+    # Redirect to print template with selected box IDs
+    return redirect(url_for('print_template', box_ids=selected_boxes))
+
+@app.route('/bulk_print_logs', methods=['POST'])
+@admin_required
+def bulk_print_logs():
+    """Handle bulk log printing from dashboard"""
+    selected_boxes = request.form.getlist('selected_boxes')
+    if not selected_boxes:
+        flash("No boxes selected for log printing", 'warning')
+        return redirect(url_for('dashboard'))
+    
+    # Generate combined log export for selected boxes
+    boxes = Box.query.filter(Box.box_id.in_(selected_boxes)).all()
+    if not boxes:
+        flash("Selected boxes not found", 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get pull events for selected boxes
+    box_ids = [box.id for box in boxes]
+    pull_events = db.session.query(
+        PullEvent, Box, HardwareType, LotNumber
+    ).join(Box, PullEvent.box_id == Box.id
+    ).join(HardwareType, Box.hardware_type_id == HardwareType.id
+    ).join(LotNumber, Box.lot_number_id == LotNumber.id
+    ).filter(Box.id.in_(box_ids)
+    ).order_by(Box.box_id, PullEvent.timestamp.desc()).all()
+    
+    # Prepare data for export
+    export_data = []
+    for pull_event, box, hardware_type, lot_number in pull_events:
+        previous_qty = box.remaining_quantity + abs(pull_event.quantity)
+        event_type = "Return" if pull_event.quantity > 0 else "Pull"
+        
+        export_data.append({
+            'Box ID': box.box_id,
+            'Type': hardware_type.name,
+            'Lot': lot_number.name,
+            'MO': pull_event.mo or '',
+            'Previous Quantity': previous_qty,
+            'Event Type': event_type,
+            'Quantity': abs(pull_event.quantity),
+            'Operator': pull_event.operator or '',
+            'QC Personnel': pull_event.qc_personnel or '',
+            'Timestamp': pull_event.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        })
+    
+    # Generate Excel
+    df = pd.DataFrame(export_data)
+    output = io.BytesIO()
+    
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Selected_Boxes_Logs', index=False)
+    
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = f'attachment; filename=selected_boxes_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+    return response
+
+@app.route('/print_box_barcode/<box_id>')
+@admin_required
+def print_box_barcode(box_id):
+    """Print barcode for a specific box"""
+    return redirect(url_for('print_template', box_ids=[box_id]))
+
+@app.route('/print_box_history/<box_id>')
+@admin_required
+def print_box_history(box_id):
+    """Print history for a specific box"""
+    return redirect(url_for('export_box_history', box_id=box_id))
 
 # Create tables
 with app.app_context():
