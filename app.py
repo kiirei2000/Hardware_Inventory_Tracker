@@ -220,20 +220,29 @@ def generate_unique_barcode(length=10):
     raise ValueError("Unable to generate a unique barcode after many attempts.")
 
 def generate_barcode_image(barcode_data, format='png'):
-    """Generate barcode image and save to static/barcodes/"""
+    """Generate QR code image and save to static/barcodes/"""
     try:
         # Ensure barcodes directory exists
         barcodes_dir = os.path.join('static', 'barcodes')
         os.makedirs(barcodes_dir, exist_ok=True)
         
-        # Generate barcode with ImageWriter
-        code128_class = barcode.get_barcode_class('code128')
-        code128 = code128_class(barcode_data, writer=ImageWriter())
+        # Generate QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(barcode_data)
+        qr.make(fit=True)
+        
+        # Create image
+        img = qr.make_image(fill_color="black", back_color="white")
         
         # Save to file
         filename = f"{barcode_data}.png"
         filepath = os.path.join(barcodes_dir, filename)
-        code128.save(filepath.replace('.png', ''))  # barcode library adds .png automatically
+        img.save(filepath)
         
         # Return URL path for HTML
         return f"/static/barcodes/{filename}"
