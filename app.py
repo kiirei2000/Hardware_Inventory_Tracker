@@ -203,25 +203,44 @@ def generate_box_id(hardware_type_name, lot_number_name, box_number):
     box_clean = sanitize_box_id_component(box_number)
     return f"{type_clean}_{lot_clean}_{box_clean}"
 
-def generate_unique_barcode():
-    """Generate a unique barcode using UUID"""
-    return str(uuid.uuid4())[:12].upper()
+def generate_unique_barcode(length=10):
+    """Generate a unique barcode checking for duplicates"""
+    import random
+    import string
+    
+    charset = string.ascii_uppercase + string.digits
+    attempts = 0
+    max_attempts = 1000
+    
+    while attempts < max_attempts:
+        new_code = ''.join(random.choices(charset, k=length))
+        if not Box.query.filter_by(barcode=new_code).first():
+            return new_code
+        attempts += 1
+    
+    raise ValueError("Unable to generate a unique barcode after many attempts.")
 
 def generate_barcode_image(barcode_data, format='png'):
-    """Generate barcode image as base64 string"""
+    """Generate barcode image and save to static/barcodes/"""
     try:
-        # Use Code128 barcode format
-        code128 = barcode.get_barcode_class('code128')
-        barcode_instance = code128(barcode_data, writer=ImageWriter())
+        import os
+        from barcode import Code128
+        from barcode.writer import ImageWriter
         
-        # Generate image in memory
-        buffer = io.BytesIO()
-        barcode_instance.write(buffer)
-        buffer.seek(0)
+        # Ensure barcodes directory exists
+        barcodes_dir = os.path.join('static', 'barcodes')
+        os.makedirs(barcodes_dir, exist_ok=True)
         
-        # Convert to base64 for HTML display
-        img_base64 = base64.b64encode(buffer.getvalue()).decode()
-        return f"data:image/png;base64,{img_base64}"
+        # Generate barcode with ImageWriter
+        code128 = Code128(barcode_data, writer=ImageWriter())
+        
+        # Save to file
+        filename = f"{barcode_data}.png"
+        filepath = os.path.join(barcodes_dir, filename)
+        code128.save(filepath.replace('.png', ''))  # barcode library adds .png automatically
+        
+        # Return URL path for HTML
+        return f"/static/barcodes/{filename}"
     except Exception as e:
         print(f"Error generating barcode: {str(e)}")
         return None

@@ -176,8 +176,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     ['hardware_type', 'new_hardware_type', 'lot_number', 'new_lot_number', 'box_number'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateBoxIdPreview);
-        document.getElementById(id).addEventListener('change', updateBoxIdPreview);
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', updateBoxIdPreview);
+            element.addEventListener('change', updateBoxIdPreview);
+        }
     });
     
     document.getElementById('new_hardware_type').addEventListener('input', function() {
