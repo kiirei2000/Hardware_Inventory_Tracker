@@ -77,12 +77,12 @@
           <i class="fas fa-print me-2"></i>Print
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
-          <li><a class="dropdown-item" href="#" onclick="printWithBarcodeType('qrcode')">
+          <li><button class="dropdown-item" type="button" onclick="printWithBarcodeType('qrcode', event)">
             <i class="fas fa-qrcode me-2"></i>Print as QR Codes
-          </a></li>
-          <li><a class="dropdown-item" href="#" onclick="printWithBarcodeType('code128')">
+          </button></li>
+          <li><button class="dropdown-item" type="button" onclick="printWithBarcodeType('code128', event)">
             <i class="fas fa-barcode me-2"></i>Print as Barcode 128
-          </a></li>
+          </button></li>
         </ul>
       </div>
       <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg px-4">
@@ -100,7 +100,7 @@
     <div class="card-body">
       <div class="row justify-content-center g-3">
         <div class="col-md-4 d-grid">
-          <button class="btn btn-info btn-lg w-100" onclick="generateRandomBarcodes('qrcode')">
+          <button class="btn btn-info btn-lg w-100" onclick="generateRandomBarcodes('qrcode', event)">
             <i class="fas fa-random me-2"></i>Generate Random Barcodes
           </button>
         </div>
@@ -182,16 +182,53 @@
 <script>
 let generatedBarcodes = [];
 
-function generateRandomBarcodes(type = 'qrcode') {
+function generateRandomBarcodes(type = 'qrcode', event) {
+    event?.preventDefault();
+    
+    // Show loading state
+    const button = event?.target || document.querySelector('.btn-info');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+    button.disabled = true;
+    
     // Generate 6 random barcodes
     const promises = [];
     for (let i = 0; i < 6; i++) {
-        promises.push(fetch(`/generate_barcode_api?type=${type}`).then(r => r.json()));
+        promises.push(
+            fetch(`/generate_barcode_api?type=${type}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    console.error('Failed to generate barcode:', error);
+                    return null;
+                })
+        );
     }
     
     Promise.all(promises).then(results => {
-        generatedBarcodes = results;
-        displayGeneratedBarcodes();
+        // Filter out failed requests
+        const validResults = results.filter(result => result !== null);
+        
+        if (validResults.length === 0) {
+            alert('Failed to generate barcodes. Please try again.');
+            return;
+        }
+        
+        // Redirect to print template with generated barcodes
+        const barcodes = validResults.map(item => item.barcode);
+        const url = new URL(window.location.origin + '/print_template');
+        barcodes.forEach(barcode => url.searchParams.append('barcodes', barcode));
+        url.searchParams.set('type', type);
+        window.location.href = url.toString();
+        
+    }).finally(() => {
+        // Restore button state
+        button.innerHTML = originalText;
+        button.disabled = false;
     });
 }
 
@@ -238,12 +275,16 @@ function printGeneratedBarcodes(type = 'qrcode') {
     window.location.href = url.toString();
 }
 
-function printWithBarcodeType(type = 'qrcode') {
+function printWithBarcodeType(type = 'qrcode', event) {
+    event?.preventDefault();
+    
     // Get current URL parameters and update with new barcode type
     const urlParams = new URLSearchParams(window.location.search);
     urlParams.set('type', type);
     const newUrl = window.location.pathname + '?' + urlParams.toString();
     window.location.href = newUrl;
+    
+    return false;
 }
 
 function deleteTextBox(button) {
