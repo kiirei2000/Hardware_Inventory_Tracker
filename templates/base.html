@@ -111,7 +111,7 @@
   </style>
 </head>
 <body>
-  <div id="main-container">
+  <div id="main-container" class="d-flex" style="min-height:100vh;">
       
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
@@ -167,7 +167,7 @@
     </div>
 
     <!-- Right Panel: Content + Footer -->
-    <div class="right-panel">
+    <div class="right-panel d-flex flex-column flex-fill">
       <main class="main-content">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -188,7 +188,8 @@
         </div>
       </main>
 
-      <footer class="app-footer bg-secondary text-center py-2 fixed-bottom">
+      <!-- Footer -->
+      <footer class="app-footer bg-secondary text-center py-2">
         <div class="container">
           <small class="text-muted">
             <i class="fas fa-box me-1"></i>Hardware Inventory Tracker &copy; 2025
