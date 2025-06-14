@@ -5,274 +5,179 @@
 {% block content %}
 <style>
 .custom-text-container {
-    margin-top: 10px;
-    position: relative;
+    margin: 1rem 0;
+    text-align: center;
 }
-
 .custom-text-input {
     width: 100%;
-    height: 60px;
-    padding: 8px;
+    min-height: 60px;
+    padding: 0.5rem;
     border: 1px solid #ddd;
     border-radius: 4px;
     resize: none;
     font-size: 12px;
     font-family: Arial, sans-serif;
-    overflow: hidden;
 }
-
 .text-controls {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    opacity: 0;
-    transition: opacity 0.2s;
+    top: 0.5rem;
+    right: 0.5rem;
 }
-
-.custom-text-container:hover .text-controls {
-    opacity: 1;
-}
-
 @media print {
-    .text-controls,
-    .finalize-controls,
-    .no-print,
     #generator-section,
+    .text-controls,
     .btn,
     .dropdown {
         display: none !important;
     }
-    
     .custom-text-input {
         border: none;
         background: transparent;
-        resize: none;
-        outline: none;
         padding: 0;
         white-space: pre-wrap;
     }
-    
     .barcode-item {
         border: 1px solid #000;
         page-break-inside: avoid;
     }
-    
     .container-fluid {
         padding: 0;
     }
 }
-</style>
-<div class="container py-4">
-  <div class="text-center mb-4">
-    <h2 class="mb-3"><i class="fas fa-print"></i> Barcode Print Template</h2>
-    <div class="d-flex justify-content-center gap-2">
-      <div class="btn-group">
-                    <div class="dropdown">
-                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-print"></i> Print
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="printWithBarcodeType('qrcode')">
-                                <i class="fas fa-qrcode me-2"></i>Print as QR Codes
-                            </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="printWithBarcodeType('code128')">
-                                <i class="fas fa-barcode me-2"></i>Print as Barcode 128
-                            </a></li>
-                        </ul>
-                    </div>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
-                    </a>
-                </div>
-            </div>
-
-            {% if not barcode_data %}
-            <!-- Template Generator Section -->
-            <div class="card mb-4" id="generator-section">
-                <div class="card-header">
-                    <h5><i class="fas fa-tools"></i> Barcode Generator</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="dropdown">
-                                <button class="btn btn-info dropdown-toggle w-100 mb-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-random"></i> Generate Random Barcodes
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="generateRandomBarcodes('qrcode')">
-                                        <i class="fas fa-qrcode me-2"></i>Generate QR Codes
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="generateRandomBarcodes('code128')">
-                                        <i class="fas fa-barcode me-2"></i>Generate Barcode 128
-                                    </a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-block mb-2">
-                                <i class="fas fa-list"></i> Choose from Dashboard
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <button onclick="showManualEntry()" class="btn btn-warning btn-block mb-2">
-                                <i class="fas fa-plus"></i> Manual Entry
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Manual Entry Form -->
-                    <div id="manual-entry" style="display: none;" class="mt-3">
-                        <form id="manual-barcode-form">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="text" id="manual-barcode-input" class="form-control" 
-                                           placeholder="Enter barcode or generate new one">
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="button" onclick="generateNewBarcode()" class="btn btn-secondary btn-block">
-                                        Generate
-                                    </button>
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-primary btn-block">
-                                        Add
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Print Template Section -->
-            <div class="print-template" id="print-area">
-                {% if barcode_data %}
-                <div class="barcode-grid">
-                    {% for item in barcode_data %}
-                    <div class="barcode-item">
-                        {% if item.image %}
-                        <img src="{{ item.image }}" alt="Barcode: {{ item.barcode }}" class="barcode-image">
-                        {% endif %}
-                        <!-- Customizable text boxes -->
-                        <div class="custom-text-container">
-                            <textarea class="custom-text-input" placeholder="Add custom text..." data-default-text="{% if item.type %}{{ item.barcode }}&#10;Box Type: {{ item.type }}{% else %}{{ item.barcode }}{% endif %}">{% if item.type %}{{ item.barcode }}&#10;Box Type: {{ item.type }}{% else %}{{ item.barcode }}{% endif %}</textarea>
-                            <div class="text-controls">
-                                <button type="button" class="btn btn-sm btn-outline-danger delete-text" onclick="deleteTextBox(this)">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="text-center text-muted py-5">
-                    <i class="fas fa-barcode fa-3x mb-3"></i>
-                    <h4>No barcodes to display</h4>
-                    <p>Use the generator above to create barcodes for printing</p>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Finalize and Print Button -->
-            {% if barcode_data %}
-            <div class="d-flex justify-content-center my-4">
-                <button onclick="finalizeAndPrint()" class="btn btn-success btn-lg">
-                    <i class="fas fa-print"></i> Finalize & Print
-                </button>
-            </div>
-            {% endif %}
-
-            <!-- Generated Barcodes Container (hidden by default) -->
-            <div id="generated-barcodes" style="display: none;">
-                <h4>Generated Barcodes</h4>
-                <div id="barcode-list"></div>
-                <div class="dropdown mt-3">
-                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-print"></i> Print These Barcodes
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="printGeneratedBarcodes('qrcode')">
-                            <i class="fas fa-qrcode me-2"></i>Print as QR Codes
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" onclick="printGeneratedBarcodes('code128')">
-                            <i class="fas fa-barcode me-2"></i>Print as Barcode 128
-                        </a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-@media print {
-    .btn, .card-header, #generator-section, .navbar, .container-fluid > .row > .col-12 > .d-flex {
-        display: none !important;
-    }
-    
-    .print-template {
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    body {
-        margin: 0;
-        padding: 0;
-    }
-}
-
 .barcode-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    padding: 20px;
+    gap: 1rem;
+    padding: 1rem 0;
 }
-
 .barcode-item {
     text-align: center;
     border: 1px solid #ddd;
-    padding: 15px;
     border-radius: 8px;
-    background: white;
+    padding: 1rem;
+    background: #fff;
     page-break-inside: avoid;
 }
-
 .barcode-image {
     max-width: 100%;
     height: auto;
-    margin-bottom: 10px;
-}
-
-.barcode-text {
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 5px;
-}
-
-.box-info {
-    font-size: 12px;
-    color: #666;
-}
-
-@media print {
-    .barcode-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
-        padding: 10px;
-    }
-    
-    .barcode-item {
-        border: 2px solid #000;
-        margin-bottom: 15px;
-    }
+    margin-bottom: 0.5rem;
 }
 </style>
 
+<div class="container-fluid py-4">
+  <!-- Header Row -->
+  <div class="row align-items-center mb-4">
+    <div class="col">
+      <h2><i class="fas fa-print me-2"></i>Barcode Print Template</h2>
+    </div>
+    <div class="col-auto d-flex gap-2">
+      <div class="btn-group">
+        <button class="btn btn-primary btn-lg px-4 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          <i class="fas fa-print me-2"></i>Print
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="#" onclick="printWithBarcodeType('qrcode')">
+            <i class="fas fa-qrcode me-2"></i>Print as QR Codes
+          </a></li>
+          <li><a class="dropdown-item" href="#" onclick="printWithBarcodeType('code128')">
+            <i class="fas fa-barcode me-2"></i>Print as Barcode 128
+          </a></li>
+        </ul>
+      </div>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg px-4">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Generator Section -->
+  {% if not barcode_data %}
+  <div class="card mb-4" id="generator-section">
+    <div class="card-header">
+      <h5><i class="fas fa-tools me-2"></i>Barcode Generator</h5>
+    </div>
+    <div class="card-body">
+      <div class="row justify-content-center g-3">
+        <div class="col-md-4 d-grid">
+          <button class="btn btn-info btn-lg w-100" onclick="generateRandomBarcodes('qrcode')">
+            <i class="fas fa-random me-2"></i>Generate Random Barcodes
+          </button>
+        </div>
+        <div class="col-md-4 d-grid">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-lg w-100">
+            <i class="fas fa-list me-2"></i>Choose from Dashboard
+          </a>
+        </div>
+        <div class="col-md-4 d-grid">
+          <button class="btn btn-warning btn-lg w-100" onclick="showManualEntry()">
+            <i class="fas fa-plus me-2"></i>Manual Entry
+          </button>
+        </div>
+      </div>
+      <div id="manual-entry" class="mt-3" style="display: none;">
+        <form id="manual-barcode-form">
+          <div class="row g-2">
+            <div class="col-md-8">
+              <input type="text" id="manual-barcode-input" class="form-control" placeholder="Enter barcode or generate new one">
+            </div>
+            <div class="col-md-2 d-grid">
+              <button type="button" onclick="generateNewBarcode()" class="btn btn-secondary">
+                <i class="fas fa-magic me-2"></i>Generate
+              </button>
+            </div>
+            <div class="col-md-2 d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Print Template Grid -->
+  <div id="print-area">
+    {% if barcode_data %}
+    <div class="barcode-grid">
+      {% for item in barcode_data %}
+      <div class="barcode-item">
+        {% if item.image %}
+        <img src="{{ item.image }}" alt="Barcode: {{ item.barcode }}" class="barcode-image">
+        {% endif %}
+        <div class="custom-text-container">
+          <textarea class="custom-text-input" placeholder="Add custom text...">{% if item.type %}{{ item.barcode }}&#10;Box Type: {{ item.type }}{% else %}{{ item.barcode }}{% endif %}</textarea>
+          <div class="text-controls">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTextBox(this)">
+              <i class="fas fa-trash me-1"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="fas fa-barcode fa-3x mb-3"></i>
+      <h4>No barcodes to display</h4>
+      <p>Use the generator above to create barcodes for printing</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Finalize & Print -->
+  {% if barcode_data %}
+  <div class="d-flex justify-content-center my-4">
+    <button onclick="finalizeAndPrint()" class="btn btn-success btn-lg px-4">
+      <i class="fas fa-print me-2"></i>Finalize & Print
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+{% block scripts %}
 <script>
 let generatedBarcodes = [];
 
