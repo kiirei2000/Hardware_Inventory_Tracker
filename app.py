@@ -1204,11 +1204,20 @@ def export_box_history(box_id):
 @app.route('/generate_barcode_api')
 def generate_barcode_api():
     """API endpoint to generate a new barcode"""
-    new_barcode = generate_unique_barcode()
-    barcode_image = generate_barcode_image(new_barcode)
+    # Check if custom barcode is provided
+    custom_barcode = request.args.get('barcode', '').strip()
+    
+    if custom_barcode:
+        # Use provided barcode
+        barcode_data = custom_barcode
+    else:
+        # Generate new unique barcode
+        barcode_data = generate_unique_barcode()
+    
+    barcode_image = generate_barcode_image(barcode_data)
     
     return jsonify({
-        'barcode': new_barcode,
+        'barcode': barcode_data,
         'image': barcode_image
     })
 

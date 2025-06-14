@@ -347,5 +347,66 @@ function printDashboard() {
   printable.style.padding = '';
   document.body.style.transform = '';
 }
+
+function toggleAllCheckboxes() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.box-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.box-checkbox:checked');
+    const dropdown = document.getElementById('bulkActionsDropdown');
+    dropdown.disabled = checkboxes.length === 0;
+}
+
+function bulkPrintBarcodes() {
+    const selectedBoxes = Array.from(document.querySelectorAll('.box-checkbox:checked')).map(cb => cb.value);
+    if (selectedBoxes.length === 0) {
+        alert('Please select boxes first');
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("bulk_print_barcodes") }}';
+    
+    selectedBoxes.forEach(boxId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_boxes';
+        input.value = boxId;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function bulkPrintLogs() {
+    const selectedBoxes = Array.from(document.querySelectorAll('.box-checkbox:checked')).map(cb => cb.value);
+    if (selectedBoxes.length === 0) {
+        alert('Please select boxes first');
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("bulk_print_logs") }}';
+    
+    selectedBoxes.forEach(boxId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_boxes';
+        input.value = boxId;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
 </script>
 {% endblock %}

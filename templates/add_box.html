@@ -93,11 +93,18 @@
               </label>
               <div class="input-group input-group-lg">
                 <input type="text" class="form-control" id="barcode" name="barcode"
-                       placeholder="Scan or enter barcode"
+                       placeholder="Generated automatically or enter manually"
                        value="{{ form_data.get('barcode','') if form_data }}" required>
-                <button class="btn btn-outline-primary" type="button" id="scanBarcodeBtn">
-                  <i class="fas fa-camera me-1"></i>Scan
+                <button class="btn btn-outline-success" type="button" id="generateBarcodeBtn" onclick="generateBarcode()">
+                  <i class="fas fa-magic me-1"></i>Generate
                 </button>
+              </div>
+              <!-- Barcode Preview -->
+              <div id="barcodePreview" class="mt-2" style="display: none;">
+                <div class="text-center p-2 border rounded bg-light">
+                  <img id="barcodeImage" src="" alt="Barcode Preview" style="max-height: 80px;">
+                  <div class="small text-muted mt-1">Barcode Preview</div>
+                </div>
               </div>
             </div>
 
@@ -191,9 +198,43 @@ document.addEventListener('DOMContentLoaded', function() {
     
     updateBoxIdPreview();
     
-    document.getElementById('scanBarcodeBtn').addEventListener('click', function() {
-        alert('Barcode scanning would be implemented here with camera access. For now, please enter the barcode manually.');
-    });
+    // Auto-generate barcode when page loads
+    generateBarcode();
+});
+
+function generateBarcode() {
+    fetch('/generate_barcode_api')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('barcode').value = data.barcode;
+            if (data.image) {
+                document.getElementById('barcodeImage').src = data.image;
+                document.getElementById('barcodePreview').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error generating barcode:', error);
+        });
+}
+
+// Also update barcode preview when manually entered
+document.getElementById('barcode').addEventListener('input', function() {
+    const barcode = this.value.trim();
+    if (barcode) {
+        fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode))
+            .then(response => response.json())
+            .then(data => {
+                if (data.image) {
+                    document.getElementById('barcodeImage').src = data.image;
+                    document.getElementById('barcodePreview').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                document.getElementById('barcodePreview').style.display = 'none';
+            });
+    } else {
+        document.getElementById('barcodePreview').style.display = 'none';
+    }
 });
 </script>
 {% endblock %}

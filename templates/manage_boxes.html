@@ -152,12 +152,23 @@
                                         <a href="{{ url_for('box_logs', box_id=box.id) }}" class="btn btn-outline-secondary" title="View Logs">
                                             <i class="fas fa-history"></i>
                                         </a>
-                                        <form method="POST" action="{{ url_for('delete_box', box_id=box.id) }}" style="display: inline;" 
-                                              onsubmit="return confirm('Are you sure you want to delete box {{ box.box_id }}?')">
-                                            <button type="submit" class="btn btn-outline-danger" title="Delete Box">
-                                                <i class="fas fa-trash"></i>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown" title="More Actions">
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </button>
-                                        </form>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="{{ url_for('print_box_barcode', box_id=box.box_id) }}">
+                                                    <i class="fas fa-barcode me-2"></i>Print Barcode
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="{{ url_for('export_box_history', box_id=box.box_id) }}">
+                                                    <i class="fas fa-file-export me-2"></i>Print History Log
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete('{{ box.box_id }}', '{{ url_for('delete_box', box_id=box.id) }}')">
+                                                    <i class="fas fa-trash me-2"></i>Delete Box
+                                                </a></li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>

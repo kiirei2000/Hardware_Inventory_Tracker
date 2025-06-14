@@ -134,6 +134,9 @@
         <a class="sidebar-item" href="{{ url_for('dashboard') }}">
           <i class="fas fa-chart-bar"></i><span class="item-text">Dashboard</span>
         </a>
+        <a class="sidebar-item" href="{{ url_for('print_template') }}">
+          <i class="fas fa-print"></i><span class="item-text">Print Template</span>
+        </a>
       </div>
       <div class="sidebar-admin">
         {% if session.get('is_admin') %}
