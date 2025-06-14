@@ -224,6 +224,39 @@ document.addEventListener('DOMContentLoaded', function() {
     
     updateBoxIdPreview();
     
+    // Also update barcode preview when manually entered
+    const barcodeInputForPreview = document.getElementById('barcode');
+    if (barcodeInputForPreview) {
+        barcodeInputForPreview.addEventListener('input', function() {
+            const barcode = this.value.trim();
+            if (barcode) {
+                fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode) + '&type=qrcode')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.image) {
+                            const barcodeImage = document.getElementById('barcodeImage');
+                            const barcodePreview = document.getElementById('barcodePreview');
+                            if (barcodeImage && barcodePreview) {
+                                barcodeImage.src = data.image;
+                                barcodePreview.style.display = 'block';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        const barcodePreview = document.getElementById('barcodePreview');
+                        if (barcodePreview) {
+                            barcodePreview.style.display = 'none';
+                        }
+                    });
+            } else {
+                const barcodePreview = document.getElementById('barcodePreview');
+                if (barcodePreview) {
+                    barcodePreview.style.display = 'none';
+                }
+            }
+        });
+    }
+
     // Auto-generate QR code when page loads
     generateBarcode('qrcode');
 });
@@ -232,48 +265,19 @@ function generateBarcode(type = 'qrcode') {
     fetch(`/generate_barcode_api?type=${type}`)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('barcode').value = data.barcode;
-            if (data.image) {
-                document.getElementById('barcodeImage').src = data.image;
-                document.getElementById('barcodePreview').style.display = 'block';
+            const barcodeInput = document.getElementById('barcode');
+            const barcodeImage = document.getElementById('barcodeImage');
+            const barcodePreview = document.getElementById('barcodePreview');
+            
+            if (barcodeInput) barcodeInput.value = data.barcode;
+            if (data.image && barcodeImage && barcodePreview) {
+                barcodeImage.src = data.image;
+                barcodePreview.style.display = 'block';
             }
         })
         .catch(error => {
             console.error('Error generating barcode:', error);
         });
-}
-
-// Also update barcode preview when manually entered
-const barcodeInput = document.getElementById('barcode');
-if (barcodeInput) {
-    barcodeInput.addEventListener('input', function() {
-        const barcode = this.value.trim();
-        if (barcode) {
-            fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode) + '&type=qrcode')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.image) {
-                        const barcodeImage = document.getElementById('barcodeImage');
-                        const barcodePreview = document.getElementById('barcodePreview');
-                        if (barcodeImage && barcodePreview) {
-                            barcodeImage.src = data.image;
-                            barcodePreview.style.display = 'block';
-                        }
-                    }
-                })
-                .catch(error => {
-                    const barcodePreview = document.getElementById('barcodePreview');
-                    if (barcodePreview) {
-                        barcodePreview.style.display = 'none';
-                    }
-                });
-        } else {
-            const barcodePreview = document.getElementById('barcodePreview');
-            if (barcodePreview) {
-                barcodePreview.style.display = 'none';
-            }
-        }
-    });
 }
 </script>
 {% endblock %}

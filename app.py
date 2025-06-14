@@ -256,38 +256,60 @@ def generate_barcode_image(barcode_data, barcode_type='qrcode', format='png'):
         filepath = os.path.join(barcodes_dir, filename)
         
         if barcode_type == 'code128':
-            # Generate Code 128 barcode if available
-            if BARCODE_AVAILABLE:
-                try:
-                    code128_class = get_barcode_class('code128')
-                    code128 = code128_class(barcode_data, writer=ImageWriter())
-                    code128.save(filepath.replace('.png', ''))  # barcode library adds .png automatically
-                except Exception as e:
-                    print(f"Error with barcode library, falling back to QR code: {e}")
-                    # Fallback to QR code if Code 128 fails
-                    return generate_barcode_image(barcode_data, 'qrcode', format)
-            else:
-                print("Code 128 not available, falling back to QR code")
+            # Generate Code 128 barcode using correct python-barcode structure
+            try:
+                code = Code128(barcode_data, writer=ImageWriter())
+                saved_filename = code.save(filepath.replace('.png', ''))  # barcode library adds .png automatically
+                log_barcode_operation("GENERATE", barcode_data, barcode_type, True)
+                
+                # Verify file was created
+                if os.path.exists(saved_filename):
+                    return f"/static/barcodes/{filename}"
+                else:
+                    raise FileNotFoundError(f"Code128 file not created at {saved_filename}")
+                    
+            except Exception as e:
+                error_msg = f"Code128 generation failed: {str(e)}"
+                log_barcode_operation("GENERATE", barcode_data, barcode_type, False, error_msg)
+                logging.error(f"Code128 generation error: {error_msg}")
+                logging.error(f"Stack trace: {traceback.format_exc()}")
+                # Fallback to QR code if Code 128 fails
                 return generate_barcode_image(barcode_data, 'qrcode', format)
         else:
             # Generate QR code
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(barcode_data)
-            qr.make(fit=True)
-            
-            # Create image
-            img = qr.make_image(fill_color="black", back_color="white")
-            img.save(filepath)
+            try:
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+                )
+                qr.add_data(barcode_data)
+                qr.make(fit=True)
+                
+                # Create image
+                img = qr.make_image(fill_color="black", back_color="white")
+                img.save(filepath)
+                
+                # Verify file was created
+                if os.path.exists(filepath):
+                    log_barcode_operation("GENERATE", barcode_data, barcode_type, True)
+                    return f"/static/barcodes/{filename}"
+                else:
+                    raise FileNotFoundError(f"QR code file not created at {filepath}")
+                    
+            except Exception as e:
+                error_msg = f"QR code generation failed: {str(e)}"
+                log_barcode_operation("GENERATE", barcode_data, barcode_type, False, error_msg)
+                logging.error(f"QR code generation error: {error_msg}")
+                logging.error(f"Stack trace: {traceback.format_exc()}")
+                return None
         
-        # Return URL path for HTML
-        return f"/static/barcodes/{filename}"
     except Exception as e:
-        print(f"Error generating barcode: {str(e)}")
+        error_msg = f"General barcode generation error: {str(e)}"
+        log_barcode_operation("GENERATE", barcode_data, barcode_type, False, error_msg)
+        logging.error(f"Barcode generation error: {error_msg}")
+        logging.error(f"Stack trace: {traceback.format_exc()}")
         return None
 
 def log_action(action_type, user, box_id=None, hardware_type=None, lot_number=None, 
