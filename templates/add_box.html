@@ -95,10 +95,10 @@
                 <input type="text" class="form-control" id="barcode" name="barcode"
                        placeholder="Generated automatically or enter manually"
                        value="{{ form_data.get('barcode','') if form_data }}" required>
-                <button type="button" class="btn btn-outline-primary" onclick="startBarcodeScanning()" title="Scan existing barcode">
+                <div class="btn-group">
+                <button type="button" class="btn btn-outline-purple" onclick="startBarcodeScanning()" title="Scan existing barcode">
                   <i class="fas fa-camera me-1"></i>Scan
                 </button>
-                <div class="btn-group">
                   <button class="btn btn-outline-primary dropdown-toggle" type="button" id="generateBarcodeBtn" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-magic me-1"></i>Generate
                   </button>
