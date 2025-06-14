@@ -110,8 +110,8 @@
     .form-control-lg { padding: .75rem 1rem; font-size: 1.125rem; }
   </style>
 </head>
-<body>
-  <div id="main-container" class="d-flex" style="min-height:100vh;">
+<body class="d-flex flex-column min-vh-100">
+  <div id="main-container" class="d-flex flex-grow-1">
       
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
@@ -182,21 +182,21 @@
             </div>
           {% endif %}
         {% endwith %}
-
+  
         <div class="container-fluid">
           {% block content %}{% endblock %}
         </div>
       </main>
 
-      <!-- Footer -->
-      <footer class="app-footer bg-secondary text-center py-2">
-        <div class="container">
-          <small class="text-muted">
-            <i class="fas fa-box me-1"></i>Hardware Inventory Tracker &copy; 2025
-          </small>
-        </div>
-      </footer>
-    </div>
+    <!-- Footer -->
+    <footer class="app-footer bg-secondary text-center py-2">
+      <div class="container">
+        <small class="text-muted">
+          <i class="fas fa-box me-1"></i>Hardware Inventory Tracker &copy; 2025
+        </small>
+      </div>
+    </footer>
+  </div>
   </div>
 
   <!-- Bootstrap JS -->
