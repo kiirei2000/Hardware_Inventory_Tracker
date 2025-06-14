@@ -1537,10 +1537,16 @@ def export_word():
             # Add top padding
             p.add_run('\n')
             
-            # 1) Try to embed the real barcode image with better path handling
+            # 1) Try to embed the real barcode image with correct path handling
+            dataset = item_data.get('dataset', {})
             barcode_code = item_data.get('barcode', '').replace('Barcode: ', '')
-            img_found = False
             
+            # Try to get barcode from the actual data structure
+            if not barcode_code and 'boxId' in dataset:
+                # Use box ID as barcode identifier if no direct barcode
+                barcode_code = dataset['boxId']
+            
+            img_found = False
             if barcode_code:
                 # Try multiple image paths and formats
                 possible_paths = [
@@ -1585,8 +1591,7 @@ def export_word():
             # 2) Add spacing and data fields
             p.add_run('\n\n')  # Space between image and data
             
-            # Add dataset information
-            dataset = item_data.get('dataset', {})
+            # Add dataset information (already defined above)
             text_fields = item_data.get('text_fields', {})
             
             # Add barcode code
@@ -1609,7 +1614,7 @@ def export_word():
             p.add_run('\n')
             
             # 3) Apply individual borders (no shared borders)
-            set_individual_cell_border(cell)
+            set_cell_border(cell)
         
         # Save to BytesIO
         doc_buffer = io.BytesIO()
