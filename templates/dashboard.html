@@ -9,6 +9,20 @@
         Inventory Dashboard
     </h2>
     <div class="btn-group">
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="bulkActionsDropdown" 
+                    data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                <i class="fas fa-ellipsis-v me-1"></i>More Actions
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
+                <li><a class="dropdown-item" href="#" onclick="bulkPrintBarcodes()">
+                    <i class="fas fa-barcode me-2"></i>Print Barcodes
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkPrintLogs()">
+                    <i class="fas fa-file-export me-2"></i>Print Logs
+                </a></li>
+            </ul>
+        </div>
         <a href="{{ url_for('export_excel', type_filter=type_filter, lot_filter=lot_filter) }}" 
            class="btn btn-success">
             <i class="fas fa-download me-1"></i>Export Excel
@@ -139,6 +153,9 @@
             <table class="table table-hover mb-0">
                 <thead class="table-dark">
                     <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
+                        </th>
                         <th>Box ID</th>
                         <th>Type</th>
                         <th>Lot</th>
@@ -155,6 +172,7 @@
                         {% for type_lot_key, group_data in type_lot_groups.items() %}
                             <!-- Type-Lot Group Header Row -->
                             <tr class="table-secondary">
+                                <td></td>
                                 <td colspan="8">
                                     <strong><i class="fas fa-folder me-2"></i>{{ group_data.type_name }} - Lot: {{ group_data.lot_name }}</strong>
                                 </td>
@@ -166,6 +184,9 @@
                             {% for box_data in group_data.boxes %}
                             {% set box = box_data.box %}
                             <tr>
+                                <td>
+                                    <input type="checkbox" class="box-checkbox" value="{{ box.box_id }}" onchange="updateBulkActions()">
+                                </td>
                                 <td><strong>{{ box.box_id }}</strong></td>
                                 <td><span class="badge bg-primary">{{ group_data.type_name }}</span></td>
                                 <td><span class="badge bg-info">{{ group_data.lot_name }}</span></td>
