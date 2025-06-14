@@ -22,7 +22,8 @@ from barcode.writer import ImageWriter
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-import base64
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 import base64
 import csv
 import logging
@@ -50,6 +51,17 @@ def log_barcode_operation(operation, barcode_data, barcode_type, success, error=
     else:
         barcode_logger.error(f"{operation} - {barcode_type} - {barcode_data} - FAILED: {error}")
         barcode_logger.error(f"Stack trace: {traceback.format_exc()}")
+
+def set_cell_border(cell):
+    """Add solid black borders around a Word table cell"""
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    for edge in ('top', 'left', 'bottom', 'right'):
+        elm = OxmlElement(f'w:{edge}')
+        elm.set(qn('w:val'), 'single')
+        elm.set(qn('w:sz'), '12')  # 12 eighth-points = 1.5pt
+        elm.set(qn('w:color'), '000000')  # black
+        tcPr.append(elm)
 
 class Base(DeclarativeBase):
     pass
@@ -1452,7 +1464,7 @@ def print_box_history(box_id):
 
 @app.route('/export_word', methods=['POST'])
 def export_word():
-    """Export barcode layout to Word document"""
+    """Export barcode layout to Word document with real images and borders"""
     try:
         barcode_data = json.loads(request.form.get('barcode_data', '[]'))
         template_data = json.loads(request.form.get('template', '{}'))
@@ -1460,9 +1472,8 @@ def export_word():
         # Create Word document
         doc = Document()
         
-        # Set document orientation and margins
+        # Set document orientation and margins (remove redundant orientation line)
         section = doc.sections[0]
-        section.orientation = section.orientation  # Portrait by default
         section.page_width = Inches(8.5)  # Letter width
         section.page_height = Inches(11)  # Letter height
         section.left_margin = Inches(0.5)
@@ -1470,9 +1481,7 @@ def export_word():
         section.top_margin = Inches(0.5)
         section.bottom_margin = Inches(0.5)
         
-        # Add title
-        title = doc.add_heading('Barcode Print Layout', 0)
-        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        # No title - removed as requested
         
         # Get template settings
         columns = template_data.get('columns', 2)
@@ -1482,46 +1491,58 @@ def export_word():
         table = doc.add_table(rows=rows, cols=columns)
         table.style = 'Table Grid'
         
-        # Fill table with barcode data
+        # Fill table with barcode data using improved approach
         for i, item_data in enumerate(barcode_data):
             if i >= rows * columns:
                 break
                 
-            row_idx = i // columns
-            col_idx = i % columns
-            cell = table.cell(row_idx, col_idx)
-            
-            # Add barcode info to cell
-            barcode_code = item_data.get('barcode', '')
-            dataset = item_data.get('dataset', {})
-            text_fields = item_data.get('text_fields', {})
-            
-            # Create cell content
+            # Use cleaner cell access
+            cell = table.rows[i // columns].cells[i % columns]
             p = cell.paragraphs[0]
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             
-            # Add barcode code
-            run = p.add_run(f"Barcode: {barcode_code}")
-            run.bold = True
-            p.add_run('\n')
+            # 1) Embed the real barcode image
+            run = p.add_run()
+            img_src = item_data.get('image_url', '')
+            try:
+                if img_src.startswith('data:'):
+                    # Handle base64 data URLs
+                    header, data = img_src.split(',', 1)
+                    img_bytes = io.BytesIO(base64.b64decode(data))
+                    run.add_picture(img_bytes, width=Inches(2))
+                elif img_src.startswith('/static/'):
+                    # Handle relative file paths - convert to absolute
+                    img_path = img_src.lstrip('/')
+                    if os.path.exists(img_path):
+                        run.add_picture(img_path, width=Inches(2))
+                    else:
+                        p.add_run(f"[Image not found: {img_path}]")
+                elif img_src and os.path.exists(img_src):
+                    # Handle absolute file paths
+                    run.add_picture(img_src, width=Inches(2))
+                else:
+                    p.add_run(f"[No image available]")
+            except Exception as img_err:
+                p.add_run(f"[Image error: {img_err}]")
             
-            # Add dataset information
-            if dataset:
-                if dataset.get('type'):
-                    p.add_run(f"Type: {dataset['type']}\n")
-                if dataset.get('lot'):
-                    p.add_run(f"Lot: {dataset['lot']}\n")
-                if dataset.get('quantity'):
-                    p.add_run(f"Qty: {dataset['quantity']}\n")
-                if dataset.get('boxId'):
-                    p.add_run(f"Box ID: {dataset['boxId']}\n")
+            # 2) Add data fields beneath the image
+            dataset = item_data.get('dataset', {})
+            text_fields = item_data.get('text_fields', {})
+            
+            # Add dataset information with proper field mapping
+            for label, key in (('Type', 'type'), ('Lot', 'lot'), 
+                              ('Qty', 'quantity'), ('Box ID', 'boxId')):
+                val = dataset.get(key)
+                if val:
+                    p.add_run(f"\n{label}: {val}")
             
             # Add custom text fields
             for field_type, value in text_fields.items():
-                p.add_run(f"{field_type.title()}: {value}\n")
+                if value.strip():
+                    p.add_run(f"\n{field_type.title()}: {value}")
             
-            # Add space for barcode image placeholder
-            p.add_run('\n[Barcode Image Placeholder]')
+            # 3) Apply solid borders around the cell
+            set_cell_border(cell)
         
         # Save to BytesIO
         doc_buffer = io.BytesIO()

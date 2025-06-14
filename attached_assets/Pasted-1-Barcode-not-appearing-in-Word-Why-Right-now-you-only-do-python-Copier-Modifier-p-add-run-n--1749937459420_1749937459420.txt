@@ -1,0 +1,124 @@
+1. “Barcode not appearing in Word”
+Why
+Right now you only do:
+
+python
+Copier
+Modifier
+p.add_run('\n[Barcode Image Placeholder]')
+That never embeds the actual barcode—you’re just inserting text. Word has nothing to show.
+
+Fix
+Use python-docx’s add_picture() API to insert the image. If your item_data['image'] is a file‐path, you can do:
+
+python
+Copier
+Modifier
+# inside your loop, instead of the placeholder
+run = p.add_run()
+run.add_picture(item_data['image'], width=Inches(2))  # adjust width as needed
+If it’s base64, decode it first:
+
+python
+Copier
+Modifier
+import base64
+
+# decode base64 PNG into a BytesIO
+data = item_data['image'].split(',',1)[1]  # if it’s like "data:image/png;base64,XXX"
+img_bytes = io.BytesIO(base64.b64decode(data))
+
+run = p.add_run()
+run.add_picture(img_bytes, width=Inches(2))
+That will actually drop the barcode graphic into your document.
+
+2. “No need title or that header line”
+Why
+You have this at the top of your function:
+
+python
+Copier
+Modifier
+title = doc.add_heading('Barcode Print Layout', 0)
+title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+That creates the big heading.
+
+Fix
+Simply remove (or comment out) those two lines. Your table will start right at the top of the page without any extra title.
+
+3. “Make border for each barcode separately”
+Why
+By default you use:
+
+python
+Copier
+Modifier
+table = doc.add_table(rows=rows, cols=columns)
+table.style = 'Table Grid'
+But depending on your Word template, “Table Grid” may not show the inner cell borders strongly, or you might want an even thicker border around each cell.
+
+Fix
+You have two options:
+
+Choose a stronger built-in style
+
+python
+Copier
+Modifier
+table.style = 'Light Grid Accent 1'  # or any style that has visible cell borders
+Manually set cell borders (this requires a bit of low-level XML tweaking):
+
+python
+Copier
+Modifier
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+
+def set_cell_border(cell):
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    for edge in ('top','left','bottom','right'):
+        border = OxmlElement(f'w:{edge}')
+        border.set(qn('w:val'), 'single')      # single-line
+        border.set(qn('w:sz'), '12')           # 12 eighth‐points = 1.5pt
+        border.set(qn('w:color'), '000000')    # black
+        tcPr.append(border)
+
+# Then in your loop, after you get `cell`:
+set_cell_border(cell)
+That will programmatically draw a solid black box around each barcode cell.
+
+Putting it all together
+Here’s a sketch of the revised loop body:
+
+python
+Copier
+Modifier
+# … after creating `cell = table.cell(row_idx, col_idx)` …
+p = cell.paragraphs[0]
+p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+# 1) Embed the barcode image
+run = p.add_run()
+run.add_picture(item_data['image'], width=Inches(2))
+
+# 2) Add your data fields beneath
+for label, key in (('Type', 'type'),
+                   ('Lot', 'lot'),
+                   ('Qty', 'quantity'),
+                   ('Box ID', 'box_id')):
+    val = dataset.get(key)
+    if val:
+        p.add_run(f"\n{label}: {val}")
+
+# 3) Apply a solid border around the cell
+set_cell_border(cell)
+And simply remove the add_heading call at the top.
+
+With those three tweaks you’ll get:
+
+Real barcode graphics in each cell
+
+No extra page‐heading
+
+A crisp border around every barcode block
