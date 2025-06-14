@@ -183,21 +183,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    document.getElementById('new_hardware_type').addEventListener('input', function() {
-        if (this.value) document.getElementById('hardware_type').value = '';
-    });
+    const newHardwareType = document.getElementById('new_hardware_type');
+    const hardwareType = document.getElementById('hardware_type');
+    const newLotNumber = document.getElementById('new_lot_number');
+    const lotNumber = document.getElementById('lot_number');
     
-    document.getElementById('hardware_type').addEventListener('change', function() {
-        if (this.value) document.getElementById('new_hardware_type').value = '';
-    });
+    if (newHardwareType) {
+        newHardwareType.addEventListener('input', function() {
+            if (this.value && hardwareType) hardwareType.value = '';
+        });
+    }
     
-    document.getElementById('new_lot_number').addEventListener('input', function() {
-        if (this.value) document.getElementById('lot_number').value = '';
-    });
+    if (hardwareType) {
+        hardwareType.addEventListener('change', function() {
+            if (this.value && newHardwareType) newHardwareType.value = '';
+        });
+    }
     
-    document.getElementById('lot_number').addEventListener('change', function() {
-        if (this.value) document.getElementById('new_lot_number').value = '';
-    });
+    if (newLotNumber) {
+        newLotNumber.addEventListener('input', function() {
+            if (this.value && lotNumber) lotNumber.value = '';
+        });
+    }
+    
+    if (lotNumber) {
+        lotNumber.addEventListener('change', function() {
+            if (this.value && newLotNumber) newLotNumber.value = '';
+        });
+    }
     
     updateBoxIdPreview();
     

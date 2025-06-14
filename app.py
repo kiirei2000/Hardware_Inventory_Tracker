@@ -223,16 +223,13 @@ def generate_unique_barcode(length=10):
 def generate_barcode_image(barcode_data, format='png'):
     """Generate barcode image and save to static/barcodes/"""
     try:
-        import os
-        from barcode import Code128
-        from barcode.writer import ImageWriter
-        
         # Ensure barcodes directory exists
         barcodes_dir = os.path.join('static', 'barcodes')
         os.makedirs(barcodes_dir, exist_ok=True)
         
         # Generate barcode with ImageWriter
-        code128 = Code128(barcode_data, writer=ImageWriter())
+        code128_class = barcode.get_barcode_class('code128')
+        code128 = code128_class(barcode_data, writer=ImageWriter())
         
         # Save to file
         filename = f"{barcode_data}.png"

@@ -7,3 +7,6 @@ sqlalchemy
 werkzeug
 python-barcode
 qrcode
+barcode
+pillow
+python-barcode
