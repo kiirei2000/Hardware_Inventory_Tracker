@@ -13,9 +13,8 @@ import re
 from functools import wraps
 from urllib.parse import urlparse
 import uuid
-import barcode
-from barcode.writer import ImageWriter
 import qrcode
+from PIL import Image
 import base64
 import csv
 
