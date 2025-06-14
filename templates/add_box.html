@@ -5,7 +5,7 @@
   <!-- Centering wrapper -->
   <div
     class="d-flex align-items-center justify-content-center"
-    style="height: calc(100vh - 60px); padding: 1.5rem;"
+    style=" padding: 1.5rem;"
   >
     <div class="col-lg-8 col-xl-6">
 
@@ -118,25 +118,26 @@
             </div>
 
             <!-- Operator -->
-            <div class="col-md-6">
-              <label for="operator" class="form-label">
-                <i class="fas fa-user me-2 text-primary"></i>Operator
-              </label>
-              <input type="text" name="operator" id="operator" class="form-control form-control-lg"
-                     placeholder="Enter operator name"
-                     value="{{ form_data.get('operator','') if form_data }}" required>
+            <div class="row gx-3 gy-2 mt-3">
+              <div class="col-md-6">
+                <label for="operator" class="form-label">
+                  <i class="fas fa-user me-2 text-primary"></i>Operator
+                </label>
+                <input type="text" name="operator" id="operator" class="form-control form-control-lg"
+                       placeholder="Enter operator name"
+                       value="{{ form_data.get('operator','') if form_data }}" required>
+              </div>
+  
+              <!-- QC Operator -->
+              <div class="col-md-6">
+                <label for="qc_operator" class="form-label">
+                  <i class="fas fa-user-check me-2 text-primary"></i>QC Personnel
+                </label>
+                <input type="text" name="qc_operator" id="qc_operator" class="form-control form-control-lg"
+                       placeholder="Enter QC personnel name"
+                       value="{{ form_data.get('qc_operator','') if form_data }}" required>
+              </div>
             </div>
-
-            <!-- QC Operator -->
-            <div class="col-md-6">
-              <label for="qc_operator" class="form-label">
-                <i class="fas fa-user-check me-2 text-primary"></i>QC Personnel
-              </label>
-              <input type="text" name="qc_operator" id="qc_operator" class="form-control form-control-lg"
-                     placeholder="Enter QC personnel name"
-                     value="{{ form_data.get('qc_operator','') if form_data }}" required>
-            </div>
-          </div>
 
           <!-- Preview Box ID -->
           <div class="alert alert-info mt-2 py-2" id="boxIdPreview" style="display: none;">
@@ -145,7 +146,7 @@
           </div>
 
           <!-- Submit Buttons -->
-          <div class="d-flex justify-content-end gap-3 mt-3">
+          <div class="d-flex justify-content-end gap-3 mt-3 pe-3">
             <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg px-4">
               <i class="fas fa-times me-2"></i>Cancel
             </a>
