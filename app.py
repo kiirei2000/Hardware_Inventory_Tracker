@@ -18,6 +18,11 @@ from PIL import Image
 # Import barcode libraries with correct python-barcode structure
 from barcode.codex import Code128
 from barcode.writer import ImageWriter
+# Word document generation
+from docx import Document
+from docx.shared import Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+import base64
 import base64
 import csv
 import logging

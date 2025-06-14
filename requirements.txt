@@ -12,3 +12,5 @@ python-barcode
 python-barcode
 pillow
 python-barcode[images]
+barcode
+python-docx

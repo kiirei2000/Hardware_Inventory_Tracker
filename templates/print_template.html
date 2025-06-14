@@ -370,9 +370,12 @@
 
   <!-- Finalize & Print -->
   {% if barcode_data %}
-  <div class="d-flex justify-content-center my-4 finalize-controls">
+  <div class="d-flex justify-content-center gap-3 my-4 finalize-controls">
     <button onclick="finalizeAndPrint()" class="btn btn-success btn-lg px-4">
       <i class="fas fa-print me-2"></i>Finalize & Print
+    </button>
+    <button onclick="exportToWord()" class="btn btn-primary btn-lg px-4">
+      <i class="fas fa-file-word me-2"></i>Export to Word
     </button>
   </div>
   {% endif %}
@@ -530,6 +533,66 @@ function cleanupPrintDivs() {
         div.classList.add('d-none');
     });
     window.onafterprint = null;
+}
+
+function exportToWord() {
+    try {
+        const printArea = document.getElementById('print-area');
+        if (!printArea) {
+            alert('Print area not found. Cannot proceed with export.');
+            return;
+        }
+        
+        // Collect current barcode data with text field values
+        const barcodeData = [];
+        document.querySelectorAll('.barcode-item').forEach(item => {
+            const barcode = item.querySelector('.barcode-image')?.alt || '';
+            const barcodeImg = item.querySelector('.barcode-image')?.src || '';
+            
+            // Get text field values
+            const textFields = {};
+            item.querySelectorAll('.custom-text-input').forEach(textarea => {
+                const fieldClass = textarea.parentElement.className;
+                const fieldType = fieldClass.match(/dynamic-field-(\w+)/)?.[1];
+                if (fieldType && textarea.value.trim()) {
+                    textFields[fieldType] = textarea.value.trim();
+                }
+            });
+            
+            barcodeData.push({
+                barcode: barcode.replace('Barcode: ', ''),
+                image_url: barcodeImg,
+                dataset: item.dataset,
+                text_fields: textFields
+            });
+        });
+        
+        // Send data to backend for Word generation
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/export_word';
+        form.style.display = 'none';
+        
+        const dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'barcode_data';
+        dataInput.value = JSON.stringify(barcodeData);
+        
+        const templateInput = document.createElement('input');
+        templateInput.type = 'hidden';
+        templateInput.name = 'template';
+        templateInput.value = JSON.stringify(currentTemplate || {columns: 2, rows: 5});
+        
+        form.appendChild(dataInput);
+        form.appendChild(templateInput);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+    } catch (error) {
+        console.error('exportToWord error:', error);
+        alert('An error occurred while preparing Word export. Check console for details.');
+    }
 }
 
 function finalizeAndPrint() {
