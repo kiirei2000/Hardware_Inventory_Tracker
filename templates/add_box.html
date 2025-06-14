@@ -2,34 +2,29 @@
 {% block title %}Add New Box - Hardware Inventory{% endblock %}
 
 {% block content %}
+  <!-- Centering rules -->
   <style>
-    /* Disable the auto-scroll on the main area */
-    main.main-content {
-      overflow: hidden;
-    }
-
-    /* Make the container fill its parent and center everything */
-    main.main-content > .container-fluid {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .content-wrapper {
+      height: calc(100vh - 112px);
     }
   </style>
 
-  <div class="row content-wrapper">
+  <div class="row content-wrapper d-flex align-items-center justify-content-center">
     <div class="col-lg-8 col-xl-6">
-      <!-- Header Section -->
-      <div class="text-center py-2 mb-2">
-        <h3 class="fw-bold mb-1">
-          <i class="fas fa-plus-circle text-primary me-2"></i>
-          Add New Box to Inventory
-        </h3>
+
+      <!-- Header Card -->
+      <div class="card shadow-lg mb-3 rounded overflow-hidden">
+        <div class="card-body bg-primary text-white text-center py-3">
+          <h4 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>
+            Add New Box to Inventory
+          </h4>
+        </div>
       </div>
 
       <!-- Form Card -->
-      <div class="card shadow-sm border-0">
-        <div class="card-body p-3">
+      <div class="card shadow-lg rounded overflow-hidden">
+        <div class="card-body p-4">
           <form method="POST" id="addBoxForm">
             <div class="row gx-3 gy-2">
             
@@ -48,7 +43,7 @@
                 {% endfor %}
               </select>
               <input type="text" class="form-control form-control-lg mt-2" id="new_hardware_type"
-                     name="new_hardware_type" placeholder="Or enter new type..."
+                     name="new_hardware_type" placeholder="Or enter a new type..."
                      value="{{ form_data.get('new_hardware_type','') if form_data }}">
             </div>
 
