@@ -53,7 +53,7 @@ Barcodes can be generated freely using online tools (e.g., barcode.tec-it.com) a
 
 Deployment
 
-Hosted on Replit for easy access and collaboration.
+Hosted on Railway.com for easy access and collaboration.
 
 (https://hardwareinventorytracker-production.up.railway.app/)
 ----
