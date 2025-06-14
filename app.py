@@ -1315,6 +1315,7 @@ def print_template():
     # Get barcode data from query parameters
     barcodes = request.args.getlist('barcodes')
     box_ids = request.args.getlist('box_ids')
+    barcode_type = request.args.get('type', 'qrcode')  # Default to QR code
     
     # If specific box IDs provided, get their barcodes
     if box_ids:
@@ -1326,7 +1327,7 @@ def print_template():
                 'box_id': box.box_id,
                 'type': box.hardware_type.name,
                 'lot': box.lot_number.name,
-                'image': generate_barcode_image(box.barcode, 'qrcode')
+                'image': generate_barcode_image(box.barcode, barcode_type)
             })
     elif barcodes:
         # Custom barcodes provided
@@ -1335,9 +1336,9 @@ def print_template():
             barcode_data.append({
                 'barcode': barcode,
                 'box_id': '',
-                'type': '',
+                'type': 'Custom Barcode',
                 'lot': '',
-                'image': generate_barcode_image(barcode, 'qrcode')
+                'image': generate_barcode_image(barcode, barcode_type)
             })
     else:
         barcode_data = []
