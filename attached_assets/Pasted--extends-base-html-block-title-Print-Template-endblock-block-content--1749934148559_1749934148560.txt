@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Print Template{% endblock %}
+
+{% block content %}
+<style>
+/* --- Core Styles --- */
+.barcode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+.barcode-item {
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fff;
+  position: relative;
+  /* ensure fields shrink with barcode */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.barcode-image {
+  max-width: 100%;
+  height: auto;
+}
+.details-container {
+  width: 100%;
+}
+.custom-text-input {
+  width: 100%;
+  font-size: 12pt;
+  resize: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.25rem;
+}
+.dynamic-field {
+  margin-top: 0.5rem;
+}
+@media print {
+  /* hide all UI chrome */
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
+  #print-area { position: absolute; top: 0; left: 0; width: 100%; }
+  /* grid: 2 cols, auto rows, page-breaks */
+  .barcode-grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 0.5in !important; }
+  .barcode-item { page-break-inside: avoid; break-inside: avoid-column; }
+}
+</style>
+
+<div class="container-fluid py-4">
+  <!-- Header + Print Controls -->
+  <div class="row align-items-center mb-4">
+    <div class="col">
+      <h2><i class="fas fa-print me-2"></i>Barcode Print Template</h2>
+    </div>
+    <div class="col-auto d-flex gap-2">
+      <button class="btn btn-primary btn-lg px-4" onclick="printWithBarcodeType(currentTemplateType)">
+        <i class="fas fa-print me-2"></i>Print
+      </button>
+      <button class="btn btn-secondary btn-lg px-4" onclick="window.location='{{ url_for('dashboard') }}'">
+        <i class="fas fa-arrow-left me-2"></i>Back
+      </button>
+    </div>
+  </div>
+
+  <!-- Generator Section (unchanged) -->
+  <div class="card mb-4" id="generator-section">
+    <div class="card-header">
+      <h5><i class="fas fa-tools me-2"></i>Barcode Generator</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 justify-content-center">
+        <div class="col-md-4 d-grid">
+          <button class="btn btn-info btn-lg w-100" onclick="generateRandomBarcodes('qrcode')">
+            <i class="fas fa-random me-2"></i>Generate Random Barcodes
+          </button>
+        </div>
+        <div class="col-md-4 d-grid">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-lg w-100">
+            <i class="fas fa-list me-2"></i>Choose from Dashboard
+          </a>
+        </div>
+        <div class="col-md-4 d-grid">
+          <button class="btn btn-warning btn-lg w-100" onclick="showManualEntry()">
+            <i class="fas fa-plus me-2"></i>Manual Entry
+          </button>
+        </div>
+      </div>
+      <div id="manual-entry" class="mt-3" style="display:none;">
+        <form id="manual-barcode-form">
+          <div class="row g-2">
+            <div class="col-md-8">
+              <input id="manual-barcode-input" class="form-control" placeholder="Enter barcode…">
+            </div>
+            <div class="col-md-2 d-grid">
+              <button type="button" onclick="generateNewBarcode()" class="btn btn-secondary">
+                <i class="fas fa-magic me-2"></i>Generate
+              </button>
+            </div>
+            <div class="col-md-2 d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template Settings -->
+  <div class="card mb-4" id="template-section">
+    <div class="card-header">
+      <h5><i class="fas fa-cog me-2"></i>Print Template Settings</h5>
+    </div>
+    <div class="card-body">
+      <div class="row align-items-center g-3">
+        <div class="col-md-4">
+          <select id="template-preset" class="form-select">
+            <option value="2x5-letter">2×5 Letter Paper</option>
+            <!-- add other presets here -->
+          </select>
+        </div>
+        <div class="col-md-4">
+          <input id="slider-barcode-size" type="range" min="50" max="150" value="100" class="form-range">
+        </div>
+        <div class="col-md-4">
+          <input id="logo-upload" type="file" class="form-control">
+        </div>
+      </div>
+      <div class="row mt-3 g-2">
+        <div class="col-auto"><button id="field-box-id" class="btn btn-outline-secondary" type="button" onclick="toggleTextField('box-id')">Box ID</button></div>
+        <div class="col-auto"><button id="field-type" class="btn btn-outline-secondary" type="button" onclick="toggleTextField('type')">Type</button></div>
+        <div class="col-auto"><button id="field-lot" class="btn btn-outline-secondary" type="button" onclick="toggleTextField('lot')">Lot</button></div>
+        <div class="col-auto"><button id="field-quantity" class="btn btn-outline-secondary" type="button" onclick="toggleTextField('quantity')">Quantity</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print Grid -->
+  <div id="print-area">
+    <div class="barcode-grid">
+      {% for item in barcode_data %}
+      <div class="barcode-item"
+           data-box-id="{{ item.box_id }}"
+           data-type="{{ item.type }}"
+           data-lot="{{ item.lot }}"
+           data-quantity="{{ item.quantity }}">
+        {% if item.image %}<img src="{{ item.image }}" class="barcode-image">{% endif %}
+        <div class="details-container"></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Finalize & Print -->
+  <div class="d-flex justify-content-center my-4">
+    <button onclick="finalizeAndPrint()" class="btn btn-success btn-lg px-4">
+      <i class="fas fa-print me-2"></i>Finalize & Print
+    </button>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+// Toggle editable fields under each barcode
+function toggleTextField(fieldType) {
+  try {
+    const allowed = ['type','lot','quantity','box-id'];
+    if (!allowed.includes(fieldType)) {
+      console.warn(`Invalid fieldType: ${fieldType}`);
+      return;
+    }
+    const btn = document.getElementById(`field-${fieldType}`);
+    if (!btn) return;
+    const isActive = btn.classList.toggle('btn-secondary');
+    btn.classList.toggle('btn-outline-secondary');
+
+    // Clear any existing dynamic fields
+    document.querySelectorAll(`.dynamic-field-${fieldType}`).forEach(el => el.remove());
+
+    if (isActive) {
+      // Show textarea prefilled from data- attributes
+      document.querySelectorAll('.barcode-item').forEach(item => {
+        const container = item.querySelector('.details-container');
+        const value = item.dataset[fieldType.replace('-','')];
+        const wrapper = document.createElement('div');
+        wrapper.className = `dynamic-field dynamic-field-${fieldType}`;
+        const ta = document.createElement('textarea');
+        ta.className = 'form-control custom-text-input';
+        ta.rows = 1;
+        ta.value = value || '';
+        wrapper.appendChild(ta);
+        container.appendChild(wrapper);
+      });
+    }
+  } catch(e) {
+    console.error('toggleTextField error:', e);
+  }
+}
+
+// Other functions (generateRandomBarcodes, showManualEntry, finalizeAndPrint, etc.) remain unchanged
+</script>
+{% endblock %}
+{% endblock %}

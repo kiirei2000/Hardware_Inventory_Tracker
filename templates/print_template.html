@@ -516,11 +516,29 @@ function printWithBarcodeType(type, event) {
     }
 }
 
+function preparePrintText() {
+    const textareas = document.querySelectorAll('.custom-text-input');
+    textareas.forEach(textarea => {
+        const printDiv = textarea.parentElement.querySelector('.custom-text-print');
+        if (printDiv && textarea.value.trim()) {
+            printDiv.textContent = textarea.value;
+            printDiv.classList.remove('d-none');
+        }
+    });
+}
+
+function cleanupPrintDivs() {
+    const printDivs = document.querySelectorAll('.custom-text-print');
+    printDivs.forEach(div => {
+        div.classList.add('d-none');
+    });
+    window.onafterprint = null;
+}
+
 function finalizeAndPrint() {
     try {
         const printArea = document.getElementById('print-area');
         if (!printArea) {
-            console.error('No #print-area found');
             alert('Print area not found. Cannot proceed with printing.');
             return;
         }
@@ -531,47 +549,9 @@ function finalizeAndPrint() {
             return;
         }
         
-        // Apply template styles
-        if (currentTemplate) {
-            applyTemplate();
-        }
-        
-        // Prepare text content for printing using DocumentFragment
-        const textareas = printArea.querySelectorAll('.custom-text-input');
-        const originalStates = [];
-        
-        textareas.forEach(textarea => {
-            if (textarea.value.trim()) {
-                const printDiv = textarea.parentElement.querySelector('.custom-text-print');
-                if (printDiv) {
-                    printDiv.textContent = textarea.value;
-                    printDiv.classList.remove('d-none');
-                }
-                originalStates.push({
-                    textarea: textarea,
-                    printDiv: printDiv,
-                    value: textarea.value
-                });
-            }
-        });
-        
-        // Set up print completion handler
-        window.onafterprint = () => {
-            try {
-                // Restore original state
-                originalStates.forEach(state => {
-                    if (state.printDiv) {
-                        state.printDiv.classList.add('d-none');
-                    }
-                });
-            } catch (error) {
-                console.error('Error restoring after print:', error);
-            } finally {
-                window.onafterprint = null; // Clean up
-            }
-        };
-        
-        // Trigger print
+        if (currentTemplate) applyTemplate();
+        preparePrintText();
+        window.onafterprint = cleanupPrintDivs;
         window.print();
         
     } catch (error) {
@@ -722,7 +702,7 @@ function uploadLogo(input) {
 function toggleTextField(fieldType) {
     try {
         // Whitelist validation for security
-        const allowedFields = ['type', 'lot', 'quantity'];
+        const allowedFields = ['type', 'lot', 'quantity', 'box-id'];
         if (!allowedFields.includes(fieldType)) {
             console.warn(`Invalid fieldType: ${fieldType}`);
             return;
@@ -734,38 +714,49 @@ function toggleTextField(fieldType) {
             return;
         }
         
-        button.classList.toggle('btn-secondary');
+        const isActive = button.classList.toggle('btn-secondary');
         button.classList.toggle('btn-outline-secondary');
+
+        // Clear existing dynamic fields for this type
+        document.querySelectorAll(`.dynamic-field-${fieldType}`).forEach(el => el.remove());
+
+        if (isActive) {
+            document.querySelectorAll('.barcode-item').forEach(item => {
+                let container = item.querySelector('.details-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.className = 'details-container';
+                    item.appendChild(container);
+                }
+                
+                // Get value from data attributes
+                const dataKey = fieldType.replace('-',''); // box-id -> boxid
+                const value = item.dataset[dataKey] || '';
+                
+                // Create wrapper with both textarea and print div
+                const wrapper = document.createElement('div');
+                wrapper.className = `dynamic-field dynamic-field-${fieldType}`;
+                
+                const textarea = document.createElement('textarea');
+                textarea.className = 'custom-text-input form-control';
+                textarea.rows = 1;
+                textarea.value = value;
+                textarea.placeholder = fieldType.charAt(0).toUpperCase() + fieldType.slice(1);
+                
+                const printDiv = document.createElement('div');
+                printDiv.className = 'custom-text-print d-none';
+                printDiv.textContent = value;
+                
+                wrapper.appendChild(textarea);
+                wrapper.appendChild(printDiv);
+                container.appendChild(wrapper);
+            });
+        }
         
-        const isActive = button.classList.contains('btn-secondary');
-        
-        // Batch DOM updates with DocumentFragment
-        document.querySelectorAll('.barcode-item').forEach(item => {
-            let textField = item.querySelector(`.text-field-${fieldType}`);
-            if (!textField && isActive) {
-                textField = document.createElement('div');
-                textField.className = `text-field-${fieldType} custom-text-container mt-2`;
-                textField.innerHTML = `
-                    <textarea class="custom-text-input form-control" 
-                              placeholder="${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)}" 
-                              rows="2"></textarea>
-                    <div class="custom-text-print d-none"></div>
-                    <button type="button" class="btn btn-sm btn-danger mt-1" onclick="deleteTextBox(this)">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `;
-                item.appendChild(textField);
-            }
-            
-            if (textField) {
-                textField.classList.toggle('d-none', !isActive);
-            }
-        });
-        
-        // Save active fields to localStorage
+        // Save state
         const activeFields = allowedFields.filter(ft => {
-            const btn = document.getElementById(`field-${ft}`);
-            return btn && btn.classList.contains('btn-secondary');
+            const button = document.getElementById(`field-${ft}`);
+            return button && button.classList.contains('btn-secondary');
         });
         localStorage.setItem('activeFields', JSON.stringify(activeFields));
     } catch (error) {
