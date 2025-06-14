@@ -348,7 +348,7 @@
     <div class="barcode-grid">
       {% for item in barcode_data %}
       <div class="barcode-item" 
-           data-boxid="{{ item.box_id or 'N/A' }}"
+           data-box-id="{{ item.box_id or 'N/A' }}"
            data-type="{{ item.hardware_type or 'N/A' }}"
            data-lot="{{ item.lot_number or 'N/A' }}"
            data-quantity="{{ item.remaining_quantity or 'N/A' }}">
@@ -546,7 +546,19 @@ function finalizeAndPrint() {
             return;
         }
         
-        if (currentTemplate) applyTemplate();
+        // Debug & verify before printing
+        console.log('Current template:', currentTemplate);
+        
+        if (currentTemplate) {
+            applyTemplate();
+            console.log('Injected CSS:', document.getElementById('template-styles')?.textContent?.substring(0, 200) + '...');
+        }
+        
+        // Debug all barcode items datasets
+        document.querySelectorAll('.barcode-item').forEach((item, index) => {
+            console.log(`Barcode item ${index} dataset:`, item.dataset);
+        });
+        
         preparePrintText();
         window.onafterprint = cleanupPrintDivs;
         window.print();
@@ -584,44 +596,73 @@ function applyTemplate() {
         
         currentTemplate = template;
         
-        // Comprehensive CSS with error prevention
+        // Get barcode size from correct slider ID
+        const barcodeSlider = document.getElementById('barcode-size') || document.getElementById('slider-barcode-size');
+        const barcodeScale = (barcodeSlider?.value || 100) / 100;
+        
+        // Comprehensive print CSS with your specifications
         const css = `
+        @page {
+            size: ${template.paper} portrait;
+            margin: 0.3in;
+        }
+
         @media print {
-            @page {
-                size: ${template.paper} portrait;
-                margin: ${template.margin};
+            /* Hide everything except the grid */
+            body * {
+                visibility: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
-            
-            /* Hide inputs, show static text */
+            #print-area,
+            #print-area * {
+                visibility: visible !important;
+            }
+
+            #print-area {
+                position: absolute !important;
+                top: 0 !important; 
+                left: 0 !important;
+                width: 100% !important; 
+                height: 100% !important;
+                display: grid !important;
+                grid-template-columns: repeat(${template.columns}, 1fr) !important;
+                grid-auto-rows: auto !important;
+                gap: 0.25in !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .barcode-item {
+                box-sizing: border-box !important;
+                width: 100% !important;  
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid-column !important;
+                border: 1px solid #000 !important;
+                padding: 0.1in !important;
+                margin: 0 !important;
+            }
+
+            .barcode-item .barcode-image {
+                max-width: 100% !important;
+                height: auto !important;
+                margin-bottom: 0.1in !important;
+                transform: scale(${barcodeScale}) !important;
+            }
+
             .custom-text-input { 
                 display: none !important; 
             }
-            .custom-text-print { 
-                display: block !important; 
-                font-size: 10pt;
-                text-align: center;
-                margin-top: 0.25rem;
-            }
-            
-            /* Grid layout */
-            .barcode-grid {
-                display: grid !important;
-                grid-template-columns: repeat(${template.columns}, 1fr) !important;
-                gap: ${template.gap} !important;
+            .custom-text-print {
+                display: block !important;
+                font-size: 9pt !important;
+                text-align: center !important;
+                margin-top: 0.05in !important;
                 width: 100% !important;
-            }
-            
-            /* Prevent page breaks */
-            .barcode-item { 
-                break-inside: avoid !important;
-                page-break-inside: avoid !important;
-            }
-            
-            /* Scale barcode images */
-            .barcode-image {
-                max-width: 100% !important;
-                height: auto !important;
-                transform: scale(${(document.getElementById('barcode-size')?.value || 100) / 100}) !important;
+                word-wrap: break-word !important;
             }
         }
         `;
@@ -750,9 +791,36 @@ function toggleTextField(fieldType) {
                     item.appendChild(container);
                 }
                 
-                // Get value from data attributes
-                const dataKey = fieldType.replace('-',''); // box-id -> boxid
-                const value = item.dataset[dataKey] || '';
+                // Get value from data attributes with proper camelCase conversion
+                // turn "box-id" → "boxId"
+                const dataKey = fieldType
+                    .split('-')
+                    .map((w,i) => i ? w[0].toUpperCase()+w.slice(1) : w)
+                    .join('');
+                let value = item.dataset[dataKey] || '';
+                
+                // Add debugging and fallback data extraction
+                console.log(`Field: ${fieldType}, DataKey: ${dataKey}, Value: ${value}`);
+                console.log(`Full dataset:`, item.dataset);
+                
+                // If no value, try alternative attribute names
+                if (!value) {
+                    switch(fieldType) {
+                        case 'type':
+                            value = item.dataset.type || item.dataset.hardwareType || 'N/A';
+                            break;
+                        case 'lot':
+                            value = item.dataset.lot || item.dataset.lotNumber || 'N/A';
+                            break;
+                        case 'quantity':
+                            value = item.dataset.quantity || item.dataset.remainingQuantity || 'N/A';
+                            break;
+                        case 'box-id':
+                            value = item.dataset.boxId || item.dataset.boxid || 'N/A';
+                            break;
+                    }
+                    console.log(`Fallback value for ${fieldType}: ${value}`);
+                }
                 
                 // Create wrapper with both textarea and print div
                 const wrapper = document.createElement('div');

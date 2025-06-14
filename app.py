@@ -1325,8 +1325,9 @@ def print_template():
             barcode_data.append({
                 'barcode': box.barcode,
                 'box_id': box.box_id,
-                'type': box.hardware_type.name,
-                'lot': box.lot_number.name,
+                'hardware_type': box.hardware_type.name if box.hardware_type else 'N/A',
+                'lot_number': box.lot_number.name if box.lot_number else 'N/A',
+                'remaining_quantity': box.remaining_quantity,
                 'image': generate_barcode_image(box.barcode, barcode_type)
             })
     elif barcodes:
@@ -1335,9 +1336,10 @@ def print_template():
         for barcode in barcodes:
             barcode_data.append({
                 'barcode': barcode,
-                'box_id': '',
-                'type': 'Custom Barcode',
-                'lot': '',
+                'box_id': 'N/A',
+                'hardware_type': 'Custom Barcode',
+                'lot_number': 'N/A',
+                'remaining_quantity': 0,
                 'image': generate_barcode_image(barcode, barcode_type)
             })
     else:

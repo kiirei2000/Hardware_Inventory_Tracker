@@ -1,0 +1,72 @@
+1. Data-Attribute Mapping
+Your fallback logic is good, but remember that HTML data-box-id shows up in JS as item.dataset.boxId (camelCase), not boxid. So instead of
+
+js
+Copier
+Modifier
+const dataKey = fieldType.replace('-','');  // yields "boxid"
+let value = item.dataset[dataKey];
+you want something like:
+
+js
+Copier
+Modifier
+// turn “box-id” → “boxId”
+const dataKey = fieldType
+  .split('-')
+  .map((w,i) => i ? w[0].toUpperCase()+w.slice(1) : w)
+  .join('');
+let value = item.dataset[dataKey];
+Then your switch-based fallbacks (hardwareType vs. type, lotNumber vs. lot, etc.) will only run when truly empty.
+
+2. applyTemplate() CSS Injection
+The dynamic CSS you outlined is perfect, but make sure:
+
+You remove any old <style id="template-styles"> before appending the new one.
+
+You inject it synchronously (no setTimeout) so that by the time you call window.print(), the browser has the final rules parsed and applied.
+
+Your slider ID matches: if your <input type="range"> is id="slider-barcode-size", read .value from that element (your snippet uses barcode-size).
+
+3. Backend Data Flow
+Your Python list comprehension is spot-on. Just confirm in your Jinja you’re writing:
+
+html
+Copier
+Modifier
+<div class="barcode-item"
+     data-box-id="{{ item.box_id }}"
+     data-type="{{ item.hardware_type }}"
+     data-lot="{{ item.lot_number }}"
+     data-quantity="{{ item.remaining_quantity }}">
+  …  
+</div>
+so that your JS “dataset” keys (boxId, type, lot, quantity) all line up exactly.
+
+4. Print-Only CSS
+Your @media print block now:
+
+Hides everything outside #print-area
+
+Sets up an N×M grid (repeat(${template.columns},1fr))
+
+Forces each card to box-sizing:border-box; width:100% so it shrinks to its column
+
+Applies transform: scale(...) on the <img> — this works, but if you find your text or padding gets misaligned you could instead wrap the entire .barcode-item in a CSS transform: scale(...) to shrink the whole card as one unit.
+
+5. Debug & Verify
+Before printing, sprinkle these logs:
+
+js
+Copier
+Modifier
+console.log('Current template:', currentTemplate);
+console.log('Injected CSS:', document.getElementById('template-styles').textContent);
+document.querySelectorAll('.barcode-item').forEach(item =>
+  console.log('Dataset:', item.dataset)
+);
+Watch the console to confirm:
+
+Your CSS is exactly what you expect
+
+Each card’s dataset contains the right boxId, type, etc.
