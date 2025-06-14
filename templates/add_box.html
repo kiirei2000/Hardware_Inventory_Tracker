@@ -95,11 +95,10 @@
                 <input type="text" class="form-control" id="barcode" name="barcode"
                        placeholder="Generated automatically or enter manually"
                        value="{{ form_data.get('barcode','') if form_data }}" required>
-                <div class="btn-group">
                 <button type="button" class="btn btn-outline-purple" onclick="startBarcodeScanning()" title="Scan existing barcode">
                   <i class="fas fa-camera me-1"></i>Scan
                 </button>
-                  <button class="btn btn-outline-primary dropdown-toggle" type="button" id="generateBarcodeBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button class="btn btn-outline-purple dropdown-toggle" type="button" id="generateBarcodeBtn" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-magic me-1"></i>Generate
                   </button>
                   <ul class="dropdown-menu">
@@ -115,7 +114,7 @@
               <!-- Barcode Preview -->
               <div id="barcodePreview" class="mt-2" style="display: none;">
                 <div class="text-center p-2 border rounded bg-light">
-                  <img id="barcodeImage" src="" alt="Barcode Preview" style="max-height: 80px;">
+                  <img id="barcodeImage" src="" alt="Barcode Preview" style="max-height: 70px;">
                   <div class="small text-muted mt-1">Barcode Preview</div>
                 </div>
               </div>
