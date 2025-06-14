@@ -249,7 +249,7 @@ if (barcodeInput) {
     barcodeInput.addEventListener('input', function() {
         const barcode = this.value.trim();
         if (barcode) {
-            fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode))
+            fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode) + '&type=qrcode')
                 .then(response => response.json())
                 .then(data => {
                     if (data.image) {

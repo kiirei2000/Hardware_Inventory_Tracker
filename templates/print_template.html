@@ -78,10 +78,9 @@
                         <img src="{{ item.image }}" alt="Barcode: {{ item.barcode }}" class="barcode-image">
                         {% endif %}
                         <div class="barcode-text">{{ item.barcode }}</div>
-                        {% if item.box_id %}
+                        {% if item.type %}
                         <div class="box-info">
-                            <small>{{ item.box_id }}</small><br>
-                            <small>{{ item.type }} - {{ item.lot }}</small>
+                            <small>{{ item.type }}</small>
                         </div>
                         {% endif %}
                     </div>

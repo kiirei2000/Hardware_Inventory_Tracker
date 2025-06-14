@@ -15,8 +15,15 @@ from urllib.parse import urlparse
 import uuid
 import qrcode
 from PIL import Image
-import barcode
-from barcode.writer import ImageWriter
+# Import barcode libraries with fallback handling
+try:
+    import barcode
+    from barcode import get_barcode_class
+    from barcode.writer import ImageWriter
+    BARCODE_AVAILABLE = True
+except ImportError:
+    print("python-barcode not available, using QR codes only")
+    BARCODE_AVAILABLE = False
 import base64
 import csv
 
@@ -233,14 +240,18 @@ def generate_barcode_image(barcode_data, barcode_type='qrcode', format='png'):
         filepath = os.path.join(barcodes_dir, filename)
         
         if barcode_type == 'code128':
-            # Generate Code 128 barcode
-            try:
-                code128_class = barcode.get_barcode_class('code128')
-                code128 = code128_class(barcode_data, writer=ImageWriter())
-                code128.save(filepath.replace('.png', ''))  # barcode library adds .png automatically
-            except Exception as e:
-                print(f"Error with barcode library, falling back to QR code: {e}")
-                # Fallback to QR code if Code 128 fails
+            # Generate Code 128 barcode if available
+            if BARCODE_AVAILABLE:
+                try:
+                    code128_class = get_barcode_class('code128')
+                    code128 = code128_class(barcode_data, writer=ImageWriter())
+                    code128.save(filepath.replace('.png', ''))  # barcode library adds .png automatically
+                except Exception as e:
+                    print(f"Error with barcode library, falling back to QR code: {e}")
+                    # Fallback to QR code if Code 128 fails
+                    return generate_barcode_image(barcode_data, 'qrcode', format)
+            else:
+                print("Code 128 not available, falling back to QR code")
                 return generate_barcode_image(barcode_data, 'qrcode', format)
         else:
             # Generate QR code
@@ -1277,7 +1288,7 @@ def print_template():
                 'box_id': box.box_id,
                 'type': box.hardware_type.name,
                 'lot': box.lot_number.name,
-                'image': generate_barcode_image(box.barcode)
+                'image': generate_barcode_image(box.barcode, 'qrcode')
             })
     elif barcodes:
         # Custom barcodes provided
@@ -1288,7 +1299,7 @@ def print_template():
                 'box_id': '',
                 'type': '',
                 'lot': '',
-                'image': generate_barcode_image(barcode)
+                'image': generate_barcode_image(barcode, 'qrcode')
             })
     else:
         barcode_data = []
