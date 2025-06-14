@@ -44,7 +44,7 @@
                                 <input type="text" class="form-control" id="new_hardware_type" 
                                        name="new_hardware_type" placeholder="Or enter new type..."
                                        value="{{ form_data.get('new_hardware_type', '') if form_data }}">
-                                <small class="form-text text-muted">Leave existing selection empty to add new type</small>
+                                <small class="form-text text-secondary">Leave existing selection empty to add new type</small>
                             </div>
                         </div>
 
@@ -66,7 +66,7 @@
                                 <input type="text" class="form-control" id="new_lot_number" 
                                        name="new_lot_number" placeholder="Or enter new lot..."
                                        value="{{ form_data.get('new_lot_number', '') if form_data }}">
-                                <small class="form-text text-muted">Leave existing selection empty to add new lot</small>
+                                <small class="form-text text-secondary">Leave existing selection empty to add new lot</small>
                             </div>
                         </div>
 
@@ -78,7 +78,7 @@
                             <input type="text" class="form-control" id="box_number" name="box_number" 
                                    value="{{ form_data.get('box_number', box.box_number) if form_data else box.box_number }}" 
                                    required>
-                            <small class="form-text text-muted">Changing this will update the Box ID</small>
+                            <small class="form-text text-secondary">Changing this will update the Box ID</small>
                         </div>
 
                         <!-- Initial Quantity -->
@@ -89,7 +89,7 @@
                             <input type="number" class="form-control" id="initial_quantity" name="initial_quantity" 
                                    value="{{ form_data.get('initial_quantity', box.initial_quantity) if form_data else box.initial_quantity }}" 
                                    min="1" required>
-                            <small class="form-text text-muted">Admin can modify any quantity</small>
+                            <small class="form-text text-secondary">Admin can modify any quantity</small>
                         </div>
 
                         <!-- Current/Remaining Quantity (NEW FIELD) -->
@@ -100,7 +100,7 @@
                             <input type="number" class="form-control" id="current_quantity" name="current_quantity" 
                                    value="{{ form_data.get('current_quantity', box.remaining_quantity) if form_data else box.remaining_quantity }}" 
                                    min="0" required>
-                            <small class="form-text text-muted">Current remaining quantity in box</small>
+                            <small class="form-text text-secondary">Current remaining quantity in box</small>
                         </div>
 
                         <!-- Barcode (Editable) -->
@@ -111,7 +111,7 @@
                             <input type="text" class="form-control" id="barcode" name="barcode" 
                                    value="{{ form_data.get('barcode', box.barcode) if form_data else box.barcode }}" 
                                    required>
-                            <small class="form-text text-muted">Must be unique across all boxes</small>
+                            <small class="form-text text-secondary">Must be unique across all boxes</small>
                         </div>
                     </div>
 
@@ -133,7 +133,7 @@
                             </div>
                             <div class="col-md-3">
                                 <strong>Created:</strong><br>
-                                <span class="text-muted">{{ box.created_at.strftime('%Y-%m-%d') if box.created_at else 'Unknown' }}</span>
+                                <span class="text-secondary">{{ box.created_at.strftime('%Y-%m-%d') if box.created_at else 'Unknown' }}</span>
                             </div>
                         </div>
                     </div>
