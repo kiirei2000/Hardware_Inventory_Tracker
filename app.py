@@ -21,7 +21,7 @@ from barcode.writer import ImageWriter
 # Word document generation
 from docx import Document
 from docx.shared import Inches, Pt
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ROW_HEIGHT_RULE
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ROW_HEIGHT_RULE, WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -1547,6 +1547,7 @@ def export_word():
     
             # A) grab the cell
             cell = table.rows[idx // cols].cells[idx % cols]
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
         
             # B) clear its default content
             cell._tc.clear_content()
