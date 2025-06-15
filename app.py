@@ -1526,7 +1526,13 @@ def export_word():
 
         # 6) Add space for company logo at top
         logo_para = doc.add_paragraph()
-        logo_para.add_run('\n' * 3)  # Space for logo
+        logo_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        logo_path = os.path.join(app.root_path, 'static', 'images', 'company_logo.png')
+        if os.path.exists(logo_path):
+            run = logo_para.add_run()
+            run.add_picture(logo_path, width=Inches(usable_w))
+        else:
+            app.logger.warning("Logo file not found at %s", logo_path)
         
         # 7) Build the table
         table = doc.add_table(rows=rows, cols=cols)
@@ -1572,14 +1578,25 @@ def export_word():
             pic_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             run   = pic_p.add_run()
             if abs_path:
+                max_w = cell_w_in * size_pct
+                max_h = barcode_h_in * size_pct
+                
+                # For a 2:1 (w:h) ratio, height = width/2
+                # If width-limited would exceed max_h, switch to height-limited.
+                if max_w / 2 > max_h:
+                    # height is the limiter
+                    final_h = max_h
+                    final_w = final_h * 2
+                else:
+                    # width is the limiter
+                    final_w = max_w
+                    final_h = final_w / 2
+                
                 run.add_picture(
-                  abs_path,
-                  width  = Inches(cell_w_in * size_pct),
-                  height = Inches(barcode_h_in * size_pct)
+                    abs_path,
+                    width  = Inches(final_w),
+                    height = Inches(final_h)
                 )
-            else:
-                app.logger.warning("No image for barcode %s", code)
-                pic_p.add_run('[No Image]')
         
             # E) insert the text at 1/3 height
             txt_p = cell.add_paragraph()
