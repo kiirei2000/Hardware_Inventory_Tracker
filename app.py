@@ -20,9 +20,9 @@ from barcode.codex import Code128
 from barcode.writer import ImageWriter
 # Word document generation
 from docx import Document
-from docx.shared import Inches
+from docx.shared import Inches, Pt
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ROW_HEIGHT_RULE
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_ROW_HEIGHT_RULE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 import base64
@@ -1492,133 +1492,110 @@ def export_word():
     try:
         barcode_data = json.loads(request.form.get('barcode_data', '[]'))
         template_data = json.loads(request.form.get('template', '{}'))
+        selected_type = template_data.get('barcode_type','qrcode')
+        labels = {'boxId':'Box ID','type':'Type','lot':'Lot','quantity':'Quantity'}
         
         # Create Word document
         doc = Document()
-        
-        # Set document orientation and margins (remove redundant orientation line)
+                
+        # 1) Set up page and margins
         section = doc.sections[0]
-        section.page_width = Inches(8.5)  # Letter width
-        section.page_height = Inches(11)  # Letter height
-        section.left_margin = Inches(0.5)
-        section.right_margin = Inches(0.5)
-        section.top_margin = Inches(0.5)
+        section.page_width  = Inches(8.5)
+        section.page_height = Inches(11)
+        section.left_margin   = Inches(0.5)
+        section.right_margin  = Inches(0.5)
+        section.top_margin    = Inches(0.5)
         section.bottom_margin = Inches(0.5)
         
-        # No title - removed as requested
+        # 2) Figure out usable area in inches
+        usable_w = section.page_width.inches  - section.left_margin.inches  - section.right_margin.inches
+        usable_h = section.page_height.inches - section.top_margin.inches - section.bottom_margin.inches
         
-        # 1) Pull template settings with debug logging
-        app.logger.debug("Word export received template_data: %s", template_data)
-        
-        cols = template_data.get('columns', 2)
-        rows = template_data.get('rows', 5)
-        cell_w_in = template_data.get('cell_width', 4)
-        cell_h_in = template_data.get('cell_height', 2.2)
-        barcode_in = template_data.get('barcode_area', 1.5)
+        # 3) Read user’s choice of grid
+        cols     = template_data.get('columns', 2)
+        rows     = template_data.get('rows',    5)
         size_pct = template_data.get('barcode_size_pct', 100) / 100
-        active_fields = template_data.get('fields', [])
-        selected_type = template_data.get('barcode_type', 'qrcode')
         
-        app.logger.debug("Extracted values - type: %s, size: %s%%, fields: %s", 
-                         selected_type, template_data.get('barcode_size_pct', 100), active_fields)
+        # 4) Compute each cell’s size
+        cell_w_in = usable_w / cols
+        cell_h_in = usable_h / rows
         
-        # Add space for company logo at top
+        # 5) Always take 2/3 of cell for the barcode, 1/3 for text
+        barcode_h_in = cell_h_in * 2/3
+        text_h_in    = cell_h_in - barcode_h_in
+
+        # 6) Add space for company logo at top
         logo_para = doc.add_paragraph()
         logo_para.add_run('\n' * 3)  # Space for logo
         
-        # 2) Build fixed-size table
+        # 7) Build the table
         table = doc.add_table(rows=rows, cols=cols)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
         table.autofit = False
         
-        # Set fixed column widths
-        for c in table.columns:
-            for cell in c.cells:
+        for col in table.columns:
+            for cell in col.cells:
                 cell.width = Inches(cell_w_in)
+        for row in table.rows:
+            row.height = Inches(cell_h_in)
+            row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
         
-        # Set fixed row heights
-        for r in table.rows:
-            r.height = Inches(cell_h_in)
-            r.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
-        
-        # 3) Fill each cell with corrected logic
-        for i, item_data in enumerate(barcode_data):
-            if i >= rows * cols:
+        # 8) Fill each cell
+        for idx, item in enumerate(barcode_data):
+            if idx >= rows * cols:
                 break
-                
-            cell = table.rows[i // cols].cells[i % cols]
-            cell.paragraphs[0].clear()
-            p = cell.paragraphs[0]
-            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            
-            # Get dataset and image information
-            dataset = item_data.get('dataset', {})
-            img_src = item_data.get('image', '')
-            
-            # Try to embed barcode with TYPE PRIORITY
-            img_found = False
-            
-            # Get barcode code from multiple sources
-            barcode_code = (item_data.get('barcode', '') or 
-                           dataset.get('boxId', '') or 
-                           'unknown').replace('Barcode: ', '')
-            
-            app.logger.debug("Processing item %d - barcode: %s, type: %s", i, barcode_code, selected_type)
-            
-            if barcode_code and barcode_code != 'unknown':
-                # PRIORITY-BASED path selection
-                if selected_type == 'code128':
-                    possible_paths = [
-                        f"static/barcodes/{barcode_code}_code128.png",  # PRIORITY
-                        f"static/barcodes/{barcode_code}_qrcode.png",   # fallback
-                        f"static/barcodes/{barcode_code}.png"          # fallback
-                    ]
-                else:  # qrcode
-                    possible_paths = [
-                        f"static/barcodes/{barcode_code}_qrcode.png",   # PRIORITY
-                        f"static/barcodes/{barcode_code}_code128.png",  # fallback
-                        f"static/barcodes/{barcode_code}.png"          # fallback
-                    ]
-                
-                for img_path in possible_paths:
-                    abs_path = os.path.join(app.root_path, img_path)
-                    app.logger.debug("Trying image path: %s", abs_path)
-                    if os.path.exists(abs_path):
-                        try:
-                            run = p.add_run()
-                            final_height = barcode_in * size_pct
-                            run.add_picture(abs_path, height=Inches(final_height))
-                            img_found = True
-                            app.logger.debug("Successfully loaded image: %s with height: %.2f", abs_path, final_height)
-                            break
-                        except Exception as e:
-                            app.logger.debug("Failed to load image %s: %s", abs_path, e)
-                            continue
-            
-            # Fallback placeholder
-            if not img_found:
-                p.add_run('[Barcode Image]')
-                app.logger.debug("No image found for barcode: %s", barcode_code)
-            
-            # Add ONLY selected fields
-            labels = {'boxId': 'Box ID', 'type': 'Type', 'lot': 'Lot', 'quantity': 'Quantity'}
-            
-            if active_fields:
-                app.logger.debug("Adding fields: %s for item %d", active_fields, i)
-                for key in active_fields:
-                    value = dataset.get(key)
-                    if value:
-                        label = labels.get(key, key.title())
-                        p.add_run(f"\n{label}: {value}")
-                        app.logger.debug("Added field %s: %s", label, value)
+    
+            # A) grab the cell
+            cell = table.rows[idx // cols].cells[idx % cols]
+        
+            # B) clear its default content
+            cell._tc.clear_content()
+        
+            # C) compute barcode filename
+            dataset = item.get('dataset', {})
+            code    = (item.get('barcode','') or dataset.get('boxId','')).replace('Barcode: ','')
+            possible = [
+                f"static/barcodes/{code}_{selected_type}.png",
+                f"static/barcodes/{code}_code128.png",
+                f"static/barcodes/{code}.png"
+            ]
+            abs_path = None
+            for path in possible:
+                full = os.path.join(app.root_path, path)
+                if os.path.exists(full):
+                    abs_path = full
+                    break
+        
+            # D) insert the image at 2/3 height
+            pic_p = cell.add_paragraph()
+            pic_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run   = pic_p.add_run()
+            if abs_path:
+                run.add_picture(
+                  abs_path,
+                  width  = Inches(cell_w_in * size_pct),
+                  height = Inches(barcode_h_in * size_pct)
+                )
             else:
-                # Minimal fallback
-                box_id = dataset.get('boxId', barcode_code)
-                p.add_run(f"\n{box_id}")
-                app.logger.debug("No active fields, added minimal info: %s", box_id)
+                app.logger.warning("No image for barcode %s", code)
+                pic_p.add_run('[No Image]')
         
-        # Apply table styling
-        table.style = 'Table Grid'
+            # E) insert the text at 1/3 height
+            txt_p = cell.add_paragraph()
+            txt_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            txt_p.paragraph_format.space_before = Pt(0)
+            txt_p.paragraph_format.space_after  = Pt(0)
         
+            fields = template_data.get('fields', [])
+            if fields:
+                for key in fields:
+                    if key in dataset:
+                        label = labels.get(key, key.title())
+                        txt_p.add_run(f"{label}: {dataset[key]}\n")
+            else:
+                txt_p.add_run(code)
+        
+            
         # Save to BytesIO
         doc_buffer = io.BytesIO()
         doc.save(doc_buffer)
@@ -1641,9 +1618,6 @@ def export_word():
         flash(f'Error generating Word document: {str(e)}', 'error')
         return redirect(url_for('print_template'))
 
-# Create tables
-with app.app_context():
-    db.create_all()
     
 @app.route('/healthz')
 def health_check():
