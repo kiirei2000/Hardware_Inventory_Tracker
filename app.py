@@ -1360,6 +1360,7 @@ def print_template():
     
     # If specific box IDs provided, get their barcodes
     if box_ids:
+        box_ids = [int(id) for id in box_ids if id.isdigit()]
         boxes = Box.query.filter(Box.box_id.in_(box_ids)).all()
         barcode_data = []
         for box in boxes:
@@ -1386,7 +1387,7 @@ def print_template():
     else:
         barcode_data = []
     
-    return render_template('print_template.html', barcode_data=barcode_data)
+    return render_template('print_template.html', barcode_data=barcode_data, barcode_type=barcode_type)
 
 @app.route('/bulk_print_barcodes', methods=['GET', 'POST'])
 @admin_required
