@@ -16,3 +16,4 @@ barcode
 python-docx
 docx
 python-docx
+pillow

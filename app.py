@@ -1525,15 +1525,36 @@ def export_word():
         barcode_h_in = cell_h_in * 2/3
         text_h_in    = cell_h_in - barcode_h_in
 
-        # 6) Add space for company logo at top
-        logo_para = doc.add_paragraph()
-        logo_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        logo_path = os.path.join(app.root_path, 'static', 'images', 'company_logo.png')
-        if os.path.exists(logo_path):
-            run = logo_para.add_run()
-            run.add_picture(logo_path, width=Inches(usable_w))
-        else:
-            app.logger.warning("Logo file not found at %s", logo_path)
+        # 6) Add space for company logo at top (if provided from frontend)
+        logo_data = template_data.get('logo_data')
+        if logo_data:
+            try:
+                import base64
+                import io
+                from PIL import Image
+                
+                # Parse base64 data URL
+                if logo_data.startswith('data:image/'):
+                    header, encoded = logo_data.split(',', 1)
+                    logo_bytes = base64.b64decode(encoded)
+                    
+                    # Create temporary logo file
+                    logo_temp_path = os.path.join(app.root_path, 'static', 'temp_logo.png')
+                    with open(logo_temp_path, 'wb') as f:
+                        f.write(logo_bytes)
+                    
+                    # Add logo to document
+                    logo_para = doc.add_paragraph()
+                    logo_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run = logo_para.add_run()
+                    run.add_picture(logo_temp_path, width=Inches(2.0))  # Fixed size for consistency
+                    
+                    # Clean up temp file
+                    os.remove(logo_temp_path)
+                    app.logger.debug("Successfully added logo to Word document")
+                    
+            except Exception as e:
+                app.logger.warning("Failed to process logo for Word export: %s", e)
         
         # 7) Build the table
         table = doc.add_table(rows=rows, cols=cols)

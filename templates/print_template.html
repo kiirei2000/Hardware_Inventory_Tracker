@@ -157,6 +157,16 @@
     margin-bottom: 0.1in !important;
   }
 
+  /* 8.5) Logo styling for print */
+  .template-logo {
+    max-width: 60px !important;
+    max-height: 30px !important;
+    margin-bottom: 0.1in !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
   /* 9) Remove container padding */
   .container-fluid {
     padding: 0 !important;
@@ -643,7 +653,13 @@ function exportToWord() {
         templateData.fields = activeFields;
         templateData.columns = templateData.columns || 2;
         templateData.rows = templateData.rows || 5;
-        templateData.barcode_area = templateData.barcode_area || 0.66;
+        templateData.barcode_area = templateData.barcode_area || 1.5;
+        
+        // Add logo data if available
+        const logoData = currentLogo || localStorage.getItem('templateLogo') || localStorage.getItem('templateLogoMain');
+        if (logoData) {
+            templateData.logo_data = logoData;
+        }
         
         // 6. Debug logging
         console.log('WORD EXPORT DEBUG:', {
