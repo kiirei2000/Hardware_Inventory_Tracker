@@ -27,34 +27,85 @@
       --bs-border-radius: .5rem;
     }
 
+    /* Mobile hamburger menu */
+    .mobile-menu-toggle {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1001;
+      background: #212529;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 1.25rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
     /* Sliding navigation bar */
     .sidebar {
       position: fixed; top: 0; left: 0;
       height: 100vh; width: 250px;
       background: #212529;
       overflow-x: hidden;
-      transition: width 0.3s ease;
-      z-index: 999;
+      transition: all 0.3s ease;
+      z-index: 1000;
     }
-    .sidebar:not(:hover) { width: 60px; }
-    .sidebar:hover     { width: 250px; }
+    
+    /* Desktop hover behavior */
+    @media (min-width: 769px) {
+      .sidebar:not(:hover) { width: 60px; }
+      .sidebar:hover { width: 250px; }
+      
+      .sidebar:not(:hover) .item-text,
+      .sidebar:not(:hover) .brand-text {
+        opacity: 0;
+      }
+      
+      .sidebar:not(:hover) .sidebar-item i,
+      .sidebar:not(:hover) .sidebar-brand i {
+        display: block;
+        margin: 0 auto;
+      }
+    }
+
+    /* Mobile sidebar behavior */
+    @media (max-width: 768px) {
+      .mobile-menu-toggle {
+        display: block;
+      }
+      
+      .sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+      }
+      
+      .sidebar.show {
+        transform: translateX(0);
+      }
+      
+      .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+      }
+      
+      .sidebar-backdrop.show {
+        display: block;
+      }
+    }
 
     /* Hide text when collapsed */
     .sidebar .item-text,
     .sidebar .brand-text {
       transition: opacity 0.3s ease;
       white-space: nowrap;
-    }
-    .sidebar:not(:hover) .item-text,
-    .sidebar:not(:hover) .brand-text {
-      opacity: 0;
-    }
-
-    /* Center icons when collapsed */
-    .sidebar:not(:hover) .sidebar-item i,
-    .sidebar:not(:hover) .sidebar-brand i {
-      display: block;
-      margin: 0 auto;
     }
 
     /* Right Panel */
@@ -70,8 +121,20 @@
       margin-left: 60px;
       transition: margin-left 0.3s ease;
     }
-    .sidebar:hover + .right-panel {
-      margin-left: 250px;
+    
+    /* Desktop layout adjustments */
+    @media (min-width: 769px) {
+      .sidebar:hover + .right-panel {
+        margin-left: 250px;
+      }
+    }
+    
+    /* Mobile layout adjustments */
+    @media (max-width: 768px) {
+      #main-container > .sidebar + .right-panel {
+        margin-left: 0;
+        padding-top: 4rem; /* Space for mobile menu button */
+      }
     }
 
     /* Main Content Area */
@@ -80,18 +143,25 @@
       overflow-y: auto;
       padding: 1.5rem;
     }
+    
+    /* Mobile content padding */
+    @media (max-width: 768px) {
+      .main-content {
+        padding: 1rem;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .main-content {
+        padding: 0.75rem;
+      }
+    }
 
     /* Footer */
     .app-footer {
       flex-shrink: 0;
       padding: 0.5rem 0;
       font-size: 0.85rem;
-    }
-    @media (max-width: 768px) {
-      .app-footer { padding: 0.5rem 0; }
-    }
-    @media (max-width: 576px) {
-      .app-footer { padding: 0.5rem 0; }
     }
 
     /* Cards, buttons, forms styling */
@@ -111,6 +181,14 @@
   </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button">
+    <i class="fas fa-bars"></i>
+  </button>
+  
+  <!-- Sidebar Backdrop for Mobile -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  
   <div id="main-container" class="d-flex flex-grow-1">
       
     <!-- Sidebar -->
@@ -204,12 +282,62 @@
   <script src="{{ url_for('static', filename='js/barcode.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Admin dropdown functionality
       const adminToggle = document.getElementById('adminToggle');
       const adminMenu = document.getElementById('adminMenu');
       if (adminToggle && adminMenu) {
         adminToggle.addEventListener('click', e => {
           e.preventDefault();
           adminMenu.classList.toggle('show');
+        });
+      }
+      
+      // Mobile menu functionality
+      const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+      
+      if (mobileMenuToggle && sidebar && sidebarBackdrop) {
+        // Toggle mobile menu
+        mobileMenuToggle.addEventListener('click', () => {
+          sidebar.classList.toggle('show');
+          sidebarBackdrop.classList.toggle('show');
+          
+          // Change icon
+          const icon = mobileMenuToggle.querySelector('i');
+          if (sidebar.classList.contains('show')) {
+            icon.className = 'fas fa-times';
+          } else {
+            icon.className = 'fas fa-bars';
+          }
+        });
+        
+        // Close mobile menu when clicking backdrop
+        sidebarBackdrop.addEventListener('click', () => {
+          sidebar.classList.remove('show');
+          sidebarBackdrop.classList.remove('show');
+          mobileMenuToggle.querySelector('i').className = 'fas fa-bars';
+        });
+        
+        // Close mobile menu when clicking any sidebar link
+        const sidebarLinks = sidebar.querySelectorAll('.sidebar-item, .admin-menu-item');
+        sidebarLinks.forEach(link => {
+          link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+              sidebar.classList.remove('show');
+              sidebarBackdrop.classList.remove('show');
+              mobileMenuToggle.querySelector('i').className = 'fas fa-bars';
+            }
+          });
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+          if (window.innerWidth > 768) {
+            sidebar.classList.remove('show');
+            sidebarBackdrop.classList.remove('show');
+            mobileMenuToggle.querySelector('i').className = 'fas fa-bars';
+          }
         });
       }
     });
