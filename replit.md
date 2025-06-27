@@ -98,6 +98,7 @@ The application uses four main entities:
 - June 14, 2025. Word export fixes - Resolved critical issues with barcode type selection (prioritizes Code128 when selected), field toggle respect (only exports toggled fields), and dynamic barcode sizing. Added comprehensive debug logging for troubleshooting and verification of data flow from frontend to backend
 - June 14, 2025. Word layout optimization - Increased barcode area to 1.5" and text area to 0.5" for better barcode visibility and scanning reliability. Adjusted cell height to 2.2" to accommodate larger barcode dimensions
 - June 27, 2025. Mobile responsiveness enhancement - Added mobile hamburger menu, touch-friendly button sizes (44px minimum), responsive sidebar navigation with backdrop overlay, improved form layouts for mobile screens, and enhanced CSS for phone compatibility
+- June 27, 2025. Company logo integration - Fixed logo display in both print templates and Word export functions. Added logo processing from localStorage, proper base64 image handling in Word documents, and consistent logo sizing across both output formats
 
 ## User Preferences
 

@@ -1184,7 +1184,12 @@ function uploadLogoMain(input) {
         
         const reader = new FileReader();
         reader.onload = function(e) {
-            localStorage.setItem('templateLogoMain', e.target.result);
+            const logoData = e.target.result;
+            localStorage.setItem('templateLogoMain', logoData);
+            localStorage.setItem('templateLogo', logoData); // Also save to regular templateLogo
+            
+            // Apply logo immediately
+            applySavedLogo(logoData);
         };
         reader.readAsDataURL(file);
     } catch (error) {
@@ -1363,6 +1368,39 @@ function deleteTextBox(button) {
     }
 }
 
+function applySavedLogo(logoData) {
+    try {
+        if (!logoData) return;
+        
+        currentLogo = logoData;
+        
+        // Add logo to each barcode item
+        const barcodeItems = document.querySelectorAll('.barcode-item');
+        barcodeItems.forEach(item => {
+            // Remove existing logo if present
+            const existingLogo = item.querySelector('.template-logo');
+            if (existingLogo) existingLogo.remove();
+            
+            // Add new logo
+            const logo = document.createElement('img');
+            logo.className = 'template-logo';
+            logo.src = logoData;
+            logo.style.cssText = 'max-width: 60px; max-height: 30px; margin-bottom: 0.1in; display: block; margin-left: auto; margin-right: auto;';
+            
+            // Insert logo before barcode image
+            const barcodeImg = item.querySelector('.barcode-image');
+            if (barcodeImg) {
+                item.insertBefore(logo, barcodeImg);
+            } else {
+                // If no barcode image, add at the beginning
+                item.insertBefore(logo, item.firstChild);
+            }
+        });
+    } catch (error) {
+        console.error('applySavedLogo error:', error);
+    }
+}
+
 // ===========================================
 // INITIALIZATION AND DOM READY
 // ===========================================
@@ -1531,6 +1569,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Initialize template system
         initializeTemplateSystem();
+        
+        // Apply saved logo if available
+        const savedLogo = localStorage.getItem('templateLogo') || localStorage.getItem('templateLogoMain');
+        if (savedLogo) {
+            applySavedLogo(savedLogo);
+        }
         
         // Set up manual form submission
         const manualForm = document.getElementById('manual-barcode-form');
