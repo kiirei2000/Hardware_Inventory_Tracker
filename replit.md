@@ -99,6 +99,7 @@ The application uses four main entities:
 - June 14, 2025. Word layout optimization - Increased barcode area to 1.5" and text area to 0.5" for better barcode visibility and scanning reliability. Adjusted cell height to 2.2" to accommodate larger barcode dimensions
 - June 27, 2025. Mobile responsiveness enhancement - Added mobile hamburger menu, touch-friendly button sizes (44px minimum), responsive sidebar navigation with backdrop overlay, improved form layouts for mobile screens, and enhanced CSS for phone compatibility
 - June 27, 2025. Company logo integration - Fixed logo display in both print templates and Word export functions. Added logo processing from localStorage, proper base64 image handling in Word documents, and consistent logo sizing across both output formats
+- June 27, 2025. Portable Windows desktop app - Converted web application to standalone desktop app with portable Python runtime, SQLite database, batch file launchers, automatic browser opening, desktop shortcut creation, and comprehensive offline functionality. Includes setup.bat for one-time installation, run.bat for daily use, and complete documentation for corporate laptop compatibility
 
 ## User Preferences
 
