@@ -97,7 +97,7 @@ class HardwareInventoryLauncher:
                 str(self.python_exe),
                 "-m", "waitress",
                 "--port", str(port),
-                "app:app
+                "app:app"
             ]
             
             print(f"Starting server on port {port}...")
