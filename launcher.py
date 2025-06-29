@@ -92,14 +92,12 @@ class HardwareInventoryLauncher:
             # Change to app directory
             app_dir = self.app_dir / "app"
             
-            # Start gunicorn server
+            # Start waitress server
             cmd = [
                 str(self.python_exe),
-                "-m", "gunicorn",
-                "--bind", f"0.0.0.0:{port}",
-                "--reuse-port",
-                "--reload",
-                "app:app"
+                "-m", "waitress",
+                "--port", str(port),
+                "app:app
             ]
             
             print(f"Starting server on port {port}...")
