@@ -111,14 +111,22 @@ class HardwareInventoryLauncher:
             
             # Wait a moment for server to start
             time.sleep(3)
+                                  
+            # Read stderr output
+            stderr = self.flask_process.stderr.read().decode(errors="ignore")
+            stdout = self.flask_process.stdout.read().decode(errors="ignore")
             
-            # Check if process is still running
             if self.flask_process.poll() is None:
                 print(f"✓ Server started successfully on port {port}")
                 return True
             else:
-                print(f"✗ Server failed to start")
+                print("✗ Server failed to start.")
+                print("STDERR:")
+                print(stderr.strip())
+                print("STDOUT:")
+                print(stdout.strip())
                 return False
+
                 
         except Exception as e:
             print(f"✗ Error starting server: {e}")
