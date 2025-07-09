@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Dashboard - Hardware Inventory{% endblock %}
+
+{% block content %}
+<div class="row mb-4 no-print">
+    <div class="col-12 col-md-6 mb-2 mb-md-0">
+        <h2>
+            <i class="fas fa-chart-bar me-2"></i>
+            Inventory Dashboard
+        </h2>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle w-100" type="button" id="bulkActionsDropdown" 
+                        data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                    <i class="fas fa-ellipsis-v me-1"></i>More Actions
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
+                    <li><button class="dropdown-item" type="button" onclick="bulkPrintBarcodes('qrcode', event)">
+                        <i class="fas fa-qrcode me-2"></i>Print QR Codes
+                    </button></li>
+                    <li><button class="dropdown-item" type="button" onclick="bulkPrintBarcodes('code128', event)">
+                        <i class="fas fa-barcode me-2"></i>Print Barcode 128
+                    </button></li>
+                    <li><button class="dropdown-item" type="button" onclick="bulkPrintLogs(event)">
+                        <i class="fas fa-file-export me-2"></i>Print Logs
+                    </button></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('export_excel', type_filter=type_filter, lot_filter=lot_filter) }}" 
+               class="btn btn-success">
+                <i class="fas fa-download me-1"></i>Export Excel
+            </a>
+            <button class="btn btn-secondary" onclick="printDashboard()">
+                <i class="fas fa-print me-1"></i>Print
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="printable">
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-filter me-2"></i>Filters
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="type_filter" class="form-label">Hardware Type</label>
+                <select class="form-select" id="type_filter" name="type_filter">
+                    <option value="">All Types</option>
+                    {% for type in types %}
+                    <option value="{{ type.name }}" {{ 'selected' if type_filter == type.name }}>
+                        {{ type.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="lot_filter" class="form-label">Lot Number</label>
+                <select class="form-select" id="lot_filter" name="lot_filter">
+                    <option value="">All Lots</option>
+                    {% for lot in lots %}
+                    <option value="{{ lot.name }}" {{ 'selected' if lot_filter == lot.name }}>
+                        {{ lot.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if type_filter or lot_filter %}
+        <div class="mt-3">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Active filters: 
+                {% if type_filter %}Type: <strong>{{ type_filter }}</strong>{% endif %}
+                {% if type_filter and lot_filter %}, {% endif %}
+                {% if lot_filter %}Lot: <strong>{{ lot_filter }}</strong>{% endif %}
+                <a href="{{ url_for('dashboard') }}" class="ms-2">Clear all filters</a>
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+{% if grouped_data %}
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{ total_stats.total_boxes }}</h5>
+                <p class="card-text">Total Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">{{ total_stats.available_boxes }}</h5>
+                <p class="card-text">Available Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning">
+                    {{ total_stats.empty_boxes }}
+                    {% if total_stats.negative_boxes > 0 %}
+                    <small class="text-danger d-block">⚠️ {{ total_stats.negative_boxes }} negative</small>
+                    {% endif %}
+                </h5>
+                <p class="card-text">Empty Boxes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">{{ total_stats.total_remaining }}</h5>
+                <p class="card-text">Total Remaining</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif type_filter or lot_filter %}
+<div class="alert alert-info mt-4">
+    <i class="fas fa-info-circle me-2"></i>
+    No boxes match your current filters. <a href="{{ url_for('dashboard') }}">Clear filters</a> to see all boxes.
+</div>
+{% endif %}
+
+<!-- Grouped Inventory Display -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-boxes me-2"></i>
+            Current Inventory
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if grouped_data %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
+                        </th>
+                        <th>Box ID</th>
+                        <th>Type</th>
+                        <th>Lot</th>
+                        <th>Box #</th>
+                        <th>Initial Qty</th>
+                        <th>Current Qty</th>
+                        <th>Status</th>
+                        <th>Barcode</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for type_code, type_lot_groups in grouped_data.items() %}
+                        {% for type_lot_key, group_data in type_lot_groups.items() %}
+                            <!-- Type-Lot Group Header Row -->
+                            <tr class="table-secondary">
+                                <td></td>
+                                <td colspan="8">
+                                    <strong><i class="fas fa-folder me-2"></i>{{ group_data.type_name }} - Lot: {{ group_data.lot_name }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-dark text-white me-1">Boxes: {{ group_data.box_count }}</span>
+                                    <span class="badge bg-secondary text-white">Total quantity: {{ group_data.total_remaining }}</span>
+                                </td>
+                            </tr>
+                            {% for box_data in group_data.boxes %}
+                            {% set box = box_data.box %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="box-checkbox" value="{{ box.box_id }}" onchange="updateBulkActions()">
+                                </td>
+                                <td><strong>{{ box.box_id }}</strong></td>
+                                <td><span class="badge bg-primary">{{ group_data.type_name }}</span></td>
+                                <td><span class="badge bg-info">{{ group_data.lot_name }}</span></td>
+                                <td>{{ box.box_number }}</td>
+                                <td>{{ box.initial_quantity }}</td>
+                                <td>
+                                    {% if box.remaining_quantity < 0 %}
+                                    <strong class="quantity-negative">{{ box.remaining_quantity }}</strong>
+                                    {% else %}
+                                    <strong class="{{ 'text-danger' if box.remaining_quantity == 0 else 'text-warning' if box.remaining_quantity < 10 else 'text-success' }}">
+                                        {{ box.remaining_quantity }}
+                                    </strong>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if box.remaining_quantity < 0 %}
+                                        <span class="badge bg-danger">⚠️ Negative</span>
+                                    {% elif box.remaining_quantity == 0 %}
+                                        <span class="badge bg-danger">Empty</span>
+                                    {% elif box.remaining_quantity < box.initial_quantity * 0.2 %}
+                                        <span class="badge bg-warning text-dark">Low</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Available</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="barcode-text">{{ box.barcode }}</span></td>
+                                <td>
+                                    <a href="{{ url_for('box_logs', box_id=box.id) }}" class="btn btn-sm btn-outline-secondary" title="View Logs">
+                                        <i class="fas fa-history"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No inventory boxes found</h5>
+            <p class="text-muted">
+                {% if type_filter or lot_filter %}
+                Try adjusting your filters or <a href="{{ url_for('dashboard') }}">view all boxes</a>.
+                {% else %}
+                Start by <a href="{{ url_for('add_box') }}">adding your first box</a> to the inventory.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+</div> <!-- End printable div -->
+{% endblock %}
+
+{% block scripts %}
+<style>
+@media print {
+  /* force landscape & tighter margins */
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+
+  /* hide everything except our .printable region */
+  body * { visibility: hidden; }
+  .printable, .printable * { visibility: visible; }
+
+  /* remove any scrolling wrappers */
+  .table-responsive { overflow: visible !important; }
+
+  /* make our printable fill the page */
+  .printable {
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100%;
+  }
+
+  /* full-width, auto-flowing table */
+  table {
+    width: 100% !important;
+    table-layout: auto;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+  
+  thead { 
+    display: table-header-group; 
+  }
+  
+  tr { 
+    page-break-inside: avoid; 
+    page-break-after: auto; 
+  }
+  
+  th, td {
+    padding: .25rem;
+    font-size: 10pt;
+    word-wrap: break-word;
+  }
+
+  /* Card improvements for print */
+  .card { 
+    page-break-inside: avoid; 
+    margin-bottom: 1rem;
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+  }
+  
+  .card-header {
+    background-color: #f8f9fa !important;
+    color: #000 !important;
+    border-bottom: 1px solid #000 !important;
+  }
+  
+  /* Badge improvements for print */
+  .badge {
+    color: #000 !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #000 !important;
+  }
+
+  /* Statistics cards in landscape */
+  .row .col-md-3 {
+    width: 25% !important;
+    float: left;
+  }
+
+  /* get rid of any leftover UI bits */
+  .no-print { display: none !important; }
+}
+</style>
+
+<script>
+function printDashboard() {
+  // 1. expand printable area
+  const printable = document.querySelector('.printable');
+  printable.style.position = 'absolute';
+  printable.style.top = '0';
+  printable.style.left = '0';
+  printable.style.width = '100%';
+  printable.style.padding = '0';         // remove any container padding
+
+  // 2. shrink entire body slightly to ensure no overflow
+  document.body.style.transform = 'scale(0.85)';
+  document.body.style.transformOrigin = 'top left';
+
+  window.print();
+
+  // 3. reset styles after printing
+  printable.style.position = '';
+  printable.style.top = '';
+  printable.style.left = '';
+  printable.style.width = '';
+  printable.style.padding = '';
+  document.body.style.transform = '';
+}
+
+function toggleAllCheckboxes() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.box-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.box-checkbox:checked');
+    const dropdown = document.getElementById('bulkActionsDropdown');
+    dropdown.disabled = checkboxes.length === 0;
+}
+
+function bulkPrintBarcodes(barcodeType = 'qrcode', event) {
+    event?.preventDefault();
+    
+    const selectedBoxes = Array.from(document.querySelectorAll('.box-checkbox:checked')).map(cb => cb.value);
+    if (selectedBoxes.length === 0) {
+        alert('Please select boxes first');
+        return false;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("bulk_print_barcodes") }}';
+    
+    selectedBoxes.forEach(boxId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_boxes';
+        input.value = boxId;
+        form.appendChild(input);
+    });
+    
+    // Add barcode type parameter
+    const typeInput = document.createElement('input');
+    typeInput.type = 'hidden';
+    typeInput.name = 'barcode_type';
+    typeInput.value = barcodeType;
+    form.appendChild(typeInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+    return false;
+}
+
+function bulkPrintLogs(event) {
+    event?.preventDefault();
+    
+    const selectedBoxes = Array.from(document.querySelectorAll('.box-checkbox:checked')).map(cb => cb.value);
+    if (selectedBoxes.length === 0) {
+        alert('Please select boxes first');
+        return false;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("bulk_print_logs") }}';
+    
+    selectedBoxes.forEach(boxId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_boxes';
+        input.value = boxId;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    return false;
+}
+</script>
+{% endblock %}

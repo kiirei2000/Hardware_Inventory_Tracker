@@ -1,0 +1,101 @@
+
+{% extends "base.html" %}
+
+{% block title %}Home - Hardware Inventory Tracker{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="text-center py-4 mb-4">
+    <h1 class="display-4 mb-3 fw-bold">
+        <i class="fas fa-boxes text-primary me-3"></i>
+        Hardware Inventory Tracker
+    </h1>
+</div>
+
+<!-- Main Action Cards Section -->
+<div class="row gx-4 gy-4 justify-content-center">
+    <!-- Add New Box Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card h-100 shadow-lg border-0 hover-lift">
+            <div class="card-body d-flex flex-column p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+                </div>
+                <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-2">Add New Box</h5>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('add_box') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-plus me-2"></i>Add Box
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Event Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card h-100 shadow-lg border-0 hover-lift">
+            <div class="card-body d-flex flex-column p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exchange-alt fa-3x text-primary mb-3"></i>
+                </div>
+                <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-2">Log Event</h5>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('log_event') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-exchange-alt me-2"></i>Log Event
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Dashboard Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card h-100 shadow-lg border-0 hover-lift">
+            <div class="card-body d-flex flex-column p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-bar fa-3x text-primary mb-3"></i>
+                </div>
+                <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-2">Dashboard</h5>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-chart-bar me-2"></i>Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Data Card -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card h-100 shadow-lg border-0 hover-lift">
+            <div class="card-body d-flex flex-column p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-download fa-3x text-secondary mb-3"></i>
+                </div>
+                <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="card-title fw-bold mb-2">Export Data</h5>
+                    </div>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('export_excel') }}" class="btn btn-secondary btn-lg px-4">
+                            <i class="fas fa-download me-2"></i>Export
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

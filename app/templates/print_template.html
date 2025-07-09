@@ -1,0 +1,1608 @@
+{% extends "base.html" %}
+
+{% block title %}Barcode Print Template{% endblock %}
+
+{% block content %}
+<style>
+.custom-text-container {
+    margin: 1rem 0;
+    text-align: center;
+}
+.custom-text-input {
+    width: 100%;
+    min-height: 60px;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: none;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+}
+.text-controls {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 768px) {
+    .btn-group .btn {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    .d-flex.gap-2 .btn {
+        width: 100%;
+    }
+    
+    .form-range {
+        height: 3rem;
+    }
+    
+    #size-display-main {
+        font-weight: bold;
+        color: #0056b3;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0.375rem !important;
+        margin-bottom: 0.25rem;
+    }
+    
+    .col-md-6,
+    .col-md-4 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* === Print ONLY rules === */
+@page {
+  size: letter portrait;
+  margin: 0.5in;
+}
+
+@media print {
+  /* 1) Hide all UI chrome except the print-area */
+  body * {
+    visibility: hidden !important;
+  }
+  #print-area, 
+  #print-area * {
+    visibility: visible !important;
+  }
+  
+  /* Prevent the grid from shifting down */
+  #print-area {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 2) Kill header row (page title + buttons) */
+  .row.align-items-center.mb-4 {
+    display: none !important;
+  }
+
+  /* 3) Hide sidebar, footer, and any other wrappers */
+  .sidebar,
+  .app-footer,
+  .navbar,
+  .no-print,
+  #generator-section,
+  .text-controls,
+  .btn,
+  .dropdown,
+  .finalize-controls {
+    display: none !important;
+  }
+
+  /* 4) Remove any leftover scrollbars */
+  html, body {
+    overflow: visible !important;
+  }
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* 5) Dynamic template grid - defaults to 2x5 for Letter paper */
+  .barcode-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-auto-rows: auto !important;
+    gap: 0.5in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* 6) Keep each barcode card together */
+  .barcode-item {
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+    border: 1px solid #000 !important;
+    padding: 0.25in !important;
+    text-align: center !important;
+    background: white !important;
+    border-radius: 0 !important;
+  }
+
+  /* 7) Clean text styling for print */
+  .custom-text-input {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    white-space: pre-wrap !important;
+    font-size: 10pt !important;
+    margin-top: 0.1in !important;
+  }
+
+  /* 8) Barcode image sizing */
+  .barcode-image {
+    max-width: 100% !important;
+    height: auto !important;
+    margin-bottom: 0.1in !important;
+  }
+
+  /* 8.5) Logo styling for print */
+  .template-logo {
+    max-width: 60px !important;
+    max-height: 30px !important;
+    margin-bottom: 0.1in !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* 9) Remove container padding */
+  .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+.barcode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+}
+.barcode-item {
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #fff;
+    page-break-inside: avoid;
+}
+
+.barcode-image {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 0.5rem;
+}
+</style>
+
+<div class="container-fluid py-4">
+  <!-- Header Row -->
+  <div class="row align-items-center mb-4">
+    <div class="col">
+      <h2><i class="fas fa-print me-2"></i>Barcode Print Template</h2>
+    </div>
+    <div class="col-auto d-flex gap-2">
+      <div class="btn-group">
+        <button class="btn btn-primary btn-lg px-4 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          <i class="fas fa-print me-2"></i>Print
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><button class="dropdown-item" type="button" onclick="printWithBarcodeType('qrcode', event)">
+            <i class="fas fa-qrcode me-2"></i>Print as QR Codes
+          </button></li>
+          <li><button class="dropdown-item" type="button" onclick="printWithBarcodeType('code128', event)">
+            <i class="fas fa-barcode me-2"></i>Print as Barcode 128
+          </button></li>
+        </ul>
+      </div>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg px-4">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Generator Section -->
+  {% if not barcode_data %}
+  <div class="card mb-4" id="generator-section">
+    <div class="card-header">
+      <h5><i class="fas fa-tools me-2"></i>Barcode Generator</h5>
+    </div>
+    <div class="card-body">
+      <div class="row justify-content-center g-3">
+        <div class="col-md-4 d-grid">
+          <button class="btn btn-info btn-lg w-100" onclick="generateRandomBarcodes('qrcode', event)">
+            <i class="fas fa-random me-2"></i>Generate Random Barcodes
+          </button>
+        </div>
+        <div class="col-md-4 d-grid">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-lg w-100">
+            <i class="fas fa-list me-2"></i>Choose from Dashboard
+          </a>
+        </div>
+        <div class="col-md-4 d-grid">
+          <button class="btn btn-warning btn-lg w-100" onclick="showManualEntry()">
+            <i class="fas fa-plus me-2"></i>Manual Entry
+          </button>
+        </div>
+      </div>
+      <div id="manual-entry" class="mt-3" style="display: none;">
+        <form id="manual-barcode-form">
+          <div class="row g-2">
+            <div class="col-md-8">
+              <input type="text" id="manual-barcode-input" class="form-control" placeholder="Enter barcode or generate new one">
+            </div>
+            <div class="col-md-2 d-grid">
+              <button type="button" onclick="generateNewBarcode()" class="btn btn-secondary">
+                <i class="fas fa-magic me-2"></i>Generate
+              </button>
+            </div>
+            <div class="col-md-2 d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Print Template Designer (Main Page) -->
+  {% if not barcode_data %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5><i class="fas fa-layout me-2"></i>Print Template</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <!-- Template Presets -->
+        <div class="col-md-4">
+          <label class="form-label">Template</label>
+          <select id="template-preset-main" class="form-select" onchange="applyTemplateMain()">
+            <option value="">Select Template...</option>
+            <option value="2x5-letter">2×5 Letter Paper</option>
+            <option value="2x3-letter">2×3 Letter Paper</option>
+            <option value="2x5-a4">2×5 A4 Paper</option>
+            <option value="2x3-a4">2×3 A4 Paper</option>
+          </select>
+        </div>
+        
+        <!-- Barcode Size -->
+        <div class="col-md-4">
+          <label class="form-label">Barcode Size: <span id="size-display-main">100%</span></label>
+          <input type="range" id="barcode-size-main" class="form-range" min="50" max="150" value="100" 
+                 oninput="updateBarcodeSizeMain(this.value)">
+        </div>
+        
+        <!-- Logo Upload -->
+        <div class="col-md-4">
+          <label class="form-label">Company Logo</label>
+          <input type="file" id="logo-upload-main" class="form-control" accept="image/*" onchange="uploadLogoMain(this)">
+        </div>
+        
+        <!-- Custom Text Fields -->
+        <div class="col-md-6">
+          <label class="form-label">Text Fields</label>
+          <div class="btn-group w-100" role="group">
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleTextFieldMain('box-id')" id="field-box-id-main">Box ID</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleTextFieldMain('type')" id="field-type-main">Type</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleTextFieldMain('lot')" id="field-lot-main">Lot</button>
+          </div>
+        </div>
+        
+        <!-- Template Actions -->
+        <div class="col-md-6">
+          <label class="form-label">Template Actions</label>
+          <div class="d-flex gap-2">
+            <button onclick="saveTemplateMain()" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-save"></i> Save
+            </button>
+            <button onclick="loadTemplateMain()" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-folder-open"></i> Load
+            </button>
+            <button onclick="resetTemplateMain()" class="btn btn-outline-warning btn-sm">
+              <i class="fas fa-undo"></i> Reset
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Print Template Designer -->
+  {% if barcode_data %}
+  <div class="card mb-4 no-print">
+    <div class="card-header">
+      <h5><i class="fas fa-layout me-2"></i>Print Template</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <!-- Template Presets -->
+        <div class="col-md-4">
+          <label class="form-label">Template</label>
+          <select id="template-preset" class="form-select" onchange="applyTemplate()">
+            <option value="">Select Template...</option>
+            <option value="2x5-letter">2×5 Letter Paper</option>
+            <option value="2x3-letter">2×3 Letter Paper</option>
+            <option value="2x5-a4">2×5 A4 Paper</option>
+            <option value="2x3-a4">2×3 A4 Paper</option>
+          </select>
+        </div>
+        
+        <!-- Barcode Size -->
+        <div class="col-md-4">
+          <label class="form-label">Barcode Size: <span id="size-display">100%</span></label>
+          <input type="range" id="barcode-size" class="form-range" min="50" max="150" value="100" 
+                 oninput="updateBarcodeSize(this.value)">
+        </div>
+        
+        <!-- Logo Upload -->
+        <div class="col-md-4">
+          <label class="form-label">Company Logo</label>
+          <input type="file" id="logo-upload" class="form-control" accept="image/*" onchange="uploadLogo(this)">
+        </div>
+        
+        <!-- Custom Text Fields -->
+        <div class="col-md-6">
+          <label class="form-label">Text Fields</label>
+          <div class="btn-group w-100" role="group">
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleTextField('box-id')" id="field-box-id">Box ID</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleTextField('type')" id="field-type">Type</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleTextField('lot')" id="field-lot">Lot</button>
+          </div>
+        </div>
+        
+        <!-- Template Actions -->
+        <div class="col-md-6">
+          <label class="form-label">Template Actions</label>
+          <div class="d-flex gap-2">
+            <button onclick="saveTemplate()" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-save"></i> Save
+            </button>
+            <button onclick="loadTemplate()" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-folder-open"></i> Load
+            </button>
+            <button onclick="resetTemplate()" class="btn btn-outline-warning btn-sm">
+              <i class="fas fa-undo"></i> Reset
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Print Template Grid -->
+  <div id="print-area">
+    {% if barcode_data %}
+    <div class="barcode-grid">
+      {% for item in barcode_data %}
+      <div class="barcode-item" 
+           data-box-id="{{ item.box_id or 'N/A' }}"
+           data-type="{{ item.hardware_type or 'N/A' }}"
+           data-lot="{{ item.lot_number or 'N/A' }}"
+           data-quantity="{{ item.remaining_quantity or 'N/A' }}">
+        {% if item.image %}
+        <img src="{{ item.image }}" alt="Barcode: {{ item.barcode }}" class="barcode-image">
+        {% endif %}
+        <div class="details-container"></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="fas fa-barcode fa-3x mb-3"></i>
+      <h4>No barcodes to display</h4>
+      <p>Use the generator above to create barcodes for printing</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Finalize & Print -->
+  {% if barcode_data %}
+  <div class="d-flex justify-content-center gap-3 my-4 finalize-controls">
+    <button onclick="finalizeAndPrint()" class="btn btn-success btn-lg px-4">
+      <i class="fas fa-print me-2"></i>Finalize & Print
+    </button>
+    <button onclick="exportToWord()" class="btn btn-primary btn-lg px-4">
+      <i class="fas fa-file-word me-2"></i>Export to Word
+    </button>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global error handler for debugging
+window.onerror = function(message, source, lineno, colno, error) {
+  console.error(`JS Error: ${message} at ${source}:${lineno}:${colno}`, error);
+};
+
+// Template presets configuration
+const templatePresets = {
+    '2x5-letter': { columns: 2, rows: 5, paper: 'letter', gap: '0.5in', margin: '0.5in' },
+    '2x3-letter': { columns: 2, rows: 3, paper: 'letter', gap: '0.6in', margin: '0.75in' },
+    '2x5-a4': { columns: 2, rows: 5, paper: 'a4', gap: '1.2cm', margin: '1.5cm' },
+    '2x3-a4': { columns: 2, rows: 3, paper: 'a4', gap: '1.5cm', margin: '2cm' }
+};
+
+// Global variables
+let generatedBarcodes = [];
+let currentTemplate = null;
+let currentLogo = null;
+
+// ===========================================
+// GENERATOR FUNCTIONS
+// ===========================================
+
+function generateRandomBarcodes(type, event) {
+    try {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        console.log('generateRandomBarcodes called with type:', type || 'qrcode');
+        
+        const barcodeType = type || 'qrcode';
+        const barcodes = [];
+        
+        // Generate 10 random barcodes
+        for (let i = 0; i < 10; i++) {
+            const randomBarcode = Math.random().toString(36).substring(2, 12).toUpperCase();
+            barcodes.push(randomBarcode);
+        }
+        
+        // Generate barcode images
+        const promises = barcodes.map(barcode => 
+            fetch(`/generate_barcode_api?barcode=${encodeURIComponent(barcode)}&type=${barcodeType}`)
+                .then(r => r.json())
+                .then(data => ({barcode: barcode, image: data.image, type: barcodeType}))
+        );
+        
+        Promise.all(promises).then(results => {
+            generatedBarcodes = results;
+            displayGeneratedBarcodes();
+        }).catch(err => {
+            console.error('Error generating barcodes:', err);
+            alert('Error generating barcodes. Please try again.');
+        });
+    } catch (error) {
+        console.error('generateRandomBarcodes error:', error);
+        alert('An error occurred while generating barcodes.');
+    }
+}
+
+function showManualEntry(event) {
+    try {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        const manualEntry = document.getElementById('manual-entry');
+        if (manualEntry) {
+            manualEntry.style.display = manualEntry.style.display === 'none' ? 'block' : 'none';
+        } else {
+            console.warn('manual-entry element not found');
+        }
+    } catch (error) {
+        console.error('showManualEntry error:', error);
+    }
+}
+
+function generateNewBarcode() {
+    try {
+        const randomBarcode = Math.random().toString(36).substring(2, 12).toUpperCase();
+        const input = document.getElementById('manual-barcode-input');
+        if (input) {
+            input.value = randomBarcode;
+        } else {
+            console.warn('manual-barcode-input element not found');
+        }
+    } catch (error) {
+        console.error('generateNewBarcode error:', error);
+    }
+}
+
+function displayGeneratedBarcodes() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete('barcodes'); // Clear existing
+        
+        generatedBarcodes.forEach(item => {
+            urlParams.append('barcodes', item.barcode);
+        });
+        urlParams.set('type', generatedBarcodes[0]?.type || 'qrcode');
+        
+        const newUrl = window.location.pathname + '?' + urlParams.toString();
+        window.location.href = newUrl;
+    } catch (error) {
+        console.error('displayGeneratedBarcodes error:', error);
+    }
+}
+
+// ===========================================
+// PRINT FUNCTIONS
+// ===========================================
+
+function printWithBarcodeType(type, event) {
+    try {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('type', type);
+        const newUrl = window.location.pathname + '?' + urlParams.toString();
+        window.location.href = newUrl;
+        
+        return false;
+    } catch (error) {
+        console.error('printWithBarcodeType error:', error);
+        return false;
+    }
+}
+
+function preparePrintText() {
+    const textareas = document.querySelectorAll('.custom-text-input');
+    textareas.forEach(textarea => {
+        const printDiv = textarea.parentElement.querySelector('.custom-text-print');
+        if (printDiv && textarea.value.trim()) {
+            printDiv.textContent = textarea.value;
+            printDiv.classList.remove('d-none');
+        }
+    });
+}
+
+function cleanupPrintDivs() {
+    const printDivs = document.querySelectorAll('.custom-text-print');
+    printDivs.forEach(div => {
+        div.classList.add('d-none');
+    });
+    window.onafterprint = null;
+}
+
+function exportToWord() {
+    try {
+        const printArea = document.getElementById('print-area');
+        if (!printArea) {
+            alert('Print area not found. Cannot proceed with export.');
+            return;
+        }
+        
+        // 1. Get current barcode type from URL params (how print system works)
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentBarcodeType = urlParams.get('type') || 'qrcode';
+        
+        // 2. Get barcode size from correct element
+        const barcodeSlider = document.getElementById('barcode-size');
+        const barcodeSize = barcodeSlider ? parseInt(barcodeSlider.value) : 100;
+        
+        // 3. Get active fields from toggle buttons (correct IDs and class check)
+        const activeFields = [];
+        ['box-id', 'type', 'lot'].forEach(fieldType => {
+            const button = document.getElementById(`field-${fieldType}`);
+            if (button && button.classList.contains('btn-secondary')) {
+                // Convert box-id to boxId for backend compatibility
+                activeFields.push(fieldType === 'box-id' ? 'boxId' : fieldType);
+            }
+        });
+        
+        // 4. Collect barcode data with proper dataset conversion
+        const barcodeData = [];
+        document.querySelectorAll('.barcode-item').forEach(item => {
+            const barcode = item.querySelector('.barcode-image')?.alt || '';
+            const barcodeImg = item.querySelector('.barcode-image')?.src || '';
+            
+            // Get text field values
+            const textFields = {};
+            item.querySelectorAll('.custom-text-input').forEach(textarea => {
+                const fieldClass = textarea.parentElement.className;
+                const fieldType = fieldClass.match(/dynamic-field-(\w+)/)?.[1];
+                if (fieldType && textarea.value.trim()) {
+                    textFields[fieldType] = textarea.value.trim();
+                }
+            });
+            
+            // Convert dataset to proper format
+            const dataset = {
+                boxId: item.dataset.boxId || item.dataset.boxid,
+                type: item.dataset.type || item.dataset.hardwareType,
+                lot: item.dataset.lot || item.dataset.lotNumber,
+                quantity: item.dataset.quantity || item.dataset.remainingQuantity
+            };
+            
+            barcodeData.push({
+                barcode: barcode.replace('Barcode: ', ''),
+                image: barcodeImg, // Use 'image' key as backend expects
+                dataset: dataset,
+                text_fields: textFields
+            });
+        });
+        
+        // 5. Create template data with all required fields
+        const templateData = currentTemplate || {};
+        templateData.barcode_type = currentBarcodeType;
+        templateData.barcode_size_pct = barcodeSize;
+        templateData.fields = activeFields;
+        templateData.columns = templateData.columns || 2;
+        templateData.rows = templateData.rows || 5;
+        templateData.barcode_area = templateData.barcode_area || 1.5;
+        
+        // Add logo data if available
+        const logoData = currentLogo || localStorage.getItem('templateLogo') || localStorage.getItem('templateLogoMain');
+        if (logoData) {
+            templateData.logo_data = logoData;
+        }
+        
+        // 6. Debug logging
+        console.log('WORD EXPORT DEBUG:', {
+            barcode_type: currentBarcodeType,
+            barcode_size_pct: barcodeSize,
+            active_fields: activeFields,
+            template_data: templateData,
+            first_item_dataset: barcodeData[0]?.dataset
+        });
+        
+        // 7. Submit form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/export_word';
+        form.style.display = 'none';
+        
+        const dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'barcode_data';
+        dataInput.value = JSON.stringify(barcodeData);
+        
+        const templateInput = document.createElement('input');
+        templateInput.type = 'hidden';
+        templateInput.name = 'template';
+        templateInput.value = JSON.stringify(templateData);
+        
+        form.appendChild(dataInput);
+        form.appendChild(templateInput);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+    } catch (error) {
+        console.error('exportToWord error:', error);
+        alert('An error occurred while preparing Word export. Check console for details.');
+    }
+}
+
+function finalizeAndPrint() {
+    try {
+        const printArea = document.getElementById('print-area');
+        if (!printArea) {
+            alert('Print area not found. Cannot proceed with printing.');
+            return;
+        }
+        
+        const templateSelect = document.getElementById('template-preset');
+        if (templateSelect && !templateSelect.value) {
+            alert('Please select a print template before printing.');
+            return;
+        }
+        
+        // Debug & verify before printing
+        console.log('Current template:', currentTemplate);
+        
+        if (currentTemplate) {
+            applyTemplate();
+            console.log('Injected CSS:', document.getElementById('template-styles')?.textContent?.substring(0, 200) + '...');
+        }
+        
+        // Debug all barcode items datasets
+        document.querySelectorAll('.barcode-item').forEach((item, index) => {
+            console.log(`Barcode item ${index} dataset:`, item.dataset);
+        });
+        
+        preparePrintText();
+        window.onafterprint = cleanupPrintDivs;
+        window.print();
+        
+    } catch (error) {
+        console.error('finalizeAndPrint error:', error);
+        alert('An error occurred while preparing to print. Check console for details.');
+    }
+}
+
+// ===========================================
+// TEMPLATE FUNCTIONS (BARCODE PAGE)
+// ===========================================
+
+function applyTemplate() {
+    try {
+        const printArea = document.getElementById('print-area');
+        if (!printArea) {
+            console.error('No #print-area found');
+            throw new Error('Print area not found');
+        }
+        
+        const select = document.getElementById('template-preset');
+        if (!select) {
+            console.warn('template-preset element not found');
+            return;
+        }
+        
+        const template = templatePresets[select.value];
+        
+        if (!template) {
+            resetTemplate();
+            return;
+        }
+        
+        currentTemplate = template;
+        
+        // Get barcode size from correct slider ID
+        const barcodeSlider = document.getElementById('barcode-size') || document.getElementById('slider-barcode-size');
+        const barcodeScale = (barcodeSlider?.value || 100) / 100;
+        
+        // Comprehensive print CSS with your specifications
+        const css = `
+        @page {
+            size: ${template.paper} portrait;
+            margin: 0.3in;
+        }
+
+        @media print {
+            /* Hide everything except the grid */
+            body * {
+                visibility: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            #print-area,
+            #print-area * {
+                visibility: visible !important;
+            }
+
+            #print-area {
+                position: absolute !important;
+                top: 0 !important; 
+                left: 0 !important;
+                width: 100% !important; 
+                height: 100% !important;
+                display: grid !important;
+                grid-template-columns: repeat(${template.columns}, 1fr) !important;
+                grid-auto-rows: auto !important;
+                gap: 0.25in !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .barcode-item {
+                box-sizing: border-box !important;
+                width: 100% !important;  
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid-column !important;
+                border: 1px solid #000 !important;
+                padding: 0.1in !important;
+                margin: 0 !important;
+            }
+
+            .barcode-item .barcode-image {
+                max-width: 100% !important;
+                height: auto !important;
+                margin-bottom: 0.1in !important;
+                transform: scale(${barcodeScale}) !important;
+            }
+
+            .custom-text-input { 
+                display: none !important; 
+            }
+            .custom-text-print {
+                display: block !important;
+                font-size: 9pt !important;
+                text-align: center !important;
+                margin-top: 0.05in !important;
+                width: 100% !important;
+                word-wrap: break-word !important;
+            }
+        }
+        `;
+        
+        // Force CSS injection
+        let styleEl = document.getElementById('template-styles');
+        if (styleEl) styleEl.remove();
+        
+        styleEl = document.createElement('style');
+        styleEl.id = 'template-styles';
+        styleEl.textContent = css;
+        document.head.appendChild(styleEl);
+        
+        // Verify injection
+        if (!document.getElementById('template-styles')) {
+            throw new Error('CSS injection failed');
+        }
+        
+        // Save to localStorage for persistence
+        localStorage.setItem('printTemplate', JSON.stringify({
+            preset: select.value,
+            template: template,
+            logo: currentLogo
+        }));
+    } catch (error) {
+        console.error('applyTemplate error:', error);
+        throw error; // Re-throw for centralized error handling
+    }
+}
+
+function updateBarcodeSize(value) {
+    try {
+        const sizeDisplay = document.getElementById('size-display');
+        if (sizeDisplay) {
+            sizeDisplay.textContent = value + '%';
+        }
+        
+        // Update barcode image sizes in real-time
+        const scale = value / 100;
+        const barcodeImages = document.querySelectorAll('.barcode-image');
+        barcodeImages.forEach(img => {
+            img.style.transform = `scale(${scale})`;
+            img.style.transformOrigin = 'center';
+        });
+        
+        // Save to localStorage
+        localStorage.setItem('barcodeSize', value);
+    } catch (error) {
+        console.error('updateBarcodeSize error:', error);
+    }
+}
+
+function uploadLogo(input) {
+    try {
+        const file = input.files[0];
+        if (!file) return;
+        
+        // Validate file size (max 1MB for offline compatibility)
+        if (file.size > 1024 * 1024) {
+            alert('Logo file too large. Please use an image under 1MB.');
+            input.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentLogo = e.target.result;
+            
+            // Add logo to each barcode item
+            const barcodeItems = document.querySelectorAll('.barcode-item');
+            barcodeItems.forEach(item => {
+                // Remove existing logo if present
+                const existingLogo = item.querySelector('.template-logo');
+                if (existingLogo) existingLogo.remove();
+                
+                // Add new logo
+                const logo = document.createElement('img');
+                logo.className = 'template-logo';
+                logo.src = currentLogo;
+                logo.style.cssText = 'max-width: 60px; max-height: 30px; margin-bottom: 0.1in; display: block; margin-left: auto; margin-right: auto;';
+                
+                // Insert logo before barcode image
+                const barcodeImg = item.querySelector('.barcode-image');
+                if (barcodeImg) {
+                    item.insertBefore(logo, barcodeImg);
+                }
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('templateLogo', currentLogo);
+        };
+        reader.readAsDataURL(file);
+    } catch (error) {
+        console.error('uploadLogo error:', error);
+        alert('Error uploading logo.');
+    }
+}
+
+function toggleTextField(fieldType) {
+    try {
+        // Whitelist validation for security
+        const allowedFields = ['type', 'lot', 'quantity', 'box-id'];
+        if (!allowedFields.includes(fieldType)) {
+            console.warn(`Invalid fieldType: ${fieldType}`);
+            return;
+        }
+        
+        const button = document.getElementById(`field-${fieldType}`);
+        if (!button) {
+            console.warn(`field-${fieldType} button not found`);
+            return;
+        }
+        
+        const isActive = button.classList.toggle('btn-secondary');
+        button.classList.toggle('btn-outline-secondary');
+
+        // Clear existing dynamic fields for this type
+        document.querySelectorAll(`.dynamic-field-${fieldType}`).forEach(el => el.remove());
+
+        if (isActive) {
+            document.querySelectorAll('.barcode-item').forEach(item => {
+                let container = item.querySelector('.details-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.className = 'details-container';
+                    item.appendChild(container);
+                }
+                
+                // Get value from data attributes with proper camelCase conversion
+                // turn "box-id" → "boxId"
+                const dataKey = fieldType
+                    .split('-')
+                    .map((w,i) => i ? w[0].toUpperCase()+w.slice(1) : w)
+                    .join('');
+                let value = item.dataset[dataKey] || '';
+                
+                // Add debugging and fallback data extraction
+                console.log(`Field: ${fieldType}, DataKey: ${dataKey}, Value: ${value}`);
+                console.log(`Full dataset:`, item.dataset);
+                
+                // If no value, try alternative attribute names
+                if (!value) {
+                    switch(fieldType) {
+                        case 'type':
+                            value = item.dataset.type || item.dataset.hardwareType || 'N/A';
+                            break;
+                        case 'lot':
+                            value = item.dataset.lot || item.dataset.lotNumber || 'N/A';
+                            break;
+                        case 'quantity':
+                            value = item.dataset.quantity || item.dataset.remainingQuantity || 'N/A';
+                            break;
+                        case 'box-id':
+                            value = item.dataset.boxId || item.dataset.boxid || 'N/A';
+                            break;
+                    }
+                    console.log(`Fallback value for ${fieldType}: ${value}`);
+                }
+                
+                // Create wrapper with both textarea and print div
+                const wrapper = document.createElement('div');
+                wrapper.className = `dynamic-field dynamic-field-${fieldType}`;
+                
+                const textarea = document.createElement('textarea');
+                textarea.className = 'custom-text-input form-control';
+                textarea.rows = 1;
+                textarea.value = value;
+                textarea.placeholder = fieldType.charAt(0).toUpperCase() + fieldType.slice(1);
+                
+                const printDiv = document.createElement('div');
+                printDiv.className = 'custom-text-print d-none';
+                printDiv.textContent = value;
+                
+                wrapper.appendChild(textarea);
+                wrapper.appendChild(printDiv);
+                container.appendChild(wrapper);
+            });
+        }
+        
+        // Save state
+        const activeFields = allowedFields.filter(ft => {
+            const button = document.getElementById(`field-${ft}`);
+            return button && button.classList.contains('btn-secondary');
+        });
+        localStorage.setItem('activeFields', JSON.stringify(activeFields));
+    } catch (error) {
+        console.error('toggleTextField error:', error);
+    }
+}
+
+function saveTemplate() {
+    try {
+        const name = prompt('Enter template name:');
+        if (!name) return;
+        
+        const presetSelect = document.getElementById('template-preset');
+        const barcodeSlider = document.getElementById('barcode-size');
+        
+        const savedTemplates = JSON.parse(localStorage.getItem('savedTemplates') || '{}');
+        savedTemplates[name] = {
+            preset: presetSelect ? presetSelect.value : '',
+            barcodeSize: barcodeSlider ? barcodeSlider.value : 100,
+            logo: currentLogo,
+            activeFields: JSON.parse(localStorage.getItem('activeFields') || '[]')
+        };
+        
+        localStorage.setItem('savedTemplates', JSON.stringify(savedTemplates));
+        alert(`Template "${name}" saved successfully!`);
+    } catch (error) {
+        console.error('saveTemplate error:', error);
+        alert('Error saving template.');
+    }
+}
+
+function loadTemplate() {
+    try {
+        const savedTemplates = JSON.parse(localStorage.getItem('savedTemplates') || '{}');
+        const names = Object.keys(savedTemplates);
+        
+        if (names.length === 0) {
+            alert('No saved templates found.');
+            return;
+        }
+        
+        const name = prompt('Load template:\n' + names.map((n, i) => `${i+1}. ${n}`).join('\n') + '\n\nEnter template name:');
+        if (!name || !savedTemplates[name]) return;
+        
+        const template = savedTemplates[name];
+        
+        // Apply saved template
+        const presetSelect = document.getElementById('template-preset');
+        const barcodeSlider = document.getElementById('barcode-size');
+        
+        if (presetSelect) presetSelect.value = template.preset;
+        if (barcodeSlider) barcodeSlider.value = template.barcodeSize;
+        
+        applyTemplate();
+        updateBarcodeSize(template.barcodeSize);
+        
+        if (template.logo) {
+            currentLogo = template.logo;
+            // Apply logo logic here if needed
+        }
+        
+        // Restore active fields
+        template.activeFields.forEach(fieldType => {
+            const button = document.getElementById(`field-${fieldType}`);
+            if (button) {
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-secondary');
+            }
+        });
+    } catch (error) {
+        console.error('loadTemplate error:', error);
+        alert('Error loading template.');
+    }
+}
+
+function resetTemplate() {
+    try {
+        const presetSelect = document.getElementById('template-preset');
+        const barcodeSlider = document.getElementById('barcode-size');
+        const sizeDisplay = document.getElementById('size-display');
+        const logoUpload = document.getElementById('logo-upload');
+        
+        if (presetSelect) presetSelect.value = '';
+        if (barcodeSlider) barcodeSlider.value = 100;
+        if (sizeDisplay) sizeDisplay.textContent = '100%';
+        if (logoUpload) logoUpload.value = '';
+        
+        // Reset field buttons
+        document.querySelectorAll('[id^="field-"]').forEach(btn => {
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-outline-secondary');
+        });
+        
+        // Remove template styles
+        const styleEl = document.getElementById('template-styles');
+        if (styleEl) styleEl.remove();
+        
+        // Remove logos
+        document.querySelectorAll('.template-logo').forEach(logo => logo.remove());
+        
+        // Reset barcode sizes
+        document.querySelectorAll('.barcode-image').forEach(img => {
+            img.style.transform = '';
+        });
+        
+        // Clear localStorage
+        localStorage.removeItem('printTemplate');
+        localStorage.removeItem('barcodeSize');
+        localStorage.removeItem('templateLogo');
+        localStorage.removeItem('activeFields');
+        
+        currentTemplate = null;
+        currentLogo = null;
+    } catch (error) {
+        console.error('resetTemplate error:', error);
+    }
+}
+
+// ===========================================
+// TEMPLATE FUNCTIONS (MAIN PAGE)
+// ===========================================
+
+function applyTemplateMain() {
+    try {
+        const select = document.getElementById('template-preset-main');
+        if (!select) {
+            console.warn('template-preset-main element not found');
+            return;
+        }
+        
+        const template = templatePresets[select.value];
+        
+        if (!template) {
+            resetTemplateMain();
+            return;
+        }
+        
+        // Store template settings for later use
+        localStorage.setItem('printTemplateMain', JSON.stringify({
+            preset: select.value,
+            template: template
+        }));
+    } catch (error) {
+        console.error('applyTemplateMain error:', error);
+    }
+}
+
+function updateBarcodeSizeMain(value) {
+    try {
+        const sizeDisplay = document.getElementById('size-display-main');
+        if (sizeDisplay) {
+            sizeDisplay.textContent = value + '%';
+        }
+        localStorage.setItem('barcodeSizeMain', value);
+    } catch (error) {
+        console.error('updateBarcodeSizeMain error:', error);
+    }
+}
+
+function uploadLogoMain(input) {
+    try {
+        const file = input.files[0];
+        if (!file) return;
+        
+        if (file.size > 1024 * 1024) {
+            alert('Logo file too large. Please use an image under 1MB.');
+            input.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const logoData = e.target.result;
+            localStorage.setItem('templateLogoMain', logoData);
+            localStorage.setItem('templateLogo', logoData); // Also save to regular templateLogo
+            
+            // Apply logo immediately
+            applySavedLogo(logoData);
+        };
+        reader.readAsDataURL(file);
+    } catch (error) {
+        console.error('uploadLogoMain error:', error);
+    }
+}
+
+function toggleTextFieldMain(fieldType) {
+    try {
+        const button = document.getElementById(`field-${fieldType}-main`);
+        if (!button) {
+            console.warn(`field-${fieldType}-main button not found`);
+            return;
+        }
+        
+        const isActive = button.classList.contains('btn-secondary');
+        
+        if (isActive) {
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-outline-secondary');
+        } else {
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-secondary');
+        }
+        
+        const activeFields = Array.from(document.querySelectorAll('[id^="field-"][id$="-main"]'))
+            .filter(btn => btn.classList.contains('btn-secondary'))
+            .map(btn => btn.id.replace('field-', '').replace('-main', ''));
+        
+        localStorage.setItem('activeFieldsMain', JSON.stringify(activeFields));
+    } catch (error) {
+        console.error('toggleTextFieldMain error:', error);
+    }
+}
+
+function saveTemplateMain() {
+    try {
+        const name = prompt('Enter template name:');
+        if (!name) return;
+        
+        const presetSelect = document.getElementById('template-preset-main');
+        const barcodeSlider = document.getElementById('barcode-size-main');
+        
+        const savedTemplates = JSON.parse(localStorage.getItem('savedTemplatesMain') || '{}');
+        savedTemplates[name] = {
+            preset: presetSelect ? presetSelect.value : '',
+            barcodeSize: barcodeSlider ? barcodeSlider.value : 100,
+            logo: localStorage.getItem('templateLogoMain'),
+            activeFields: JSON.parse(localStorage.getItem('activeFieldsMain') || '[]')
+        };
+        
+        localStorage.setItem('savedTemplatesMain', JSON.stringify(savedTemplates));
+        alert(`Template "${name}" saved successfully!`);
+    } catch (error) {
+        console.error('saveTemplateMain error:', error);
+        alert('Error saving template.');
+    }
+}
+
+function loadTemplateMain() {
+    try {
+        const savedTemplates = JSON.parse(localStorage.getItem('savedTemplatesMain') || '{}');
+        const names = Object.keys(savedTemplates);
+        
+        if (names.length === 0) {
+            alert('No saved templates found.');
+            return;
+        }
+        
+        const name = prompt('Load template:\n' + names.map((n, i) => `${i+1}. ${n}`).join('\n') + '\n\nEnter template name:');
+        if (!name || !savedTemplates[name]) return;
+        
+        const template = savedTemplates[name];
+        
+        const presetSelect = document.getElementById('template-preset-main');
+        const barcodeSlider = document.getElementById('barcode-size-main');
+        
+        if (presetSelect) presetSelect.value = template.preset;
+        if (barcodeSlider) barcodeSlider.value = template.barcodeSize;
+        
+        applyTemplateMain();
+        updateBarcodeSizeMain(template.barcodeSize);
+        
+        if (template.logo) {
+            localStorage.setItem('templateLogoMain', template.logo);
+        }
+        
+        template.activeFields.forEach(fieldType => {
+            const button = document.getElementById(`field-${fieldType}-main`);
+            if (button) {
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-secondary');
+            }
+        });
+    } catch (error) {
+        console.error('loadTemplateMain error:', error);
+        alert('Error loading template.');
+    }
+}
+
+function resetTemplateMain() {
+    try {
+        const presetSelect = document.getElementById('template-preset-main');
+        const barcodeSlider = document.getElementById('barcode-size-main');
+        const sizeDisplay = document.getElementById('size-display-main');
+        const logoUpload = document.getElementById('logo-upload-main');
+        
+        if (presetSelect) presetSelect.value = '';
+        if (barcodeSlider) barcodeSlider.value = 100;
+        if (sizeDisplay) sizeDisplay.textContent = '100%';
+        if (logoUpload) logoUpload.value = '';
+        
+        document.querySelectorAll('[id^="field-"][id$="-main"]').forEach(btn => {
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-outline-secondary');
+        });
+        
+        localStorage.removeItem('printTemplateMain');
+        localStorage.removeItem('barcodeSizeMain');
+        localStorage.removeItem('templateLogoMain');
+        localStorage.removeItem('activeFieldsMain');
+    } catch (error) {
+        console.error('resetTemplateMain error:', error);
+    }
+}
+
+// ===========================================
+// TEMPLATE DROPDOWN FUNCTIONS
+// ===========================================
+
+function loadTemplateDropdown() {
+    let savedTemplates = {};
+    try {
+        savedTemplates = JSON.parse(localStorage.getItem('savedTemplates') || '{}');
+    } catch {
+        console.error('Could not parse savedTemplates from localStorage');
+        return;
+    }
+    const select = document.getElementById('template-preset');
+    if (!select) {
+        console.warn('#template-preset not found');
+        return;
+    }
+
+    // Remove old saved- options
+    select.querySelectorAll('option').forEach(opt => {
+        if (opt.value.startsWith('saved-')) opt.remove();
+    });
+
+    const names = Object.keys(savedTemplates);
+    if (!names.length) return;
+
+    names.forEach(name => {
+        const option = document.createElement('option');
+        option.value = `saved-${name}`;
+        option.textContent = `Saved: ${name}`;
+        select.appendChild(option);
+    });
+}
+
+// ===========================================
+// UTILITY FUNCTIONS
+// ===========================================
+
+function deleteTextBox(button) {
+    try {
+        const textContainer = button.closest('.custom-text-container');
+        const textarea = textContainer.querySelector('.custom-text-input');
+        
+        if (confirm('Delete this text box?')) {
+            textarea.value = '';
+            textContainer.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('deleteTextBox error:', error);
+    }
+}
+
+function applySavedLogo(logoData) {
+    try {
+        if (!logoData) return;
+        
+        currentLogo = logoData;
+        
+        // Add logo to each barcode item
+        const barcodeItems = document.querySelectorAll('.barcode-item');
+        barcodeItems.forEach(item => {
+            // Remove existing logo if present
+            const existingLogo = item.querySelector('.template-logo');
+            if (existingLogo) existingLogo.remove();
+            
+            // Add new logo
+            const logo = document.createElement('img');
+            logo.className = 'template-logo';
+            logo.src = logoData;
+            logo.style.cssText = 'max-width: 60px; max-height: 30px; margin-bottom: 0.1in; display: block; margin-left: auto; margin-right: auto;';
+            
+            // Insert logo before barcode image
+            const barcodeImg = item.querySelector('.barcode-image');
+            if (barcodeImg) {
+                item.insertBefore(logo, barcodeImg);
+            } else {
+                // If no barcode image, add at the beginning
+                item.insertBefore(logo, item.firstChild);
+            }
+        });
+    } catch (error) {
+        console.error('applySavedLogo error:', error);
+    }
+}
+
+// ===========================================
+// INITIALIZATION AND DOM READY
+// ===========================================
+
+function initializeTemplateSystem() {
+    try {
+        console.log('Initializing template system...');
+        
+        // Load saved template for barcode display page
+        const savedTemplate = localStorage.getItem('printTemplate');
+        const savedSize = localStorage.getItem('barcodeSize');
+        const savedFields = localStorage.getItem('activeFields');
+        
+        const templateSelect = document.getElementById('template-preset');
+        if (templateSelect && savedTemplate) {
+            const template = JSON.parse(savedTemplate);
+            templateSelect.value = template.preset;
+            applyTemplate();
+        }
+        
+        const barcodeSlider = document.getElementById('barcode-size');
+        if (barcodeSlider && savedSize) {
+            barcodeSlider.value = savedSize;
+            updateBarcodeSize(savedSize);
+        }
+        
+        if (savedFields) {
+            const fields = JSON.parse(savedFields);
+            fields.forEach(fieldType => {
+                const button = document.getElementById(`field-${fieldType}`);
+                if (button) {
+                    button.classList.remove('btn-outline-secondary');
+                    button.classList.add('btn-secondary');
+                }
+            });
+        }
+        
+        // Load saved template for main page
+        const savedTemplateMain = localStorage.getItem('printTemplateMain');
+        const savedSizeMain = localStorage.getItem('barcodeSizeMain');
+        const savedFieldsMain = localStorage.getItem('activeFieldsMain');
+        
+        const templateSelectMain = document.getElementById('template-preset-main');
+        if (templateSelectMain && savedTemplateMain) {
+            const template = JSON.parse(savedTemplateMain);
+            templateSelectMain.value = template.preset;
+            applyTemplateMain();
+        }
+        
+        const barcodeSliderMain = document.getElementById('barcode-size-main');
+        if (barcodeSliderMain && savedSizeMain) {
+            barcodeSliderMain.value = savedSizeMain;
+            updateBarcodeSizeMain(savedSizeMain);
+        }
+        
+        if (savedFieldsMain) {
+            const fields = JSON.parse(savedFieldsMain);
+            fields.forEach(fieldType => {
+                const button = document.getElementById(`field-${fieldType}-main`);
+                if (button) {
+                    button.classList.remove('btn-outline-secondary');
+                    button.classList.add('btn-secondary');
+                }
+            });
+        }
+        
+        // Add graceful fallback CSS for non-JS users
+        if (!document.getElementById('fallback-styles')) {
+            const fallbackCSS = `
+            @media print {
+                .barcode-grid {
+                    display: grid !important;
+                    grid-template-columns: repeat(2, 1fr) !important;
+                    gap: 0.5in !important;
+                }
+            }
+            `;
+            const fallbackStyle = document.createElement('style');
+            fallbackStyle.id = 'fallback-styles';
+            fallbackStyle.textContent = fallbackCSS;
+            document.head.appendChild(fallbackStyle);
+        }
+        
+        console.log('Template system initialized successfully');
+    } catch (error) {
+        console.error('initializeTemplateSystem error:', error);
+    }
+}
+
+// DOM-ready sanity check function
+function performSanityChecks() {
+    try {
+        console.log('Performing sanity checks...');
+        
+        const checks = [
+            { name: 'generateRandomBarcodes', fn: window.generateRandomBarcodes },
+            { name: 'showManualEntry', fn: window.showManualEntry },
+            { name: 'finalizeAndPrint', fn: window.finalizeAndPrint },
+            { name: 'printWithBarcodeType', fn: window.printWithBarcodeType },
+            { name: 'applyTemplate', fn: window.applyTemplate },
+            { name: 'updateBarcodeSize', fn: window.updateBarcodeSize },
+            { name: 'applyTemplateMain', fn: window.applyTemplateMain },
+            { name: 'updateBarcodeSizeMain', fn: window.updateBarcodeSizeMain }
+        ];
+        
+        checks.forEach(c => {
+            if (typeof c.fn !== 'function') {
+                console.warn(`⚠️ Missing function: ${c.name}() is not defined`);
+            } else {
+                console.log(`✓ Function available: ${c.name}()`);
+            }
+        });
+
+        const elems = [
+            'generator-section',
+            'print-area',
+            'manual-entry',
+            'template-preset',
+            'barcode-size',
+            'template-preset-main',
+            'barcode-size-main'
+        ];
+        
+        elems.forEach(id => {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`⚠️ Missing DOM element: #${id}`);
+            } else {
+                console.log(`✓ DOM element found: #${id}`);
+            }
+        });
+        
+        console.log('Sanity checks completed');
+    } catch (error) {
+        console.error('performSanityChecks error:', error);
+    }
+}
+
+// DOM ready event
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        console.log('DOM ready, initializing...');
+        
+        // Perform sanity checks
+        performSanityChecks();
+        
+        // Validate text field buttons at startup
+        ['type','lot','quantity','box-id'].forEach(ft => {
+            if (!document.getElementById(`field-${ft}`)) 
+                console.warn(`Missing toggle button for field-${ft}`);
+        });
+        
+        // Load and apply saved activeFields
+        const savedFields = localStorage.getItem('activeFields');
+        if (savedFields) {
+            try {
+                const fields = JSON.parse(savedFields);
+                fields.forEach(fieldType => toggleTextField(fieldType));
+            } catch (e) {
+                console.error('Error loading saved fields:', e);
+            }
+        }
+        
+        // Load template dropdown
+        loadTemplateDropdown();
+        
+        // Initialize template system
+        initializeTemplateSystem();
+        
+        // Apply saved logo if available
+        const savedLogo = localStorage.getItem('templateLogo') || localStorage.getItem('templateLogoMain');
+        if (savedLogo) {
+            applySavedLogo(savedLogo);
+        }
+        
+        // Set up manual form submission
+        const manualForm = document.getElementById('manual-barcode-form');
+        if (manualForm) {
+            manualForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const input = document.getElementById('manual-barcode-input');
+                const barcode = input ? input.value.trim() : '';
+                if (barcode) {
+                    fetch('/generate_barcode_api?barcode=' + encodeURIComponent(barcode))
+                        .then(r => r.json())
+                        .then(data => {
+                            generatedBarcodes.push({barcode: barcode, image: data.image});
+                            displayGeneratedBarcodes();
+                            input.value = '';
+                        })
+                        .catch(err => {
+                            console.error('Manual barcode generation error:', err);
+                            alert('Error generating barcode. Please try again.');
+                        });
+                }
+            });
+        }
+        
+        console.log('Initialization complete');
+    } catch (error) {
+        console.error('DOMContentLoaded error:', error);
+    }
+});
+</script>
+{% endblock %}

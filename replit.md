@@ -100,6 +100,7 @@ The application uses four main entities:
 - June 27, 2025. Mobile responsiveness enhancement - Added mobile hamburger menu, touch-friendly button sizes (44px minimum), responsive sidebar navigation with backdrop overlay, improved form layouts for mobile screens, and enhanced CSS for phone compatibility
 - June 27, 2025. Company logo integration - Fixed logo display in both print templates and Word export functions. Added logo processing from localStorage, proper base64 image handling in Word documents, and consistent logo sizing across both output formats
 - June 27, 2025. Portable Windows desktop app - Converted web application to standalone desktop app with portable Python runtime, SQLite database, batch file launchers, automatic browser opening, desktop shortcut creation, and comprehensive offline functionality. Includes setup.bat for one-time installation, run.bat for daily use, and complete documentation for corporate laptop compatibility
+- July 9, 2025. Portable app critical fixes - Fixed all deployment issues: switched from gunicorn to waitress server, updated requirements.txt with correct package versions, fixed Python embedded configuration, corrected static files paths to app/static/, resolved circular import issues between models and app, added comprehensive error handling and dependency checking, created proper package structure with __init__.py files, and enhanced setup.bat with better error handling and target installation paths
 
 ## User Preferences
 

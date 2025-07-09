@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Log Event - Hardware Inventory{% endblock %}
+
+{% block content %}
+<style>
+  .content-wrapper {
+    height: calc(100vh - 112px);
+  }
+  /* Header Event Colors */
+  .bg-pull-event   { background-color: #dc3545 !important; }
+  .bg-return-event { background-color: #198754 !important; }
+</style>
+
+<div class="row content-wrapper d-flex align-items-center justify-content-center">
+  <div class="col-lg-8 col-xl-6">
+
+    <!-- Fully-rounded, shadowed header card -->
+    <div class="card shadow-lg mb-3 rounded overflow-hidden">
+      <div id="event-header" class="bg-pull-event text-white text-center py-3">
+        <h4 id="event-title" class="mb-0">
+          <i id="event-icon" class="fas fa-minus-circle me-2"></i>
+          Log Pull Event
+        </h4>
+      </div>
+    </div>
+
+    <!-- Fully-rounded, shadowed form card -->
+    <div class="card shadow-lg rounded overflow-hidden">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('log_event') }}" id="logEventForm">
+          <div class="row gx-3 gy-2">
+                                       
+                        <!-- Barcode -->
+                        <div class="col-12">
+                            <label for="barcode" class="form-label">
+                                <i class="fas fa-barcode me-2 text-primary"></i>Barcode
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <input type="text" class="form-control" id="barcode" name="barcode" 
+                                       placeholder="Scan or enter barcode"
+                                       value="{{ form_data.get('barcode', '') if form_data }}" required>
+                                <button class="btn btn-outline-primary" type="button" id="scanBarcodeBtn">
+                                    <i class="fas fa-camera me-1"></i>Scan
+                                </button>
+                                <button class="btn btn-outline-primary" type="button" id="lookupBarcodeBtn">
+                                    <i class="fas fa-search me-1"></i>Lookup
+                                </button>
+                            </div>
+                        </div>
+            
+                        <!-- Box Info Display -->
+                        <div id="boxInfo" class="col-12" style="display: none;">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-box me-2"></i>Box Information:</h6>
+                                <div id="boxInfoContent"></div>
+                            </div>
+                        </div>
+            
+                        <!-- Event Type -->
+                        <div class="col-md-6">
+                            <label for="event_type" class="form-label">
+                                <i class="fas fa-exchange-alt me-2 text-primary"></i>Event Type
+                            </label>
+                            <select id="event_type" name="event_type" class="form-select form-select-lg" required>
+                                <option value="Pull">Pull</option>
+                                <option value="Return">Return</option>
+                            </select>
+                        </div>
+            
+                        <!-- Quantity -->
+                        <div class="col-md-6">
+                            <label for="quantity" class="form-label">
+                                <i class="fas fa-hashtag me-2 text-primary"></i>Quantity
+                            </label>
+                            <input type="number" min="1" name="quantity" id="quantity" class="form-control form-control-lg" 
+                                   placeholder="Enter quantity" required>
+                        </div>
+            
+                        <!-- Manufacturing Order -->
+                        <div class="col-md-6">
+                            <label for="mo" class="form-label">
+                                <i class="fas fa-clipboard-list me-2 text-primary"></i>Manufacturing Order (MO)
+                            </label>
+                            <input type="text" name="mo" id="mo" class="form-control form-control-lg" 
+                                   placeholder="Enter MO number" required>
+                        </div>
+            
+                        <!-- Operator -->
+                        <div class="col-md-6">
+                            <label for="operator" class="form-label">
+                                <i class="fas fa-user me-2 text-primary"></i>Operator
+                            </label>
+                            <input type="text" name="operator" id="operator" class="form-control form-control-lg" 
+                                   placeholder="Enter operator name" required>
+                        </div>
+            
+                        <!-- QC Personnel -->
+                        <div class="col-md-6">
+                            <label for="qc_personnel" class="form-label">
+                                <i class="fas fa-user-check me-2 text-primary"></i>QC Personnel
+                            </label>
+                            <input type="text" name="qc_personnel" id="qc_personnel" class="form-control form-control-lg" 
+                                   placeholder="Enter QC personnel name" required>
+                        </div>
+            
+                        <!-- Signature -->
+                        <div class="col-md-6">
+                            <label for="signature" class="form-label">
+                                <i class="fas fa-signature me-2 text-primary"></i>Signature (Optional)
+                            </label>
+                            <input type="text" name="signature" id="signature" class="form-control form-control-lg" 
+                                   placeholder="Enter signature">
+                        </div>
+                    </div>
+            
+                    <div id="error-msg" class="text-danger mt-2"></div>
+            
+                    <!-- Buttons -->
+                    <div class="d-flex justify-content-end gap-3 mt-3">
+                      <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg px-4">
+                        <i class="fas fa-times me-2"></i>Cancel
+                      </a>
+                      <button type="submit" class="btn btn-primary btn-lg px-4">
+                        <i class="fas fa-save me-2"></i>Submit Event
+                      </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const barcodeInput = document.getElementById('barcode');
+    const lookupBtn    = document.getElementById('lookupBarcodeBtn');
+    const scanBtn      = document.getElementById('scanBarcodeBtn');
+    const boxInfoDiv   = document.getElementById('boxInfo');
+    const boxInfoContent = document.getElementById('boxInfoContent');
+    const errorMsg     = document.getElementById('error-msg');
+    const header       = document.getElementById('event-header');
+    const title        = document.getElementById('event-title');
+    const select       = document.getElementById('event_type');
+    const icon         = document.getElementById('event-icon');
+
+    // Dynamic header color & text
+    select.addEventListener("change", function() {
+        const type = this.value;
+        if (type === "Pull") {
+            title.innerHTML = '<i class="fas fa-minus-circle me-2 text-white"></i>Log Pull Event';
+            header.className = "card-header bg-pull-event text-white text-center rounded";
+        } else {
+            title.innerHTML = '<i class="fas fa-plus-circle me-2 text-white"></i>Log Return Event';
+            header.className = "card-header bg-return-event text-white text-center rounded";
+        }
+        title.className = "text-white mb-0";
+    });
+  
+    // initialize on page load
+    select.dispatchEvent(new Event('change'));
+  
+    async function lookupBarcode(barcode) {
+        if (!barcode.trim()) {
+            boxInfoDiv.style.display = 'none';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/get_box_info/${encodeURIComponent(barcode)}`);
+            const data = await response.json();
+            
+            if (data.found) {
+                boxInfoContent.innerHTML = `
+                    <strong>Box ID:</strong> ${data.box_id}<br>
+                    <strong>Hardware Type:</strong> ${data.hardware_type}<br>
+                    <strong>Lot Number:</strong> ${data.lot_number}<br>
+                    <strong>Available Quantity:</strong> ${data.remaining_quantity}
+                `;
+                boxInfoDiv.style.display = 'block';
+                errorMsg.textContent = '';
+            } else {
+                boxInfoContent.innerHTML = `
+                    <span class="text-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Barcode not found in inventory
+                    </span>
+                `;
+                boxInfoDiv.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error looking up barcode:', error);
+            boxInfoDiv.style.display = 'none';
+        }
+    }
+    
+    barcodeInput.addEventListener('blur', function() {
+        lookupBarcode(this.value);
+    });
+    
+    lookupBtn.addEventListener('click', function() {
+        lookupBarcode(barcodeInput.value);
+    });
+    
+    scanBtn.addEventListener('click', function() {
+        alert('Barcode scanning would be implemented here with camera access. For now, please enter the barcode manually.');
+    });
+    
+    document.getElementById('logEventForm').addEventListener('submit', function(e) {
+        const operator = document.getElementById('operator').value.trim();
+        const qcPersonnel = document.getElementById('qc_personnel').value.trim();
+        const quantity = parseInt(document.getElementById('quantity').value);
+        const barcode = document.getElementById('barcode').value.trim();
+        
+        errorMsg.textContent = '';
+        
+        if (!barcode) {
+            e.preventDefault();
+            errorMsg.textContent = 'Please enter a barcode.';
+            return;
+        }
+        
+        if (!quantity || quantity <= 0) {
+            e.preventDefault();
+            errorMsg.textContent = 'Quantity must be greater than 0.';
+            return;
+        }
+        
+        if (operator === qcPersonnel) {
+            e.preventDefault();
+            errorMsg.textContent = 'Operator and QC Personnel cannot be the same.';
+            return;
+        }
+    });
+    
+    document.getElementById('event_type').dispatchEvent(new Event('change'));
+    
+    if (barcodeInput.value.trim()) {
+        lookupBarcode(barcodeInput.value);
+    }
+});
+</script>
+{% endblock %}
