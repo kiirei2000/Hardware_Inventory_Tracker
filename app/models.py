@@ -1,6 +1,17 @@
-from app import db
 from datetime import datetime, timezone
-import json
+# Handle both relative and absolute imports
+try:
+    from . import db
+except ImportError:
+    # Fallback for when running as script
+    from flask import Flask
+    from flask_sqlalchemy import SQLAlchemy
+    from sqlalchemy.orm import DeclarativeBase
+    
+    class Base(DeclarativeBase):
+        pass
+    
+    db = SQLAlchemy(model_class=Base)
 
 class HardwareType(db.Model):
     """Hardware type lookup table"""
@@ -64,7 +75,7 @@ class PullEvent(db.Model):
     box = db.relationship('Box', backref='pull_events')
     
     def __repr__(self):
-        return f'<PullEvent {self.id}: {self.quantity} from Box {self.box_id}>'
+        return f'<PullEvent {self.id} - Box {self.box_id}>'
 
 class ActionLog(db.Model):
     """Admin action log table"""
@@ -84,12 +95,14 @@ class ActionLog(db.Model):
     qc_personnel = db.Column(db.String(100))  # QC Personnel who approved/checked
     details = db.Column(db.Text)  # JSON or text details of the action
     
+    @property
     def details_json(self):
         """Parse JSON details into a dictionary"""
+        import json
         try:
-            return json.loads(self.details) if self.details else {}
-        except json.JSONDecodeError:
+            return json.loads(self.details or '{}')
+        except (json.JSONDecodeError, TypeError):
             return {}
     
     def __repr__(self):
-        return f'<ActionLog {self.action_type}: {self.user} on {self.box_id}>'
+        return f'<ActionLog {self.id}: {self.action_type} by {self.user}>'

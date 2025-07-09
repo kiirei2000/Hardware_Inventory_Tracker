@@ -18,3 +18,4 @@ docx
 python-docx
 pillow
 waitress
+waitress
