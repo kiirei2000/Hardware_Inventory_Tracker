@@ -78,9 +78,7 @@ class HardwareInventoryLauncher:
         """Set up environment variables"""
         os.environ['FLASK_APP'] = str(self.app_dir / "app" / "app.py")
         os.environ['FLASK_ENV'] = 'production'
-        # Use proper Windows path for SQLite
-        db_path = str(self.data_dir / 'inventory.db').replace('\\', '/')
-        os.environ['DATABASE_URL'] = f"sqlite:///{db_path}"
+        os.environ['DATABASE_URL'] = f"sqlite:///{self.data_dir / 'inventory.db'}"
         os.environ['SESSION_SECRET'] = 'hardware-inventory-secret-key-2025'
         
         # Add python to PATH for this session
@@ -94,46 +92,34 @@ class HardwareInventoryLauncher:
             # Change to app directory
             app_dir = self.app_dir / "app"
             
-            # Start waitress server
+            # Start gunicorn server
             cmd = [
                 str(self.python_exe),
-                "-m", "waitress",
-                "--port", str(port),
+                "-m", "gunicorn",
+                "--bind", f"0.0.0.0:{port}",
+                "--reuse-port",
+                "--reload",
                 "app:app"
             ]
             
             print(f"Starting server on port {port}...")
-            # Show command for debugging
-            print(f"Running: {' '.join(cmd)}")
-            print(f"Working directory: {app_dir}")
-            
             self.flask_process = subprocess.Popen(
                 cmd,
                 cwd=str(app_dir),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,  # Combine stderr with stdout
-                universal_newlines=True,
+                stderr=subprocess.PIPE,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             
             # Wait a moment for server to start
             time.sleep(3)
             
-            # Check if process is still running and show any errors
+            # Check if process is still running
             if self.flask_process.poll() is None:
                 print(f"✓ Server started successfully on port {port}")
                 return True
             else:
                 print(f"✗ Server failed to start")
-                # Get error output
-                try:
-                    stdout, stderr = self.flask_process.communicate(timeout=1)
-                    if stdout:
-                        print(f"Output: {stdout}")
-                    if stderr:
-                        print(f"Error: {stderr}")
-                except subprocess.TimeoutExpired:
-                    pass
                 return False
                 
         except Exception as e:
@@ -167,28 +153,10 @@ class HardwareInventoryLauncher:
         """Check if portable Python is available"""
         if not self.python_exe.exists():
             print("✗ Portable Python not found!")
-            print("Please run setup.bat first to install dependencies.")
+            print("Please run setup.exe first to install dependencies.")
             input("Press Enter to exit...")
             return False
         print("✓ Portable Python found")
-        
-        # Check if waitress is installed
-        try:
-            result = subprocess.run([
-                str(self.python_exe), "-c", "import waitress; import flask; import pandas"
-            ], capture_output=True, text=True, timeout=10)
-            if result.returncode != 0:
-                print("✗ Missing dependencies. Please run setup.bat first.")
-                print("Setup will download Python and all required packages.")
-                input("Press Enter to exit...")
-                return False
-            print("✓ Dependencies verified")
-        except Exception as e:
-            print(f"✗ Error checking dependencies: {e}")
-            print("Please run setup.bat to install required components.")
-            input("Press Enter to exit...")
-            return False
-        
         return True
     
     def wait_for_exit(self):

@@ -17,5 +17,3 @@ python-docx
 docx
 python-docx
 pillow
-waitress
-waitress

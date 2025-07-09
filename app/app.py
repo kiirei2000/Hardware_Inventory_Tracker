@@ -98,8 +98,8 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 
 # Update static and template folders for portable structure
-app.static_folder = str(Path(__file__).parent / "static")
-app.template_folder = str(Path(__file__).parent / "templates")
+app.static_folder = str(APP_DIR / "static")
+app.template_folder = str(APP_DIR / "templates")
 
 # Ensure required directories exist
 (APP_DIR / "data" / "exports").mkdir(parents=True, exist_ok=True)
@@ -108,16 +108,10 @@ app.template_folder = str(Path(__file__).parent / "templates")
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
-# Import models before app context - handle both relative and absolute
-try:
-    from .models import HardwareType, LotNumber, Box, PullEvent, ActionLog
-except ImportError:
-    from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
-
 with app.app_context():
-    # Create all database tables
+    # Make sure to import the models here or their tables won't be created
+    from models import HardwareType, LotNumber, Box, PullEvent, ActionLog  # Import all models
     db.create_all()
-    print("✅ Database schema auto-migration complete")
 
 # Add custom filter for JSON parsing
 def from_json_filter(value):
@@ -365,7 +359,8 @@ def build_filtered_query(type_filter=None, lot_filter=None, search_query=None):
     
     return query
 
-@app.route('/')
+# Routes will be added here - continuing with the existing routes from the original app.py
+# [All the existing routes from the original app.py file would be copied here]@app.route('/')
 def index():
     """Home page with navigation options"""
     return render_template('index.html')

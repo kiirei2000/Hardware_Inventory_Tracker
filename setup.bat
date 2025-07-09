@@ -14,8 +14,8 @@ if exist "python\python.exe" (
 echo Step 1: Downloading Python (this may take a few minutes)...
 echo Please wait while we download portable Python...
 
-REM Download portable Python 3.11 (latest stable)
-powershell -Command "try { Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip' -OutFile 'python.zip' -UseBasicParsing } catch { Write-Host 'Download failed. Please check your internet connection.'; exit 1 }"
+REM Download portable Python 3.11
+powershell -Command "try { Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.0/python-3.11.0-embed-amd64.zip' -OutFile 'python.zip' -UseBasicParsing } catch { Write-Host 'Download failed. Please check your internet connection.'; exit 1 }"
 
 if not exist "python.zip" (
     echo Failed to download Python. Please check your internet connection.
@@ -27,12 +27,9 @@ echo Step 2: Extracting Python...
 powershell -Command "try { Expand-Archive -Path 'python.zip' -DestinationPath 'python' -Force } catch { Write-Host 'Extraction failed.'; exit 1 }"
 del python.zip
 
-REM Configure Python embedded for pip and site-packages
-echo python311.zip > python\python311._pth
-echo . >> python\python311._pth
-echo .\Lib\site-packages >> python\python311._pth
-echo import site >> python\python311._pth
-echo import sys; sys.path.append('.') > python\sitecustomize.py
+REM Configure Python to use pip
+echo import sys > python\sitecustomize.py
+echo sys.path.append('.') >> python\sitecustomize.py
 
 REM Get pip
 echo Step 3: Installing pip...
@@ -41,57 +38,37 @@ python\python.exe get-pip.py --no-warn-script-location
 del get-pip.py
 
 echo Step 4: Installing application dependencies...
-REM Install packages to embedded Python
-python\python.exe -m pip install --no-warn-script-location --target python\Lib\site-packages -r app\requirements.txt
-if errorlevel 1 (
-    echo Failed to install Python packages. Please check your internet connection.
-    pause
-    exit /b 1
-)
+python\python.exe -m pip install --no-warn-script-location -r app\requirements.txt
 
 echo Step 5: Downloading web assets...
-REM Create static directories in app folder
-if not exist "app\static" mkdir app\static
-if not exist "app\static\css" mkdir app\static\css
-if not exist "app\static\js" mkdir app\static\js
-if not exist "app\static\fonts" mkdir app\static\fonts
-if not exist "app\static\barcodes" mkdir app\static\barcodes
+REM Create static directories
+if not exist "static" mkdir static
+if not exist "static\css" mkdir static\css
+if not exist "static\js" mkdir static\js
+if not exist "static\fonts" mkdir static\fonts
 
 REM Download Bootstrap CSS
-powershell -Command "try { Invoke-WebRequest -Uri 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' -OutFile 'app\static\css\bootstrap.min.css' -UseBasicParsing } catch { Write-Host 'Failed to download Bootstrap CSS' }"
+powershell -Command "try { Invoke-WebRequest -Uri 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' -OutFile 'static\css\bootstrap.min.css' -UseBasicParsing } catch { Write-Host 'Failed to download Bootstrap CSS' }"
 
 REM Download Bootstrap JS
-powershell -Command "try { Invoke-WebRequest -Uri 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js' -OutFile 'app\static\js\bootstrap.bundle.min.js' -UseBasicParsing } catch { Write-Host 'Failed to download Bootstrap JS' }"
+powershell -Command "try { Invoke-WebRequest -Uri 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js' -OutFile 'static\js\bootstrap.bundle.min.js' -UseBasicParsing } catch { Write-Host 'Failed to download Bootstrap JS' }"
 
 REM Create basic FontAwesome CSS
-echo /* FontAwesome Icons - Essential subset for Hardware Inventory */ > app\static\css\fontawesome.min.css
-echo .fa, .fas { font-family: "Font Awesome 6 Free"; font-weight: 900; } >> app\static\css\fontawesome.min.css
-echo .fa-barcode:before { content: "\f02a"; } >> app\static\css\fontawesome.min.css
-echo .fa-boxes:before { content: "\f468"; } >> app\static\css\fontawesome.min.css
-echo .fa-plus:before { content: "\f067"; } >> app\static\css\fontawesome.min.css
-echo .fa-edit:before { content: "\f044"; } >> app\static\css\fontawesome.min.css
-echo .fa-trash:before { content: "\f1f8"; } >> app\static\css\fontawesome.min.css
-echo .fa-print:before { content: "\f02f"; } >> app\static\css\fontawesome.min.css
-echo .fa-download:before { content: "\f019"; } >> app\static\css\fontawesome.min.css
-echo .fa-search:before { content: "\f002"; } >> app\static\css\fontawesome.min.css
-echo .fa-user:before { content: "\f007"; } >> app\static\css\fontawesome.min.css
-echo .fa-cog:before { content: "\f013"; } >> app\static\css\fontawesome.min.css
-echo .fa-home:before { content: "\f015"; } >> app\static\css\fontawesome.min.css
-echo .fa-list:before { content: "\f03a"; } >> app\static\css\fontawesome.min.css
-echo .fa-qrcode:before { content: "\f029"; } >> app\static\css\fontawesome.min.css
-echo .fa-file-excel:before { content: "\f1c3"; } >> app\static\css\fontawesome.min.css
-echo .fa-file-word:before { content: "\f1c2"; } >> app\static\css\fontawesome.min.css
+echo /* FontAwesome Icons - Essential subset for Hardware Inventory */ > static\css\fontawesome.min.css
+echo .fa, .fas { font-family: "Font Awesome 6 Free"; font-weight: 900; } >> static\css\fontawesome.min.css
+echo .fa-barcode:before { content: "\f02a"; } >> static\css\fontawesome.min.css
+echo .fa-boxes:before { content: "\f468"; } >> static\css\fontawesome.min.css
+echo .fa-plus:before { content: "\f067"; } >> static\css\fontawesome.min.css
+echo .fa-edit:before { content: "\f044"; } >> static\css\fontawesome.min.css
+echo .fa-trash:before { content: "\f1f8"; } >> static\css\fontawesome.min.css
+echo .fa-print:before { content: "\f02f"; } >> static\css\fontawesome.min.css
+echo .fa-download:before { content: "\f019"; } >> static\css\fontawesome.min.css
+echo .fa-search:before { content: "\f002"; } >> static\css\fontawesome.min.css
+echo .fa-user:before { content: "\f007"; } >> static\css\fontawesome.min.css
+echo .fa-cog:before { content: "\f013"; } >> static\css\fontawesome.min.css
 
 echo Step 6: Setting up database and directories...
-REM Create required directories
-if not exist "data" mkdir data
-if not exist "data\logs" mkdir data\logs
-if not exist "data\exports" mkdir data\exports
-if not exist "config" mkdir config
-REM Templates are included in app folder
-
-REM Initialize database (will create on first run)
-echo Database will be created on first application start.
+python\python.exe launcher.py --setup-only
 
 :create_shortcut
 echo Step 7: Creating desktop shortcut...
