@@ -117,7 +117,7 @@ except ImportError:
 with app.app_context():
     # Create all database tables
     db.create_all()
-    print("✅ Database schema auto-migration complete")
+    print("Database schema auto-migration complete")
 
 # Add custom filter for JSON parsing
 def from_json_filter(value):

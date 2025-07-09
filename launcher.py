@@ -39,7 +39,7 @@ class HardwareInventoryLauncher:
         for directory in dirs_to_create:
             directory.mkdir(parents=True, exist_ok=True)
             
-        print(f"✓ Created data directories")
+        print(f"Created data directories")
         
     def create_default_config(self):
         """Create default configuration file if missing"""
@@ -61,7 +61,7 @@ class HardwareInventoryLauncher:
             
             with open(config_file, 'w') as f:
                 config.write(f)
-            print(f"✓ Created default configuration")
+            print(f"Created default configuration")
     
     def find_free_port(self, start=5000, end=5010):
         """Find available port in range"""
@@ -121,10 +121,10 @@ class HardwareInventoryLauncher:
             
             # Check if process is still running and show any errors
             if self.flask_process.poll() is None:
-                print(f"✓ Server started successfully on port {port}")
+                print(f"Server started successfully on port {port}")
                 return True
             else:
-                print(f"✗ Server failed to start")
+                print(f"Server failed to start")
                 # Get error output
                 try:
                     stdout, stderr = self.flask_process.communicate(timeout=1)
@@ -137,7 +137,7 @@ class HardwareInventoryLauncher:
                 return False
                 
         except Exception as e:
-            print(f"✗ Error starting server: {e}")
+            print(f"Error starting server: {e}")
             return False
     
     def open_browser(self, port):
@@ -148,7 +148,7 @@ class HardwareInventoryLauncher:
             webbrowser.open(url)
             return True
         except Exception as e:
-            print(f"✗ Error opening browser: {e}")
+            print(f"Error opening browser: {e}")
             print(f"Please manually open: http://localhost:{port}")
             return False
     
@@ -161,16 +161,16 @@ class HardwareInventoryLauncher:
                 self.flask_process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self.flask_process.kill()
-            print("✓ Server stopped")
+            print("Server stopped")
     
     def check_python_installation(self):
         """Check if portable Python is available"""
         if not self.python_exe.exists():
-            print("✗ Portable Python not found!")
+            print("Portable Python not found!")
             print("Please run setup.bat first to install dependencies.")
             input("Press Enter to exit...")
             return False
-        print("✓ Portable Python found")
+        print("Portable Python found")
         
         # Check if waitress is installed
         try:
@@ -178,13 +178,13 @@ class HardwareInventoryLauncher:
                 str(self.python_exe), "-c", "import waitress; import flask; import pandas"
             ], capture_output=True, text=True, timeout=10)
             if result.returncode != 0:
-                print("✗ Missing dependencies. Please run setup.bat first.")
+                print("Missing dependencies. Please run setup.bat first.")
                 print("Setup will download Python and all required packages.")
                 input("Press Enter to exit...")
                 return False
-            print("✓ Dependencies verified")
+            print("Dependencies verified")
         except Exception as e:
-            print(f"✗ Error checking dependencies: {e}")
+            print(f"Error checking dependencies: {e}")
             print("Please run setup.bat to install required components.")
             input("Press Enter to exit...")
             return False
@@ -225,18 +225,18 @@ class HardwareInventoryLauncher:
         self.setup_environment()
         
         if setup_only:
-            print("✓ Setup complete")
+            print("Setup complete")
             return True
         
         # Find available port
         self.port = self.find_free_port()
         if not self.port:
-            print("✗ No available ports (5000-5010)")
+            print("No available ports (5000-5010)")
             print("Please close other applications and try again.")
             input("Press Enter to exit...")
             return False
         
-        print(f"✓ Using port {self.port}")
+        print(f"Using port {self.port}")
         
         # Start Flask server
         if not self.start_flask_server(self.port):
