@@ -1,20 +1,17 @@
 from datetime import datetime, timezone
-import sys
-from pathlib import Path
-
-# Add app directory to path if needed
-if str(Path(__file__).parent) not in sys.path:
-    sys.path.insert(0, str(Path(__file__).parent))
-
-# Import db - handle both relative and absolute imports
+# Handle both relative and absolute imports
 try:
-    from app import db
+    from . import db
 except ImportError:
-    # Fallback for standalone execution
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    from app.app import db
+    # Fallback for when running as script
+    from flask import Flask
+    from flask_sqlalchemy import SQLAlchemy
+    from sqlalchemy.orm import DeclarativeBase
+    
+    class Base(DeclarativeBase):
+        pass
+    
+    db = SQLAlchemy(model_class=Base)
 
 class HardwareType(db.Model):
     """Hardware type lookup table"""

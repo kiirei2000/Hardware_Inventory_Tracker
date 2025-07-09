@@ -108,24 +108,16 @@ app.template_folder = str(Path(__file__).parent / "templates")
 # initialize the app with the extension, flask-sqlalchemy >= 3.0.x
 db.init_app(app)
 
-# Import models after db is initialized
-from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
+# Import models before app context - handle both relative and absolute
+try:
+    from .models import HardwareType, LotNumber, Box, PullEvent, ActionLog
+except ImportError:
+    from models import HardwareType, LotNumber, Box, PullEvent, ActionLog
 
 with app.app_context():
     # Create all database tables
-    try:
-        db.create_all()
-        print("✅ Database schema auto-migration complete")
-        
-        # Verify tables were created
-        inspector = db.inspect(db.engine)
-        tables = inspector.get_table_names()
-        print(f"Created tables: {tables}")
-        
-    except Exception as e:
-        print(f"❌ Database creation failed: {e}")
-        import traceback
-        traceback.print_exc()
+    db.create_all()
+    print("✅ Database schema auto-migration complete")
 
 # Add custom filter for JSON parsing
 def from_json_filter(value):
@@ -327,61 +319,25 @@ def group_boxes_by_type_lot(results):
 def calculate_inventory_stats(grouped_data):
     """Calculate summary statistics from grouped data with error handling"""
     try:
-        if not grouped_data:
-            return {
-                'total_boxes': 0,
-                'available_boxes': 0,
-                'empty_boxes': 0,
-                'negative_boxes': 0,
-                'total_remaining': 0,
-                'total_initial': 0,
-                'utilization_rate': 0
-            }
-        
-        total_boxes = 0
-        available_boxes = 0
-        empty_boxes = 0
-        negative_boxes = 0
-        total_remaining = 0
-        total_initial = 0
-        
-        # Handle both tuple and dict formats
-        if isinstance(grouped_data, dict):
-            for type_code, type_lot_groups in grouped_data.items():
-                if isinstance(type_lot_groups, dict):
-                    for type_lot_key, group_data in type_lot_groups.items():
-                        boxes = group_data.get('boxes', [])
-                        for box in boxes:
-                            total_boxes += 1
-                            total_initial += box.initial_quantity
-                            total_remaining += box.remaining_quantity
-                            if box.remaining_quantity > 0:
-                                available_boxes += 1
-                            elif box.remaining_quantity == 0:
-                                empty_boxes += 1
-                            elif box.remaining_quantity < 0:
-                                negative_boxes += 1
+        total_types = len(grouped_data)
+        total_boxes = sum(group.get('total_boxes', 0) for group in grouped_data.values())
+        total_initial = sum(group.get('total_initial', 0) for group in grouped_data.values())
+        total_remaining = sum(group.get('total_remaining', 0) for group in grouped_data.values())
         
         return {
+            'total_types': total_types,
             'total_boxes': total_boxes,
-            'available_boxes': available_boxes,
-            'empty_boxes': empty_boxes,
-            'negative_boxes': negative_boxes,
-            'total_remaining': total_remaining,
             'total_initial': total_initial,
+            'total_remaining': total_remaining,
             'utilization_rate': round(((total_initial - total_remaining) / total_initial * 100), 1) if total_initial > 0 else 0
         }
     except Exception as e:
         print(f"Error calculating stats: {e}")
-        import traceback
-        traceback.print_exc()
         return {
+            'total_types': 0,
             'total_boxes': 0,
-            'available_boxes': 0,
-            'empty_boxes': 0,
-            'negative_boxes': 0,
-            'total_remaining': 0,
             'total_initial': 0,
+            'total_remaining': 0,
             'utilization_rate': 0
         }
 
@@ -712,7 +668,7 @@ def dashboard():
     results = query.order_by(HardwareType.name, LotNumber.name, Box.box_number).all()
     
     # Group boxes using helper function
-    type_groups, grouped_data = group_boxes_by_type_lot(results)
+    grouped_data = group_boxes_by_type_lot(results)
     
     # Calculate statistics
     total_stats = calculate_inventory_stats(grouped_data)
