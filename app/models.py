@@ -1,19 +1,9 @@
 from datetime import datetime, timezone
-# Handle both relative and absolute imports
-try:
-    from . import db
-except ImportError:
-    # Fallback for when running as script
-    from flask import Flask
-    from flask_sqlalchemy import SQLAlchemy
-    from sqlalchemy.orm import DeclarativeBase
-    
-    class Base(DeclarativeBase):
-        pass
-    
-    db = SQLAlchemy(model_class=Base)
 
-class HardwareType(db.Model):
+# This will be imported from app
+db = None
+
+class HardwareType:
     """Hardware type lookup table"""
     __tablename__ = 'hardware_types'
     
