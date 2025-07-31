@@ -53,9 +53,7 @@ Barcodes can be generated freely using online tools (e.g., barcode.tec-it.com) a
 
 Deployment
 
-Hosted on Railway.com for easy access and collaboration.
-
-(https://hardwareinventorytracker-production.up.railway.app/)
+TO BE UPDATED
 ----
 
 Can be exported and run locally or deployed to other Flask-friendly hosts (e.g., Render, PythonAnywhere, etc.).
